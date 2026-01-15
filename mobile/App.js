@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 const linking = {
-  prefixes: ['boutiqueminimart://', 'http://172.21.64.1:5000', 'http://192.168.100.30:5000'],
+  prefixes: ['boutiqueminimart://', 'https://boutiqueminimart.onrender.com', 'http://172.21.64.1:5000', 'http://192.168.100.30:5000'],
   config: {
     screens: {
       Auth: {

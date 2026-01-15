@@ -7,7 +7,7 @@ import Constants from 'expo-constants';
 const expoHost = Constants.expoConfig?.hostUri?.split(':').shift();
 const host = expoHost || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
 
-export const BASE_URL = `http://${host}:5000`;
+export const BASE_URL = 'https://boutiqueminimart.onrender.com';
 export const API_URL = `${BASE_URL}/api`;
 
 console.log('--- API CONFIGURATION ---');

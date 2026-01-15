@@ -1,43 +1,32 @@
-const path = require('path');
 const express = require('express');
 const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
-    destination(req, file, cb) {
-        cb(null, 'uploads/');
-    },
-    filename(req, file, cb) {
-        cb(
-            null,
-            `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-        );
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'djsgmue0r',
+    api_key: process.env.CLOUDINARY_API_KEY || '461177557342769',
+    api_secret: process.env.CLOUDINARY_API_SECRET || '5oDpli1BZ_xp3fgeNvl_u6zUxXU',
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'boutique_mini_mart',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     },
 });
 
-function checkFileType(file, cb) {
-    const filetypes = /jpg|jpeg|png/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-        return cb(null, true);
-    } else {
-        cb('Images only!');
-    }
-}
-
-const upload = multer({
-    storage,
-    fileFilter: function (req, file, cb) {
-        checkFileType(file, cb);
-    },
-});
+const upload = multer({ storage: storage });
 
 router.post('/', upload.single('image'), (req, res) => {
     res.send({
-        image: `/${req.file.path.replace(/\\/g, '/')}`,
+        image: req.file.path,
     });
 });
 

@@ -116,7 +116,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     // Create reset url (Using HTTP link to a redirect page that opens the app)
     const host = req.get('host');
-    const resetUrl = `http://${host}/api/auth/reset-password-page/${resetToken}`;
+    const protocol = req.get('host').includes('localhost') ? 'http' : 'https';
+    const resetUrl = `${protocol}://${host}/api/auth/reset-password-page/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. \n\n Please click the link below to reset your password and open the MiniBoutique app: \n\n ${resetUrl}`;
 
