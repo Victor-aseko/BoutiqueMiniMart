@@ -53,7 +53,8 @@ const ResetPasswordScreen = ({ route, navigation }) => {
             await api.post(`/auth/reset-password/${token}`, { password });
             setIsSuccess(true);
         } catch (err) {
-            const message = err.response?.data?.message || 'Token is invalid or has expired';
+            console.error('Reset password error:', err);
+            const message = err.response?.data?.message || err.message || 'Token is invalid or has expired';
             Alert.alert('Error', message);
         } finally {
             setIsLoading(false);

@@ -7,7 +7,8 @@ import {
     FlatList,
     ActivityIndicator,
     RefreshControl,
-    TouchableOpacity
+    TouchableOpacity,
+    ScrollView
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { Image, Alert } from 'react-native';
 
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { useCart } from '../../context/CartContext';
 
 const OrdersScreen = ({ navigation, route }) => {
     const { user } = useAuth();
@@ -132,6 +134,8 @@ const OrdersScreen = ({ navigation, route }) => {
         }
     }, [route.params]);
 
+    const { clearCart } = useCart();
+
     const handlePlaceOrder = async () => {
         if (!pendingOrder || !user) return;
 
@@ -171,12 +175,33 @@ const OrdersScreen = ({ navigation, route }) => {
                 totalPrice: itemsPrice + shippingPrice,
             };
 
-            const response = await api.post('/orders', orderData);
+            // Using fetch to bypass potential axios network issues
+            console.log('Placing order with fetch...');
+            const response = await fetch(`${api.defaults.baseURL}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${user.token}`
+                },
+                body: JSON.stringify(orderData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to place order');
+            }
 
             Alert.alert('Success', 'Order placed successfully!', [
                 {
                     text: 'OK', onPress: () => {
                         setPendingOrder(null);
+                        // Clear cart if this order came from the cart
+                        if (route.params?.cartItems) {
+                            console.log('Clearing cart after successful order');
+                            clearCart();
+                        }
                         navigation.setParams({ product: null, cartItems: null });
                         // Refresh orders
                         fetchOrders();
@@ -186,7 +211,7 @@ const OrdersScreen = ({ navigation, route }) => {
             ]);
         } catch (error) {
             console.error('Order placement error:', error);
-            Alert.alert('Error', 'Failed to place order. Please try again.');
+            Alert.alert('Error', `Failed to place order: ${error.message}`);
         } finally {
             setPlacingOrder(false);
         }
@@ -263,114 +288,131 @@ const OrdersScreen = ({ navigation, route }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.headerRow}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => {
+                    if (pendingOrder) {
+                        cancelPendingOrder();
+                    } else {
+                        navigation.goBack();
+                    }
+                }} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={22} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Orders</Text>
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('Profile', { screen: 'Notifications' })}
-                    style={styles.notificationBtn}
-                >
-                    <Bell color={COLORS.primary} size={22} />
-                    {unreadCount > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{unreadCount}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-            </View>
-
-            {pendingOrder && (
-                <View style={styles.pendingOrderContainer}>
-                    <View style={styles.pendingHeader}>
-                        <Text style={styles.pendingTitle}>Complete Your Order</Text>
-                        <TouchableOpacity onPress={cancelPendingOrder}>
-                            <X size={24} color={COLORS.textLight} />
-                        </TouchableOpacity>
-                    </View>
-                    {pendingOrder.items.map((item, idx) => (
-                        <View key={idx} style={[styles.pendingCard, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 15 }]}>
-                            {(() => {
-                                const variant = item.colors?.find(c => c.name === item.color);
-                                return <Image source={{ uri: variant?.image || item.image }} style={styles.pendingImage} />;
-                            })()}
-                            <View style={styles.pendingInfo}>
-                                <Text style={styles.pendingName} numberOfLines={1}>{item.name}</Text>
-                                <Text style={styles.pendingDetail}>Qty: {item.qty} • Size: {item.size || 'Default'} • {item.color || 'Default'}</Text>
-                                <Text style={styles.pendingPrice}>Kshs {(Number(item.price || 0) * Number(item.qty || 1)).toFixed(2)}</Text>
-                            </View>
-                        </View>
-                    ))}
-
-                    <View style={styles.summaryBox}>
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Items Price:</Text>
-                            <Text style={styles.summaryValue}>Kshs {pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0).toFixed(2)}</Text>
-                        </View>
-                        <View style={styles.summaryRow}>
-                            <Text style={styles.summaryLabel}>Shipping:</Text>
-                            <Text style={styles.summaryValue}>Kshs {shippingPrice.toFixed(2)}</Text>
-                        </View>
-                        <View style={[styles.summaryRow, styles.totalRow]}>
-                            <Text style={styles.totalLabel}>Total:</Text>
-                            <Text style={styles.totalValue}>Kshs {(pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0) + shippingPrice).toFixed(2)}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.addressBox}>
-                        <Text style={styles.pendingLocation}>📍 Shipping to: {pendingOrder.shippingAddress?.street || pendingOrder.location}, {pendingOrder.shippingAddress?.city}</Text>
-                        <Text style={styles.pendingLocation}>📞 Phone: {pendingOrder.shippingAddress?.phone || 'N/A'}</Text>
-                    </View>
-
-                    <Text style={styles.sectionTitle}>Payment Method</Text>
-                    <View style={styles.paymentMethods}>
-                        {['Cash (Pay on Delivery)', 'M-Pesa', 'Card'].map((method) => (
-                            <TouchableOpacity
-                                key={method}
-                                style={[styles.paymentBtn, paymentMethod === method && styles.paymentBtnActive]}
-                                onPress={() => setPaymentMethod(method)}
-                            >
-                                <Text style={[styles.paymentText, paymentMethod === method && styles.paymentTextActive]}>{method}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                <Text style={styles.headerTitle}>{pendingOrder ? 'Confirm Order' : 'My Orders'}</Text>
+                {!pendingOrder && (
                     <TouchableOpacity
-                        style={styles.placeOrderBtn}
-                        onPress={handlePlaceOrder}
-                        disabled={placingOrder}
+                        onPress={() => navigation.navigate('Profile', { screen: 'Notifications' })}
+                        style={styles.notificationBtn}
                     >
-                        {placingOrder ? (
-                            <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                            <>
-                                <Text style={styles.placeOrderText}>Confirm & Place Order</Text>
-                                <Check size={20} color="#fff" style={{ marginLeft: 10 }} />
-                            </>
+                        <Bell color={COLORS.primary} size={22} />
+                        {unreadCount > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>{unreadCount}</Text>
+                            </View>
                         )}
                     </TouchableOpacity>
-                </View>
-            )}
+                )}
+            </View>
 
-            <FlatList
-                data={orders}
-                keyExtractor={(item) => item._id}
-                renderItem={renderItem}
-                contentContainerStyle={styles.list}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={() => {
-                        setIsRefreshing(true);
-                        fetchOrders();
-                    }} />
-                }
-                ListEmptyComponent={
-                    !pendingOrder ? (
+            {pendingOrder ? (
+                <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                    <View style={styles.pendingOrderContainer}>
+                        <View style={styles.pendingHeader}>
+                            <Text style={styles.pendingTitle}>Review Items</Text>
+                        </View>
+                        {pendingOrder.items.map((item, idx) => (
+                            <View key={idx} style={[styles.pendingCard, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 15 }]}>
+                                {(() => {
+                                    const variant = item.colors?.find(c => c.name === item.color);
+                                    return <Image source={{ uri: variant?.image || item.image }} style={styles.pendingImage} />;
+                                })()}
+                                <View style={styles.pendingInfo}>
+                                    <Text style={styles.pendingName} numberOfLines={2}>{item.name}</Text>
+                                    <View style={styles.variantContainer}>
+                                        <Text style={styles.pendingDetail}>Qty: {item.qty}</Text>
+                                        {item.size && item.size !== 'Default' && (
+                                            <Text style={styles.pendingVariant}>Size: {item.size}</Text>
+                                        )}
+                                        {item.color && item.color !== 'Default' && (
+                                            <Text style={styles.pendingVariant}>Color: {item.color}</Text>
+                                        )}
+                                    </View>
+                                    <Text style={styles.pendingPrice}>Kshs {(Number(item.price || 0) * Number(item.qty || 1)).toFixed(2)}</Text>
+                                </View>
+                            </View>
+                        ))}
+
+                        <View style={styles.summaryBox}>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Items Price:</Text>
+                                <Text style={styles.summaryValue}>Kshs {pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0).toFixed(2)}</Text>
+                            </View>
+                            <View style={styles.summaryRow}>
+                                <Text style={styles.summaryLabel}>Shipping:</Text>
+                                <Text style={styles.summaryValue}>Kshs {shippingPrice.toFixed(2)}</Text>
+                            </View>
+                            <View style={[styles.summaryRow, styles.totalRow]}>
+                                <Text style={styles.totalLabel}>Total:</Text>
+                                <Text style={styles.totalValue}>Kshs {(pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0) + shippingPrice).toFixed(2)}</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.addressBox}>
+                            <Text style={styles.sectionTitle}>Shipping Address</Text>
+                            <View style={styles.addressCard}>
+                                <Text style={styles.pendingLocation}>📍 {pendingOrder.shippingAddress?.street || pendingOrder.location}, {pendingOrder.shippingAddress?.city}</Text>
+                                <Text style={styles.pendingLocation}>📞 {pendingOrder.shippingAddress?.phone || 'N/A'}</Text>
+                            </View>
+                        </View>
+
+                        <Text style={styles.sectionTitle}>Payment Method</Text>
+                        <View style={styles.paymentMethods}>
+                            {['Cash (Pay on Delivery)', 'M-Pesa', 'Card'].map((method) => (
+                                <TouchableOpacity
+                                    key={method}
+                                    style={[styles.paymentBtn, paymentMethod === method && styles.paymentBtnActive]}
+                                    onPress={() => setPaymentMethod(method)}
+                                >
+                                    <Text style={[styles.paymentText, paymentMethod === method && styles.paymentTextActive]}>{method}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.placeOrderBtn}
+                            onPress={handlePlaceOrder}
+                            disabled={placingOrder}
+                        >
+                            {placingOrder ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <>
+                                    <Text style={styles.placeOrderText}>Confirm & Place Order</Text>
+                                    <Check size={20} color="#fff" style={{ marginLeft: 10 }} />
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            ) : (
+                <FlatList
+                    data={orders}
+                    keyExtractor={(item) => item._id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.list}
+                    refreshControl={
+                        <RefreshControl refreshing={isRefreshing} onRefresh={() => {
+                            setIsRefreshing(true);
+                            fetchOrders();
+                        }} />
+                    }
+                    ListEmptyComponent={
                         <View style={styles.empty}>
                             <Package size={60} color={COLORS.border} />
                             <Text style={styles.emptyText}>You haven't placed any orders yet.</Text>
                         </View>
-                    ) : null
-                }
-            />
+                    }
+                />
+            )}
         </SafeAreaView>
     );
 };
@@ -640,7 +682,21 @@ const styles = StyleSheet.create({
         color: COLORS.accent,
     },
     addressBox: {
-        marginBottom: 15,
+        marginBottom: 20,
+    },
+    addressCard: {
+        backgroundColor: COLORS.background,
+        padding: 10,
+        borderRadius: 8,
+    },
+    variantContainer: {
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    pendingVariant: {
+        fontSize: 13,
+        color: COLORS.textLight,
+        fontWeight: '500',
     }
 });
 

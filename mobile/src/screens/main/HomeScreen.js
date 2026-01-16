@@ -13,7 +13,8 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    Keyboard
+    Keyboard,
+    Dimensions
 } from 'react-native';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -118,21 +119,29 @@ const HomeScreen = ({ navigation }) => {
         </View>
     );
 
+    const { width } = Dimensions.get('window');
+    const CARD_WIDTH = (width - 50) / 2; // (Screen width - 40px padding - 20px gap) / 2
+
     const renderNewArrivals = () => {
+        // Limit to 4 items, 2 visible per screen
         const displayProducts = products.slice(0, 4);
         return (
             <View style={styles.newArrivalsContainer}>
                 <FlatList
                     data={displayProducts}
-                    numColumns={4}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
                     scrollEnabled={true}
                     keyExtractor={(item) => item._id}
+                    initialNumToRender={2}
+                    maxToRenderPerBatch={2}
                     renderItem={({ item }) => (
-                        <View style={styles.horizontalProductCard}>
+                        <View style={{ width: CARD_WIDTH, marginRight: 10 }}>
                             <ProductCard
                                 product={item}
-                                onPress={() => navigation.navigate('ProductDetails', { product: item })}
+                                onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: false })}
                                 onAddToCart={handleAddToCart}
+                                isOffer={false}
                             />
                         </View>
                     )}
@@ -159,7 +168,7 @@ const HomeScreen = ({ navigation }) => {
                     <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
                         <View style={styles.productsGrid}>
                             {products.map((product) => (
-                                <View key={product._id} style={styles.productWrapper}>
+                                <View key={product._id} style={{ width: '48%', marginBottom: 15 }}>
                                     <ProductCard
                                         product={product}
                                         onPress={() => {
@@ -178,7 +187,8 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const renderAllOffersModal = () => {
-        const limitedProducts = products.slice(0, 4);
+        // Show 4 products for offers (5-9)
+        const limitedProducts = products.slice(5, 9);
         return (
             <Modal
                 visible={showAllOffers}
@@ -196,17 +206,18 @@ const HomeScreen = ({ navigation }) => {
                     <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
                         <View style={styles.productsGrid}>
                             {limitedProducts.map((product) => (
-                                <View key={product._id} style={styles.productWrapper}>
+                                <View key={product._id} style={{ width: '48%', marginBottom: 15 }}>
                                     <ProductCard
                                         product={product}
                                         onPress={() => {
                                             setShowAllOffers(false);
-                                            navigation.navigate('ProductDetails', { product });
+                                            navigation.navigate('ProductDetails', { product, isOffer: true });
                                         }}
                                         onAddToCart={handleAddToCart}
+                                        isOffer={true}
                                     />
                                     <View style={styles.offerBadge}>
-                                        <Text style={styles.offerBadgeText}>-20% OFF</Text>
+                                        <Text style={styles.offerBadgeText}>-10% OFF</Text>
                                     </View>
                                 </View>
                             ))}
@@ -229,28 +240,23 @@ const HomeScreen = ({ navigation }) => {
         <View>
             <View style={styles.offersSection}>
                 {renderSectionHeader('Special Offers', () => setShowAllOffers(true), 'View Offers')}
-                <View style={styles.offersContainer}>
-                    <FlatList
-                        data={products.slice(0, 4)}
-                        horizontal
-                        scrollEnabled={true}
-                        showsHorizontalScrollIndicator={false}
-                        renderItem={({ item }) => (
-                            <View style={styles.horizontalOfferCard}>
-                                <View style={styles.offerCardContainer}>
-                                    <ProductCard
-                                        product={item}
-                                        onPress={() => navigation.navigate('ProductDetails', { product: item })}
-                                        onAddToCart={handleAddToCart}
-                                    />
-                                    <View style={styles.offerBadge}>
-                                        <Text style={styles.offerBadgeText}>-20% OFF</Text>
-                                    </View>
+                <View style={[styles.offersContainer, { paddingHorizontal: 0 }]}>
+                    {/* Just display two cards close to one another */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 }}>
+                        {products.slice(5, 7).map((item) => (
+                            <View key={item._id} style={{ width: '48%', position: 'relative' }}>
+                                <ProductCard
+                                    product={item}
+                                    onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: true })}
+                                    onAddToCart={handleAddToCart}
+                                    isOffer={true}
+                                />
+                                <View style={styles.offerBadge}>
+                                    <Text style={styles.offerBadgeText}>-10% OFF</Text>
                                 </View>
                             </View>
-                        )}
-                        keyExtractor={(item) => item._id}
-                    />
+                        ))}
+                    </View>
                 </View>
             </View>
 
@@ -346,7 +352,7 @@ const HomeScreen = ({ navigation }) => {
             />
             {renderAllArrivalsModal()}
             {renderAllOffersModal()}
-            
+
         </SafeAreaView>
     );
 };
@@ -402,8 +408,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     newArrivalsContainer: {
-        marginHorizontal: -20,
-        paddingHorizontal: 20,
+        paddingLeft: 20,
         marginBottom: 20,
         backgroundColor: COLORS.white,
         paddingBottom: 20,
@@ -418,14 +423,12 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     horizontalProductCard: {
-        width: '50%',
-        paddingHorizontal: 6,
+        width: 140,
+        marginRight: 10,
     },
     horizontalOfferCard: {
-        width: '50%',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        marginRight: 6,
+        width: 140,
+        marginRight: 10,
     },
     offerCardContainer: {
         position: 'relative',

@@ -38,34 +38,42 @@ const addOrderItems = asyncHandler(async (req, res) => {
 
         const createdOrder = await order.save();
 
-        // Notify vendor
-        try {
-            const sendEmail = require('../utils/sendEmail');
-            await sendEmail({
-                email: 'Miniboutique043@gmail.com',
-                subject: 'New Order Placed - Boutique Mini Mart',
-                message: `A new order (${createdOrder._id}) has been placed by ${req.user.name}.\n\nTotal: ${createdOrder.totalPrice}\nPayment Method: ${createdOrder.paymentMethod}\n\nPlease check the admin dashboard for details.`
-            });
-        } catch (e) {
-            console.error('Failed to send order notification email:', e);
-        }
-
-        // Create In-App Notification for Admins
-        try {
-            const admins = await User.find({ isAdmin: true });
-            const notifications = admins.map(admin => ({
-                user: admin._id,
-                title: 'New Order Received! 🎉',
-                message: `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} has been placed by ${req.user.name}. Sum: Kshs ${createdOrder.totalPrice.toFixed(2)}`,
-                type: 'ORDER_PLACED',
-                orderId: createdOrder._id
-            }));
-            await Notification.insertMany(notifications);
-        } catch (e) {
-            console.error('Failed to create in-app notification for admins:', e);
-        }
-
+        // Send response immediately to avoid blocking UI if email service is slow/down
         res.status(201).json(createdOrder);
+
+        // Notify vendor (Background Process)
+        const notifyVendor = async () => {
+            try {
+                const sendEmail = require('../utils/sendEmail');
+                await sendEmail({
+                    email: 'Miniboutique043@gmail.com',
+                    subject: 'New Order Placed - Boutique Mini Mart',
+                    message: `A new order (${createdOrder._id}) has been placed by ${req.user.name}.\n\nTotal: ${createdOrder.totalPrice}\nPayment Method: ${createdOrder.paymentMethod}\n\nPlease check the admin dashboard for details.`
+                });
+            } catch (e) {
+                console.error('Failed to send order notification email:', e);
+            }
+        };
+        notifyVendor();
+
+        // Create In-App Notification for Admins (Background Process)
+        const notifyAdmins = async () => {
+            try {
+                const admins = await User.find({ isAdmin: true });
+                const notifications = admins.map(admin => ({
+                    user: admin._id,
+                    title: 'New Order Received! 🎉',
+                    message: `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} has been placed by ${req.user.name}. Sum: Kshs ${createdOrder.totalPrice.toFixed(2)}`,
+                    type: 'ORDER_PLACED',
+                    orderId: createdOrder._id
+                }));
+                await Notification.insertMany(notifications);
+            } catch (e) {
+                console.error('Failed to create in-app notification for admins:', e);
+            }
+        };
+        notifyAdmins();
+
     }
 });
 

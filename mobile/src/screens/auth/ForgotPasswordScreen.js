@@ -29,11 +29,27 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
         setIsLoading(true);
         try {
-            await api.post('/auth/forgot-password', { email });
+            // Using fetch to bypass potential axios network issues on Android
+            console.log('Attempting password reset for:', email);
+            const response = await fetch(`${api.defaults.baseURL}/auth/forgot-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Something went wrong');
+            }
+
             setIsSent(true);
         } catch (err) {
-            const message = err.response?.data?.message || 'Something went wrong. Please try again.';
-            Alert.alert('Error', message);
+            console.error('Forgot password error:', err);
+            Alert.alert('Error', err.message || 'Network request failed');
         } finally {
             setIsLoading(false);
         }

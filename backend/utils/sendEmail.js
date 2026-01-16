@@ -26,6 +26,8 @@ const sendEmail = async (options) => {
             secure: port === 465, // true for 465, false for other ports
             requireTLS: true,
             tls: { rejectUnauthorized: false },
+            connectionTimeout: 10000, // 10 seconds
+            socketTimeout: 10000, // 10 seconds
             auth: {
                 user: process.env.SMTP_EMAIL,
                 pass: process.env.SMTP_PASSWORD,
@@ -57,8 +59,14 @@ const sendEmail = async (options) => {
         console.log('Message sent: %s', info.messageId);
         return info;
     } catch (err) {
-        console.error('Error sending email:', err && (err.response || err.message) ? (err.response || err.message) : err);
-        throw err;
+        console.error('Error sending email:', err);
+        if (err.response) {
+            console.error('SMTP Response:', err.response);
+        }
+        if (err.code === 'EAUTH') {
+            console.error('SMTP Authentication Failed. Please check your email and password/app-password.');
+        }
+        throw new Error(`Email failed: ${err.message}`);
     }
 };
 

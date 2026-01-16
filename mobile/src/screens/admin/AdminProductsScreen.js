@@ -200,8 +200,13 @@ const AdminProductsScreen = ({ navigation }) => {
                 console.log('Server Raw Response:', data);
 
                 if (data && data.image) {
-                    const imagePath = data.image.startsWith('/') ? data.image.substring(1) : data.image;
-                    const fullUrl = `${BASE_URL.replace(/\/$/, '')}/${imagePath}`;
+                    let fullUrl = data.image;
+
+                    // If it's not a full URL (does not start with http/https), prepend BASE_URL
+                    if (!fullUrl.startsWith('http')) {
+                        const imagePath = data.image.startsWith('/') ? data.image.substring(1) : data.image;
+                        fullUrl = `${BASE_URL.replace(/\/$/, '')}/${imagePath}`;
+                    }
 
                     console.log('Success! Final URL:', fullUrl);
                     if (type === 'main') {

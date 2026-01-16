@@ -182,7 +182,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} />
+                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} resizeMode="cover" />
 
                 <View style={styles.content}>
                     <View style={styles.metaRow}>
@@ -192,11 +192,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                             <Text style={styles.ratingText}>({product.numReviews} reviews)</Text>
                         </View>
                     </View>
-                    {!user?.isAdmin && (
-                        <TouchableOpacity style={styles.reviewLink} onPress={() => navigation.navigate('AddReview', { product })}>
-                            <Text style={styles.reviewLinkText}>Write a review</Text>
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity style={styles.reviewLink} onPress={() => navigation.navigate('AddReview', { product })}>
+                        <Text style={styles.reviewLinkText}>Write a review</Text>
+                    </TouchableOpacity>
 
                     <Text style={styles.name}>{product.name}</Text>
                     <View style={styles.brandRow}>
@@ -204,7 +202,16 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         <Text style={styles.brandValue}>{product.brand || 'Boutique'}</Text>
                     </View>
 
-                    <Text style={styles.price}>Kshs {Number(product.price).toFixed(2)}</Text>
+                    <View style={styles.priceContainer}>
+                        {route.params?.isOffer ? (
+                            <>
+                                <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.price))}</Text>
+                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price) * 0.9)} <Text style={styles.offTxt}>(10% OFF)</Text></Text>
+                            </>
+                        ) : (
+                            <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
+                        )}
+                    </View>
 
                     <Text style={styles.sectionTitle}>Description</Text>
                     <Text style={styles.description}>{product.description}</Text>
@@ -305,7 +312,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             <View style={styles.footer}>
                 <View style={styles.totalBox}>
                     <Text style={styles.totalLabel}>Subtotal</Text>
-                    <Text style={styles.totalPrice}>Kshs {(Number(product.price) * qty).toFixed(2)}</Text>
+                    <Text style={styles.totalPrice}>Kshs {
+                        (route.params?.isOffer
+                            ? Math.floor(Number(product.price) * 0.9)
+                            : Math.floor(Number(product.price))
+                        ) * qty
+                    }</Text>
                 </View>
                 <View style={{ flexDirection: 'row', flex: 2 }}>
                     <MyButton
@@ -332,7 +344,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     <View style={styles.modalSheet}>
                         <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
                         <Text style={styles.modalName}>{product.name}</Text>
-                        <Text style={styles.modalPrice}>Kshs {(Number(product.price) * orderQty).toFixed(2)}</Text>
+                        <Text style={styles.modalPrice}>Kshs {
+                            (route.params?.isOffer
+                                ? Math.floor(Number(product.price) * 0.9)
+                                : Math.floor(Number(product.price))
+                            ) * orderQty
+                        }</Text>
 
                         {/* Color Selection */}
                         <Text style={styles.modalLabel}>Color:</Text>
@@ -469,15 +486,20 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 350,
-        resizeMode: 'cover',
+        height: 450,
+        backgroundColor: '#f0f0f0',
     },
     content: {
         padding: 20,
         backgroundColor: COLORS.white,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        marginTop: -30,
+        marginTop: -35,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 5,
     },
     metaRow: {
         flexDirection: 'row',
@@ -506,11 +528,27 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         marginBottom: 8,
     },
+    priceContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        marginBottom: 20,
+    },
+    offerOldPrice: {
+        fontSize: 18,
+        color: COLORS.error,
+        textDecorationLine: 'line-through',
+        marginRight: 10,
+        fontWeight: 'bold',
+    },
     price: {
-        fontSize: 22,
+        fontSize: 26,
         fontWeight: 'bold',
         color: COLORS.accent,
-        marginBottom: 20,
+    },
+    offTxt: {
+        fontSize: 14,
+        color: COLORS.success,
+        fontWeight: 'bold',
     },
     sectionTitle: {
         fontSize: 16,
@@ -709,21 +747,28 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     optionBtn: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
         borderWidth: 1,
         borderColor: COLORS.border,
-        borderRadius: 8,
-        marginRight: 8,
-        marginBottom: 5,
+        borderRadius: 12,
+        marginRight: 10,
+        marginBottom: 8,
+        backgroundColor: COLORS.white,
     },
     optionBtnSelected: {
         backgroundColor: COLORS.accent,
         borderColor: COLORS.accent,
+        shadowColor: COLORS.accent,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 3,
     },
     optionText: {
         color: COLORS.text,
         fontSize: 14,
+        fontWeight: '500',
     },
     optionTextSelected: {
         color: COLORS.white,
@@ -745,8 +790,8 @@ const styles = StyleSheet.create({
     colorOptionBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         borderWidth: 1,
         borderColor: COLORS.border,
         borderRadius: 20,
@@ -756,13 +801,16 @@ const styles = StyleSheet.create({
     },
     colorOptionBtnSelected: {
         borderColor: COLORS.accent,
-        backgroundColor: COLORS.accent + '10',
+        backgroundColor: '#FFF0F5', // lightly tinted background
+        borderWidth: 2,
     },
     colorOptionImg: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         marginRight: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
     },
     variantsRow: {
         flexDirection: 'row',

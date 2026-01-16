@@ -4,7 +4,10 @@ import { COLORS, SIZES } from '../theme/theme';
 import { ShoppingCart } from 'lucide-react-native';
 import Rating from './Rating';
 
-const ProductCard = ({ product, onPress, onAddToCart, style }) => {
+const ProductCard = ({ product, onPress, onAddToCart, style, isOffer = false }) => {
+    const originalPrice = Math.floor(Number(product.price));
+    const discountedPrice = Math.floor(originalPrice * 0.9); // 10% off
+
     return (
         <TouchableOpacity style={[styles.container, style]} onPress={onPress} activeOpacity={0.8}>
             <Image source={{ uri: product.image }} style={styles.image} />
@@ -13,7 +16,14 @@ const ProductCard = ({ product, onPress, onAddToCart, style }) => {
                 <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
 
                 <View style={styles.row}>
-                    <Text style={styles.price}>Kshs {product.price}</Text>
+                    {isOffer ? (
+                        <View style={styles.priceColumn}>
+                            <Text style={styles.offerOldPrice}>Kshs {originalPrice}</Text>
+                            <Text style={styles.price}>Kshs {discountedPrice}</Text>
+                        </View>
+                    ) : (
+                        <Text style={styles.price}>Kshs {originalPrice}</Text>
+                    )}
                     <Rating rating={product.rating} size={10} />
                 </View>
 
@@ -44,7 +54,7 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 160,
+        height: 175,
         backgroundColor: '#eee',
     },
     info: {
@@ -78,6 +88,20 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: COLORS.primary,
+    },
+    priceColumn: {
+        flexDirection: 'column',
+    },
+    oldPrice: {
+        fontSize: 10,
+        color: COLORS.textLight,
+        textDecorationLine: 'line-through',
+    },
+    offerOldPrice: {
+        fontSize: 11,
+        color: COLORS.error, // Red for offer old price
+        textDecorationLine: 'line-through',
+        fontWeight: 'bold',
     },
     rating: {
         flexDirection: 'row',
