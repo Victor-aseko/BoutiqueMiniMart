@@ -15,7 +15,7 @@ router.post('/login', authUser);
 router.post('/forgot-password', forgotPassword);
 router.get('/reset-password-page/:token', (req, res) => {
     const { token } = req.params;
-    const appUrl = `boutiqueminimart://api/auth/reset-password/${token}`;
+    const appUrl = `boutiqueminimart://reset-password/${token}`;
     res.send(`
         <html>
             <head>
@@ -41,11 +41,13 @@ router.get('/reset-password-page/:token', (req, res) => {
                 </div>
                 <div class="footer">If you didn't request this, you can safely ignore this page.</div>
                 <script>
-                    window.location.href = "${appUrl}";
-                    // Fallback for some browsers
+                    // Try to open the app
+                    window.location.replace("${appUrl}");
+                    
+                    // Fallback for some browsers if replace doesn't work
                     setTimeout(function() {
                         window.location.href = "${appUrl}";
-                    }, 500);
+                    }, 1000);
                 </script>
             </body>
         </html>

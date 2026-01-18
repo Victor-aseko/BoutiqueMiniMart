@@ -46,7 +46,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
             try {
                 const sendEmail = require('../utils/sendEmail');
                 await sendEmail({
-                    email: 'Miniboutique043@gmail.com',
+                    email: 'miniboutique043@gmail.com',
                     subject: 'New Order Placed - Boutique Mini Mart',
                     message: `A new order (${createdOrder._id}) has been placed by ${req.user.name}.\n\nTotal: ${createdOrder.totalPrice}\nPayment Method: ${createdOrder.paymentMethod}\n\nPlease check the admin dashboard for details.`
                 });

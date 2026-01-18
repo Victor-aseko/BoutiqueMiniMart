@@ -15,7 +15,7 @@ const linking = {
     screens: {
       Auth: {
         screens: {
-          ResetPassword: 'api/auth/reset-password/:token',
+          ResetPassword: 'reset-password/:token',
         },
       },
     },

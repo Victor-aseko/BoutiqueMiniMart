@@ -47,7 +47,16 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
-        const success = await addToCart(product, qty, finalColor, finalSize);
+        const finalPrice = route.params?.isOffer
+            ? Math.floor(Number(product.price) * 0.9)
+            : Number(product.price);
+
+        const productToAdd = {
+            ...product,
+            price: finalPrice
+        };
+
+        const success = await addToCart(productToAdd, qty, finalColor, finalSize);
         if (success) {
             Alert.alert('Added to cart', 'The item has been successfully added to the cart. Please proceed to make an order or checkout.', [
                 { text: 'View Cart', onPress: () => { try { navigation.getParent()?.getParent()?.navigate('Cart'); } catch (e) { navigation.navigate('Cart'); } } },

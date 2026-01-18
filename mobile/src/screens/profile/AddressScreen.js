@@ -6,7 +6,9 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
-    Modal
+    Modal,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Plus, MapPin, Trash2, Home, Briefcase } from 'lucide-react-native';
@@ -161,59 +163,64 @@ const AddressScreen = ({ navigation, route }) => {
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.modalOverlay}
+                >
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Add New Address</Text>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={styles.modalTitle}>Add New Address</Text>
 
-                        <MyInput
-                            label="Street"
-                            placeholder="123 Boutique St"
-                            value={street}
-                            onChangeText={setStreet}
-                        />
-                        <MyInput
-                            label="City"
-                            placeholder="New York"
-                            value={city}
-                            onChangeText={setCity}
-                        />
-                        <MyInput
-                            label="Postal Code"
-                            placeholder="10001"
-                            value={postalCode}
-                            onChangeText={setPostalCode}
-                            keyboardType="numeric"
-                        />
-                        <MyInput
-                            label="Country"
-                            placeholder="USA"
-                            value={country}
-                            onChangeText={setCountry}
-                        />
-                        <MyInput
-                            label="Phone Number"
-                            placeholder="e.g. 0712345678"
-                            value={phone}
-                            onChangeText={setPhone}
-                            keyboardType="phone-pad"
-                        />
-
-                        <View style={styles.modalActions}>
-                            <TouchableOpacity
-                                style={[styles.modalBtn, styles.cancelBtn]}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <MyButton
-                                title="Save Address"
-                                onPress={handleAddAddress}
-                                loading={loading}
-                                style={[styles.modalBtn, styles.saveBtn]}
+                            <MyInput
+                                label="Street"
+                                placeholder="123 Boutique St"
+                                value={street}
+                                onChangeText={setStreet}
                             />
-                        </View>
+                            <MyInput
+                                label="City"
+                                placeholder="New York"
+                                value={city}
+                                onChangeText={setCity}
+                            />
+                            <MyInput
+                                label="Postal Code"
+                                placeholder="10001"
+                                value={postalCode}
+                                onChangeText={setPostalCode}
+                                keyboardType="numeric"
+                            />
+                            <MyInput
+                                label="Country"
+                                placeholder="USA"
+                                value={country}
+                                onChangeText={setCountry}
+                            />
+                            <MyInput
+                                label="Phone Number"
+                                placeholder="e.g. 0712345678"
+                                value={phone}
+                                onChangeText={setPhone}
+                                keyboardType="phone-pad"
+                            />
+
+                            <View style={styles.modalActions}>
+                                <TouchableOpacity
+                                    style={[styles.modalBtn, styles.cancelBtn]}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                                </TouchableOpacity>
+                                <MyButton
+                                    title="Save Address"
+                                    onPress={handleAddAddress}
+                                    loading={loading}
+                                    style={[styles.modalBtn, styles.saveBtn]}
+                                />
+                            </View>
+                        </ScrollView>
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );

@@ -15,10 +15,15 @@ const sendEmail = async (options) => {
     const transportOptions = isGmail
         ? {
             service: 'gmail',
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.SMTP_EMAIL,
                 pass: (process.env.SMTP_PASSWORD || '').replace(/\s+/g, ''),
             },
+            connectionTimeout: 15000,
+            greetingTimeout: 15000,
+            socketTimeout: 15000,
         }
         : {
             host: process.env.SMTP_HOST,
@@ -26,47 +31,52 @@ const sendEmail = async (options) => {
             secure: port === 465, // true for 465, false for other ports
             requireTLS: true,
             tls: { rejectUnauthorized: false },
-            connectionTimeout: 10000, // 10 seconds
-            socketTimeout: 10000, // 10 seconds
+            connectionTimeout: 15000,
+            socketTimeout: 15000,
             auth: {
                 user: process.env.SMTP_EMAIL,
                 pass: process.env.SMTP_PASSWORD,
             },
         };
 
-    console.log('Using transport options for email send', { isGmail, port });
+    console.log('Final transport configuration:', {
+        service: isGmail ? 'gmail' : 'custom',
+        host: transportOptions.host,
+        port: transportOptions.port,
+        secure: transportOptions.secure,
+        user: transportOptions.auth.user
+    });
 
     const transporter = nodemailer.createTransport(transportOptions);
 
     try {
         // verify connection configuration
         await transporter.verify();
-        console.log('SMTP transporter verified');
+        console.log('SMTP transporter verified successfully');
     } catch (err) {
-        console.error('SMTP transporter verification failed:', err && err.message ? err.message : err);
-        throw err;
+        console.error('SMTP transporter verification failed:', err);
+        throw new Error(`SMTP Verification Error: ${err.message}`);
     }
 
     const message = {
-        from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+        from: `"${process.env.FROM_NAME || 'BoutiqueMiniMart'}" <${process.env.FROM_EMAIL}>`,
         to: options.email,
         subject: options.subject,
         text: options.message,
     };
 
+    console.log(`Sending email to: ${options.email} with subject: ${options.subject}`);
+
     try {
         const info = await transporter.sendMail(message);
-        console.log('Message sent: %s', info.messageId);
+        console.log('Email sent successfully! Message ID:', info.messageId);
         return info;
     } catch (err) {
-        console.error('Error sending email:', err);
-        if (err.response) {
-            console.error('SMTP Response:', err.response);
-        }
+        console.error('Error in sendMail:', err);
         if (err.code === 'EAUTH') {
-            console.error('SMTP Authentication Failed. Please check your email and password/app-password.');
+            console.error('CRITICAL: SMTP Authentication Failed. Check App Password.');
         }
-        throw new Error(`Email failed: ${err.message}`);
+        throw new Error(`Email delivery failed: ${err.message}`);
     }
 };
 

@@ -31,7 +31,17 @@ const ProductCard = ({ product, onPress, onAddToCart, style, isOffer = false }) 
                     style={styles.addToCartBtn}
                     onPress={(e) => {
                         e.stopPropagation();
-                        onAddToCart && onAddToCart(product);
+                        if (onAddToCart) {
+                            if (isOffer) {
+                                const discountedProduct = {
+                                    ...product,
+                                    price: discountedPrice
+                                };
+                                onAddToCart(discountedProduct);
+                            } else {
+                                onAddToCart(product);
+                            }
+                        }
                     }}
                 >
                     <ShoppingCart color={COLORS.white} size={14} />
