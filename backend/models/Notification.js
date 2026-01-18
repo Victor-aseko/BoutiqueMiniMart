@@ -18,7 +18,7 @@ const notificationSchema = mongoose.Schema(
         type: {
             type: String,
             required: true,
-            enum: ['ORDER_PLACED', 'ORDER_STATUS_UPDATE', 'PROMOTIONAL', 'SYSTEM'],
+            enum: ['ORDER_PLACED', 'ORDER_STATUS_UPDATE', 'PROMOTIONAL', 'SYSTEM', 'SUPPORT_REQUEST'],
         },
         isRead: {
             type: Boolean,

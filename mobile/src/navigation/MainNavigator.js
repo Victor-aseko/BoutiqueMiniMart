@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { Home, ShoppingBag, Info, Menu, ShoppingCart } from 'lucide-react-native';
+import { Home, ShoppingBag, Info, Menu, ShoppingCart, MessageSquare } from 'lucide-react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useCart } from '../context/CartContext';
 import { COLORS } from '../theme/theme';
@@ -10,6 +10,7 @@ import { COLORS } from '../theme/theme';
 import HomeScreen from '../screens/main/HomeScreen';
 import ShopScreen from '../screens/main/ShopScreen';
 import AboutUsScreen from '../screens/main/AboutUsScreen';
+import SupportScreen from '../screens/main/SupportScreen';
 import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
 
@@ -49,14 +50,14 @@ const HomeStack = ({ navigation }) => (
                 fontSize: 18,
             },
             headerLeft: () => (
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     style={{ marginLeft: 15 }}
                 >
                     <Menu size={24} color={COLORS.primary} />
                 </TouchableOpacity>
             ),
-            
+
         }}
     >
         <Stack.Screen
@@ -92,14 +93,14 @@ const ShopStack = ({ navigation }) => (
                 fontSize: 18,
             },
             headerLeft: () => (
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     style={{ marginLeft: 15 }}
                 >
                     <Menu size={24} color={COLORS.primary} />
                 </TouchableOpacity>
             ),
-            
+
         }}
     >
         <Stack.Screen
@@ -135,20 +136,52 @@ const AboutStack = ({ navigation }) => (
                 fontSize: 18,
             },
             headerLeft: () => (
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => navigation.openDrawer()}
                     style={{ marginLeft: 15 }}
                 >
                     <Menu size={24} color={COLORS.primary} />
                 </TouchableOpacity>
             ),
-            
+
         }}
     >
         <Stack.Screen
             name="AboutUsScreen"
             component={AboutUsScreen}
             options={{ title: 'About Us' }}
+        />
+    </Stack.Navigator>
+);
+
+const SupportStack = ({ navigation }) => (
+    <Stack.Navigator
+        screenOptions={{
+            headerShown: true,
+            headerStyle: {
+                backgroundColor: COLORS.white,
+                borderBottomWidth: 1,
+                borderBottomColor: COLORS.border,
+            },
+            headerTintColor: COLORS.primary,
+            headerTitleStyle: {
+                fontWeight: 'bold',
+                fontSize: 18,
+            },
+            headerLeft: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.openDrawer()}
+                    style={{ marginLeft: 15 }}
+                >
+                    <Menu size={24} color={COLORS.primary} />
+                </TouchableOpacity>
+            ),
+        }}
+    >
+        <Stack.Screen
+            name="SupportScreen"
+            component={SupportScreen}
+            options={{ title: 'Support' }}
         />
     </Stack.Navigator>
 );
@@ -199,6 +232,14 @@ const MainNavigator = ({ navigation }) => {
                 options={{
                     tabBarLabel: 'About',
                     tabBarIcon: ({ color, size }) => <Info color={color} size={size} />,
+                }}
+            />
+            <Tab.Screen
+                name="SupportTab"
+                component={SupportStack}
+                options={{
+                    tabBarLabel: 'Support',
+                    tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
                 }}
             />
         </Tab.Navigator>

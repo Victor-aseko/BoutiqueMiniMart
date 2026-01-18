@@ -108,7 +108,7 @@ const OrdersScreen = ({ navigation, route }) => {
                     qty: route.params.qty,
                     color: route.params.color,
                     size: route.params.size,
-                    price: route.params.product.price,
+                    price: route.params.price || route.params.product.price,
                     name: route.params.product.name,
                     image: route.params.product.image,
                     colors: route.params.product.colors // for variant image resolution

@@ -116,14 +116,14 @@ const AddressScreen = ({ navigation, route }) => {
                             style={styles.addressCard}
                             onPress={() => {
                                 if (navigation.getState().routes.find(r => r.name === 'ProductDetails') || route.params?.returnScreen === 'ProductDetails') {
-                                    // Because ProductDetails is in a different stack (HomeStack or ShopStack) typically,
-                                    // we have to navigate carefully.
-                                    // We need to go via the Drawer's MainTabs route to get back to the TabNavigator.
                                     navigation.navigate('MainTabs', {
                                         screen: 'HomeTab',
                                         params: {
                                             screen: 'ProductDetails',
-                                            params: { selectedAddress: address }
+                                            params: {
+                                                selectedAddress: address,
+                                                isOffer: route.params?.isOffer || false // Preserve offer status
+                                            }
                                         }
                                     });
                                 }

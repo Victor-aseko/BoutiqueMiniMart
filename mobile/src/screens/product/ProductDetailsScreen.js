@@ -115,11 +115,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
+        const finalPrice = route.params?.isOffer
+            ? Math.floor(Number(product.price) * 0.9)
+            : Number(product.price);
+
         setOrderModalVisible(false);
         navigation.navigate('Orders', {
             screen: 'OrdersScreen',
             params: {
-                product,
+                product: { ...product, price: finalPrice },
                 qty: orderQty,
                 shippingAddress: {
                     ...selectedAddress,
@@ -128,6 +132,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 location: selectedAddress.city,
                 color: finalColor,
                 size: finalSize,
+                price: finalPrice // Pass price explicitly too
             }
         });
 
@@ -417,7 +422,10 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                         setOrderModalVisible(false);
                                         navigation.navigate('Profile', {
                                             screen: 'AddressScreen',
-                                            params: { returnScreen: 'ProductDetails' }
+                                            params: {
+                                                returnScreen: 'ProductDetails',
+                                                isOffer: route.params?.isOffer || false // Pass this so it can be returned
+                                            }
                                         });
                                     }}
                                     style={styles.locationBtn}
