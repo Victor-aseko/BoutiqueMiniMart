@@ -14,9 +14,9 @@ const sendEmail = async (options) => {
 
     const transportOptions = isGmail
         ? {
-            service: 'gmail',
-            port: 465,
-            secure: true,
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // Use STARTTLS
             auth: {
                 user: process.env.SMTP_EMAIL,
                 pass: (process.env.SMTP_PASSWORD || '').replace(/\s+/g, ''),
@@ -24,6 +24,9 @@ const sendEmail = async (options) => {
             connectionTimeout: 15000,
             greetingTimeout: 15000,
             socketTimeout: 15000,
+            tls: {
+                rejectUnauthorized: false
+            }
         }
         : {
             host: process.env.SMTP_HOST,
@@ -40,10 +43,10 @@ const sendEmail = async (options) => {
         };
 
     console.log('Final transport configuration:', {
-        service: isGmail ? 'gmail' : 'custom',
         host: transportOptions.host,
         port: transportOptions.port,
         secure: transportOptions.secure,
+        connectionType: transportOptions.secure ? 'SSL/TLS (Port 465)' : 'STARTTLS (Port 587)',
         user: transportOptions.auth.user
     });
 
