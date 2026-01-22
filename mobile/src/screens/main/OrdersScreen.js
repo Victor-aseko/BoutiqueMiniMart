@@ -75,6 +75,13 @@ const OrdersScreen = ({ navigation, route }) => {
         }
     }, [pendingOrder]);
 
+    const handleAddressSelection = () => {
+        navigation.navigate('Profile', {
+            screen: 'AddressScreen',
+            params: { returnScreen: 'OrdersScreen' }
+        });
+    };
+
     useEffect(() => {
         if (!user) {
             navigation.navigate('Auth');
@@ -357,9 +364,14 @@ const OrdersScreen = ({ navigation, route }) => {
                         </View>
 
                         <View style={styles.addressBox}>
-                            <Text style={styles.sectionTitle}>Shipping Address</Text>
+                            <View style={styles.addressSectionHeader}>
+                                <Text style={styles.sectionTitle}>Shipping Address</Text>
+                                <TouchableOpacity onPress={handleAddressSelection}>
+                                    <Text style={styles.changeAddressBtn}>Change</Text>
+                                </TouchableOpacity>
+                            </View>
                             <View style={styles.addressCard}>
-                                <Text style={styles.pendingLocation}>📍 {pendingOrder.shippingAddress?.street || pendingOrder.location}, {pendingOrder.shippingAddress?.city}</Text>
+                                <Text style={styles.pendingLocation}>📍 {pendingOrder.shippingAddress?.street || pendingOrder.location || 'N/A'}, {pendingOrder.shippingAddress?.city || 'N/A'}</Text>
                                 <Text style={styles.pendingLocation}>📞 {pendingOrder.shippingAddress?.phone || 'N/A'}</Text>
                             </View>
                         </View>
@@ -697,6 +709,17 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: COLORS.textLight,
         fontWeight: '500',
+    },
+    addressSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    changeAddressBtn: {
+        color: COLORS.accent,
+        fontWeight: 'bold',
+        fontSize: 13,
     }
 });
 

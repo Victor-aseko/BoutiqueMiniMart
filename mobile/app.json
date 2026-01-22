@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "MiniBoutique",
-    "slug": "MiniBoutique",
+    "slug": "mobile",
     "scheme": "boutiqueminimart",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aseko.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,8 +30,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "9fde5af2-80d0-434f-bc40-ace3ca22c48f"
+        "projectId": "2f51b5ba-f8eb-4245-92be-c71ababcc920"
       }
-    }
+    },
+    "owner": "miniboutique",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

@@ -6,7 +6,9 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    ScrollView
+    ScrollView,
+    Image,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -14,6 +16,11 @@ import MyButton from '../../components/MyButton';
 import MyInput from '../../components/MyInput';
 import { COLORS } from '../../theme/theme';
 import { Mail, Lock, ChevronLeft } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
@@ -51,6 +58,54 @@ const LoginScreen = ({ navigation, route }) => {
             }
 
             navigation.navigate('Main', { screen: 'MainTabs', params: { screen: 'ProfileTab' } });
+        }
+    };
+
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        androidClientId: __DEV__
+            ? "780227151309-5t3tohn4vplmq4ms3qocoh7ojbtusnfm.apps.googleusercontent.com" // Debug
+            : "780227151309-ra956k5pbspsfu0fgginc2c5t4jdlcso.apps.googleusercontent.com", // Release
+        iosClientId: "780227151309-o5m6385lhv9n1uffh4rsmrv7cah94eav.apps.googleusercontent.com",
+    }, {
+        projectNameForProxy: "@miniboutique/mobile",
+        // Using native redirect to avoid proxy 404s
+        redirectUri: AuthSession.makeRedirectUri({
+            scheme: 'boutiqueminimart',
+            useProxy: false
+        })
+    });
+
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { authentication } = response;
+            handleGoogleSuccess(authentication.accessToken);
+        }
+    }, [response]);
+
+    const handleGoogleSuccess = async (token) => {
+        try {
+            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const userData = await response.json();
+            console.log('Google User Data:', userData);
+            navigation.navigate('GoogleConfirm', {
+                userEmail: userData.email,
+                userName: userData.name,
+                userPicture: userData.picture,
+                redirectTo: route?.params?.redirectTo
+            });
+        } catch (err) {
+            console.error('Google Sign-In Error:', err);
+            Alert.alert('Authentication Error', 'Failed to fetch user data from Google');
+        }
+    };
+
+    const handleGoogleLogin = () => {
+        if (request) {
+            promptAsync();
+        } else {
+            Alert.alert('System Busy', 'Google authentication is initializing. Please try again.');
         }
     };
 
@@ -107,6 +162,21 @@ const LoginScreen = ({ navigation, route }) => {
                             loading={isLoading}
                             style={styles.loginBtn}
                         />
+
+                        <View style={styles.divider}>
+                            <View style={styles.dividerLine} />
+                            <Text style={styles.dividerText}>OR</Text>
+                            <View style={styles.dividerLine} />
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.googleBtn}
+                            onPress={handleGoogleLogin}
+                            activeOpacity={0.8}
+                        >
+                            <Image source={require('../../../assets/icons/google.png')} style={styles.googleIcon} />
+                            <Text style={styles.googleBtnText}>Continue with Google</Text>
+                        </TouchableOpacity>
 
                         <View style={styles.footer}>
                             <Text style={styles.footerText}>Don't have an account? </Text>
@@ -181,6 +251,47 @@ const styles = StyleSheet.create({
         color: COLORS.error,
         textAlign: 'center',
         marginBottom: 10,
+    },
+    divider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 25,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: COLORS.border,
+    },
+    dividerText: {
+        paddingHorizontal: 15,
+        color: COLORS.textLight,
+        fontSize: 14,
+    },
+    googleBtn: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.white,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        paddingVertical: 14,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    googleIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 15,
+        borderRadius: 20,
+    },
+    googleBtnText: {
+        fontSize: 16,
+        color: COLORS.primary,
+        fontWeight: 'bold',
     }
 });
 

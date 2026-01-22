@@ -115,17 +115,27 @@ const AddressScreen = ({ navigation, route }) => {
                             key={index}
                             style={styles.addressCard}
                             onPress={() => {
-                                if (navigation.getState().routes.find(r => r.name === 'ProductDetails') || route.params?.returnScreen === 'ProductDetails') {
+                                const returnScreen = route.params?.returnScreen;
+
+                                if (returnScreen === 'OrdersScreen') {
+                                    navigation.navigate('Orders', {
+                                        screen: 'OrdersScreen',
+                                        params: { selectedAddress: address }
+                                    });
+                                } else if (returnScreen === 'ProductDetails') {
                                     navigation.navigate('MainTabs', {
                                         screen: 'HomeTab',
                                         params: {
                                             screen: 'ProductDetails',
                                             params: {
                                                 selectedAddress: address,
-                                                isOffer: route.params?.isOffer || false // Preserve offer status
+                                                isOffer: route.params?.isOffer || false
                                             }
                                         }
                                     });
+                                } else {
+                                    // Default behavior if not in a specific checkout flow
+                                    // Maybe just show details or do nothing
                                 }
                             }}
                         >

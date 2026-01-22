@@ -14,7 +14,7 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as ImageIcon, Upload } from 'lucide-react-native';
+import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload } from 'lucide-react-native';
 import api, { BASE_URL } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../../theme/theme';
@@ -355,7 +355,7 @@ const AdminProductsScreen = ({ navigation }) => {
                                             placeholder="https://... or upload"
                                             value={image}
                                             onChangeText={setImage}
-                                            icon={ImageIcon}
+                                            icon={LucideImage}
                                         />
                                     </View>
                                     <TouchableOpacity

@@ -65,14 +65,14 @@ const RegisterScreen = ({ navigation }) => {
                         {error && <Text style={styles.apiError}>{error}</Text>}
                         <MyInput
                             label="Full Name"
-                            placeholder="John Doe"
+                            placeholder="mini Boutique"
                             value={name}
                             onChangeText={handleInputChange(setName)}
                             icon={User}
                         />
                         <MyInput
                             label="Email"
-                            placeholder="john@example.com"
+                            placeholder="miniboutique043@gmail.com"
                             value={email}
                             onChangeText={handleInputChange(setEmail)}
                             keyboardType="email-address"

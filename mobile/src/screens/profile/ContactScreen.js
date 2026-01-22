@@ -8,7 +8,8 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    Linking
+    Linking,
+    Image
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ChevronLeft } from 'lucide-react-native';
@@ -19,6 +20,9 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import MyInput from '../../components/MyInput';
 import MyButton from '../../components/MyButton';
+
+const whatsappIcon = require('../../../assets/icons/whatsapp.png');
+const facebookIcon = require('../../../assets/icons/facebook.png');
 
 
 const ContactScreen = () => {
@@ -146,7 +150,7 @@ const ContactScreen = () => {
                             />
                             <MyInput
                                 label="Email"
-                                placeholder="name@example.com"
+                                placeholder="miniboutique043@gmail.com"
                                 value={email}
                                 onChangeText={setEmail}
                                 icon={Mail}
@@ -186,10 +190,10 @@ const ContactScreen = () => {
 
                         <View style={styles.footerLinks}>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
-                                <MessageSquare size={20} color={COLORS.success} />
+                                <Image source={whatsappIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
-                                <Facebook size={20} color={COLORS.primary} />
+                                <Image source={facebookIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
                                 <Instagram size={20} color={COLORS.accent} />
@@ -369,6 +373,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginHorizontal: 10,
+        overflow: 'hidden',
+    },
+    socialIconImage: {
+        width: 40,
+        height: 40,
+        resizeMode: 'contain',
     },
     footerBottom: {
         width: '100%',

@@ -14,7 +14,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    Dimensions
+    Dimensions,
+    Image
 } from 'react-native';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +26,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import ProductCard from '../../components/ProductCard';
 import { COLORS } from '../../theme/theme';
+
+const whatsappIcon = require('../../../assets/icons/whatsapp.png');
+const facebookIcon = require('../../../assets/icons/facebook.png');
 
 const HomeScreen = ({ navigation }) => {
     const [products, setProducts] = useState([]);
@@ -266,10 +270,10 @@ const HomeScreen = ({ navigation }) => {
 
                 <View style={styles.footerLinks}>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
-                        <MessageSquare size={20} color={COLORS.success} />
+                        <Image source={whatsappIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
-                        <Facebook size={20} color={COLORS.primary} />
+                        <Image source={facebookIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
                         <Instagram size={20} color={COLORS.accent} />
@@ -502,6 +506,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginHorizontal: 10,
+        overflow: 'hidden',
+    },
+    socialIconImage: {
+        width: 40,
+        height: 40,
+        resizeMode: 'contain',
     },
     footerBottom: {
         width: '100%',

@@ -5,13 +5,14 @@ import AuthNavigator from './AuthNavigator';
 import DrawerNavigator from './DrawerNavigator';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../theme/theme';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 
 import { createStackNavigator } from '@react-navigation/stack';
 
 const Stack = createStackNavigator();
 
 const AppNavigator = ({ linking }) => {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, hasSeenOnboarding } = useAuth();
 
     if (isLoading) {
         return (
@@ -24,8 +25,14 @@ const AppNavigator = ({ linking }) => {
     return (
         <NavigationContainer linking={linking}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="Main" component={DrawerNavigator} />
-                <Stack.Screen name="Auth" component={AuthNavigator} />
+                {!hasSeenOnboarding ? (
+                    <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                ) : (
+                    <>
+                        <Stack.Screen name="Main" component={DrawerNavigator} />
+                        <Stack.Screen name="Auth" component={AuthNavigator} />
+                    </>
+                )}
             </Stack.Navigator>
         </NavigationContainer>
     );

@@ -206,4 +206,38 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { authUser, registerUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile };
+// @desc    Google Sign In / Sign Up
+// @route   POST /api/auth/google
+// @access  Public
+const googleLogin = asyncHandler(async (req, res) => {
+    const { name, email, picture, googleId } = req.body;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+        // Update user if they changed their name or picture on Google
+        user.name = name || user.name;
+        // Optionally update other fields
+        await user.save();
+    } else {
+        // Create new user if they don't exist
+        user = await User.create({
+            name,
+            email,
+            password: crypto.randomBytes(16).toString('hex'), // Random password for social login
+            addresses: [],
+            isAdmin: false // Default to not admin
+        });
+    }
+
+    res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        addresses: user.addresses,
+        token: generateToken(user._id),
+    });
+});
+
+module.exports = { authUser, registerUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, googleLogin };

@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
     useEffect(() => {
         checkLoginStatus();
@@ -28,6 +29,11 @@ export const AuthProvider = ({ children }) => {
 
     const checkLoginStatus = async () => {
         try {
+            const onboardingSeen = await AsyncStorage.getItem('hasSeenOnboarding');
+            if (onboardingSeen === 'true') {
+                setHasSeenOnboarding(true);
+            }
+
             const storedUser = await AsyncStorage.getItem('user');
             if (storedUser) {
                 const userData = JSON.parse(storedUser);
@@ -86,6 +92,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithGoogle = async (userDataFromGoogle) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await api.post('/auth/google', userDataFromGoogle);
+            const userData = response.data;
+            if (!userData.addresses) userData.addresses = [];
+            api.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
+            setUser(userData);
+            await AsyncStorage.setItem('user', JSON.stringify(userData));
+            return true;
+        } catch (err) {
+            console.error('Google login error detail:', err.response?.data || err.message);
+            setError(err.response?.data?.message || 'Google login failed');
+            return false;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = async () => {
         try {
             await AsyncStorage.removeItem('user');
@@ -103,8 +129,29 @@ export const AuthProvider = ({ children }) => {
 
     const clearError = () => setError(null);
 
+    const completeOnboarding = async () => {
+        try {
+            await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+            setHasSeenOnboarding(true);
+        } catch (e) {
+            console.log('Error saving onboarding status', e);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isLoading, error, login, register, logout, clearError, updateProfile }}>
+        <AuthContext.Provider value={{
+            user,
+            isLoading,
+            error,
+            hasSeenOnboarding,
+            login,
+            register,
+            loginWithGoogle,
+            logout,
+            clearError,
+            updateProfile,
+            completeOnboarding
+        }}>
             {children}
         </AuthContext.Provider>
     );

@@ -7,11 +7,13 @@ const {
     forgotPassword,
     resetPassword,
     updateUserProfile,
+    googleLogin,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', registerUser);
 router.post('/login', authUser);
+router.post('/google', googleLogin);
 router.post('/forgot-password', forgotPassword);
 router.get('/reset-password-page/:token', (req, res) => {
     const { token } = req.params;

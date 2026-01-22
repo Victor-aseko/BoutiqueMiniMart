@@ -194,15 +194,15 @@ const MainNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    paddingBottom: Platform.OS === 'ios' ? 35 : 25,
-                    height: Platform.OS === 'ios' ? 100 : 85,
+                    paddingBottom: Platform.OS === 'ios' ? 45 : 40,
+                    height: Platform.OS === 'ios' ? 120 : 105,
                     borderTopWidth: 1,
                     borderTopColor: COLORS.border,
                     backgroundColor: COLORS.white,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
-                    marginBottom: 10,
+                    marginBottom: 15,
                     fontWeight: '500',
                 },
                 tabBarItemStyle: {
