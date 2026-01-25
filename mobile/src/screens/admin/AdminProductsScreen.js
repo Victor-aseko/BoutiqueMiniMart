@@ -148,8 +148,8 @@ const AdminProductsScreen = ({ navigation }) => {
 
         try {
             if (isEditing) {
-                await api.put(`/products/${currentProductId}`, productData);
-                Alert.alert('Success', 'Product updated successfully');
+                const res = await api.put(`/products/${currentProductId}`, productData);
+                Alert.alert('Success', `Product updated. Server Offer Status: ${res.data.isOffer}`);
             } else {
                 await api.post('/products', productData);
                 Alert.alert('Success', 'Product created successfully');
@@ -243,6 +243,11 @@ const AdminProductsScreen = ({ navigation }) => {
                 <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.productCategory}>{item.category}</Text>
                 <Text style={styles.productPrice}>Kshs {item.price.toFixed(2)}</Text>
+                {item.isOffer && (
+                    <View style={{ backgroundColor: COLORS.accent, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 4 }}>
+                        <Text style={{ color: COLORS.white, fontSize: 10, fontWeight: 'bold' }}>SPECIAL OFFER</Text>
+                    </View>
+                )}
                 <Text style={[styles.stockStatus, { color: item.countInStock > 0 ? COLORS.success : COLORS.error }]}>
                     {item.countInStock > 0 ? `${item.countInStock} in stock` : 'Out of stock'}
                 </Text>
@@ -352,8 +357,7 @@ const AdminProductsScreen = ({ navigation }) => {
                                 placeholder="e.g. Dresses, Shoes"
                                 value={category}
                                 onChangeText={setCategory}
-                                icon={Tag}
-                            />
+                                icon={Tag} />
 
 
 
