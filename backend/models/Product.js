@@ -66,6 +66,11 @@ const productSchema = mongoose.Schema(
             required: true,
             default: 0,
         },
+        isOffer: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
     },
     {
         timestamps: true,
