@@ -4,10 +4,10 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    SafeAreaView,
     Image,
     ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
 import { ChevronLeft, Info, CheckCircle, XCircle } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';

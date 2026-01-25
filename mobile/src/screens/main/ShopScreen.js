@@ -53,7 +53,6 @@ const ShopScreen = ({ navigation }) => {
     const [availableBrands, setAvailableBrands] = useState(['All']);
 
     useEffect(() => {
-        fetchProducts();
         fetchCategories();
     }, []);
 
@@ -177,7 +176,11 @@ const ShopScreen = ({ navigation }) => {
                             <Text style={styles.modalClose}>✕</Text>
                         </TouchableOpacity>
                     </View>
-                    <ScrollView style={styles.modalScroll}>
+                    <ScrollView
+                        style={styles.modalScroll}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        showsVerticalScrollIndicator={false}
+                    >
                         {options.map((option, index) => {
                             const isSelected = isPrice
                                 ? selectedValue.label === option.label
@@ -438,7 +441,7 @@ const styles = StyleSheet.create({
         color: COLORS.textLight,
     },
     modalScroll: {
-        maxHeight: 400,
+        flexGrow: 0,
     },
     modalOption: {
         paddingHorizontal: 20,

@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Tag, Facebook, Instagram, Send, X, MessageSquare } from 'lucide-react-native';
+import { Search, Tag, Facebook, Instagram, Music, X, MessageSquare } from 'lucide-react-native';
 import { Linking } from 'react-native';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -39,13 +39,14 @@ const HomeScreen = ({ navigation }) => {
     const [showAllArrivals, setShowAllArrivals] = useState(false);
     const [showAllOffers, setShowAllOffers] = useState(false);
 
+    // Derived state for filtered products
+    const specialOffers = products.filter(p => p.isOffer);
+    const newArrivals = products.filter(p => !p.isOffer); // Optional: separate or just use all
+
     const { user } = useAuth();
     const { addToCart } = useCart();
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
-
+    // Simplified fetching logic to prevent redundant calls
     useFocusEffect(
         React.useCallback(() => {
             fetchProducts();
@@ -123,11 +124,13 @@ const HomeScreen = ({ navigation }) => {
         </View>
     );
 
-    const { width } = Dimensions.get('window');
-    const CARD_WIDTH = (width - 50) / 2; // (Screen width - 40px padding - 20px gap) / 2
+    const { width: windowWidth } = Dimensions.get('window');
+    const CARD_WIDTH = (windowWidth - 40) / 2; // Reduced gap for larger images
 
     const renderNewArrivals = () => {
-        // Limit to 4 items, 2 visible per screen
+        // Show all products except maybe strictly offers? Or just all latest
+        // For 'New Arrivals', usually we show the latest items. 
+        // Let's stick to slicing the main sorted list, but we can prioritize non-offers if needed.
         const displayProducts = products.slice(0, 4);
         return (
             <View style={styles.newArrivalsContainer}>
@@ -191,8 +194,8 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const renderAllOffersModal = () => {
-        // Show 4 products for offers (5-9)
-        const limitedProducts = products.slice(5, 9);
+        // Show all products flagged as offer
+        const limitedProducts = specialOffers;
         return (
             <Modal
                 visible={showAllOffers}
@@ -247,7 +250,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={[styles.offersContainer, { paddingHorizontal: 0 }]}>
                     {/* Just display two cards close to one another */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 }}>
-                        {products.slice(5, 7).map((item) => (
+                        {specialOffers.slice(0, 2).map((item) => (
                             <View key={item._id} style={{ width: '48%', position: 'relative' }}>
                                 <ProductCard
                                     product={item}
@@ -276,10 +279,10 @@ const HomeScreen = ({ navigation }) => {
                         <Image source={facebookIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
-                        <Instagram size={20} color={COLORS.accent} />
+                        <Instagram size={24} color={COLORS.accent} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
-                        <Send size={20} color={'#000'} />
+                        <Music size={24} color={'#000'} />
                     </TouchableOpacity>
                 </View>
 
@@ -372,7 +375,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     headerContainer: {
-        padding: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 10,
         backgroundColor: COLORS.white,
     },
     searchBar: {
@@ -384,7 +388,7 @@ const styles = StyleSheet.create({
         height: 50,
         borderWidth: 1,
         borderColor: COLORS.border,
-        marginBottom: 20,
+        marginBottom: 10,
     },
     searchIcon: {
         marginRight: 10,
@@ -412,7 +416,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     newArrivalsContainer: {
-        paddingLeft: 20,
+        paddingLeft: 10, // Reduced from 20 to decrease left margin
         marginBottom: 20,
         backgroundColor: COLORS.white,
         paddingBottom: 20,

@@ -20,7 +20,7 @@ const RegisterScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const { register, isLoading, error, clearError } = useAuth();
+    const { register, isLoading, error, setError, clearError } = useAuth();
 
     useEffect(() => {
         clearError();
@@ -33,11 +33,15 @@ const RegisterScreen = ({ navigation }) => {
 
     const handleRegister = async () => {
         if (!name || !email || !password) {
-            alert('Please fill in all fields');
+            setError('Please fill in all fields to create your account.');
+            return;
+        }
+        if (password.length < 6) {
+            setError('Password must be at least 6 characters long.');
             return;
         }
         if (password !== confirmPassword) {
-            alert("Passwords don't match");
+            setError("Passwords do not match. Please check and try again.");
             return;
         }
         await register(name, email, password);
@@ -62,7 +66,11 @@ const RegisterScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.form}>
-                        {error && <Text style={styles.apiError}>{error}</Text>}
+                        {error && (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>{error}</Text>
+                            </View>
+                        )}
                         <MyInput
                             label="Full Name"
                             placeholder="mini Boutique"
@@ -164,10 +172,22 @@ const styles = StyleSheet.create({
         color: COLORS.accent,
         fontWeight: 'bold',
     },
-    apiError: {
-        color: COLORS.error,
+    errorContainer: {
+        backgroundColor: '#FEE2E2',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#FECACA',
+    },
+    errorText: {
+        color: '#B91C1C',
+        fontSize: 14,
         textAlign: 'center',
-        marginBottom: 10,
+        fontWeight: '600',
+    },
+    apiError: {
+        display: 'none',
     }
 });
 

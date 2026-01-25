@@ -10,7 +10,7 @@ const ProductCard = ({ product, onPress, onAddToCart, style, isOffer = false }) 
 
     return (
         <TouchableOpacity style={[styles.container, style]} onPress={onPress} activeOpacity={0.8}>
-            <Image source={{ uri: product.image }} style={styles.image} />
+            <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
             <View style={styles.info}>
                 <Text style={styles.category}>{product.category}</Text>
                 <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 175,
-        backgroundColor: '#eee',
+        height: 240, // More height for premium vertical look
+        backgroundColor: '#f9f9f9',
     },
     info: {
         padding: 10,
@@ -139,4 +139,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default ProductCard;
+export default React.memo(ProductCard);

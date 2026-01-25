@@ -8,9 +8,9 @@ import {
     TouchableOpacity,
     Dimensions,
     Animated,
-    SafeAreaView,
     StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { ArrowRight } from 'lucide-react-native';

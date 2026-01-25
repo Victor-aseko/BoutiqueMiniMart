@@ -8,7 +8,8 @@ import {
     TouchableOpacity,
     Platform,
     Modal,
-    TextInput
+    TextInput,
+    KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Heart, Share as ShareIcon, Phone } from 'lucide-react-native';
@@ -355,125 +356,137 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 onRequestClose={() => setOrderModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalSheet}>
-                        <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
-                        <Text style={styles.modalName}>{product.name}</Text>
-                        <Text style={styles.modalPrice}>Kshs {
-                            (route.params?.isOffer
-                                ? Math.floor(Number(product.price) * 0.9)
-                                : Math.floor(Number(product.price))
-                            ) * orderQty
-                        }</Text>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        style={{ width: '100%', justifyContent: 'flex-end' }}
+                    >
+                        <View style={styles.modalSheet}>
+                            <View style={styles.modalHandle} />
+                            <ScrollView
+                                style={{ width: '100%', maxHeight: SIZES.height * 0.8 }}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }}
+                            >
+                                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
+                                <Text style={styles.modalName}>{product.name}</Text>
+                                <Text style={styles.modalPrice}>Kshs {
+                                    (route.params?.isOffer
+                                        ? Math.floor(Number(product.price) * 0.9)
+                                        : Math.floor(Number(product.price))
+                                    ) * orderQty
+                                }</Text>
 
-                        {/* Color Selection */}
-                        <Text style={styles.modalLabel}>Color:</Text>
-                        <View style={styles.optionsRow}>
-                            {product.colors && product.colors.length > 0 ? (
-                                product.colors.map((c, i) => (
-                                    <TouchableOpacity
-                                        key={i}
-                                        style={[
-                                            styles.colorOptionBtn,
-                                            (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected
-                                        ]}
-                                        onPress={() => setSelectedColor(c)}
-                                    >
-                                        <Image source={{ uri: c.image }} style={styles.colorOptionImg} />
-                                        <Text style={[
-                                            styles.optionText,
-                                            (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected
-                                        ]}>{c.name}</Text>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <Text style={styles.modalValue}>{product.color || 'Default'}</Text>
-                            )}
-                        </View>
-
-                        {/* Size Selection */}
-                        <Text style={styles.modalLabel}>Size:</Text>
-                        <View style={styles.optionsRow}>
-                            {product.sizes && product.sizes.length > 0 ? (
-                                product.sizes.map((s, i) => (
-                                    <TouchableOpacity
-                                        key={i}
-                                        style={[
-                                            styles.optionBtn,
-                                            selectedSize === s && styles.optionBtnSelected
-                                        ]}
-                                        onPress={() => setSelectedSize(s)}
-                                    >
-                                        <Text style={[
-                                            styles.optionText,
-                                            selectedSize === s && styles.optionTextSelected
-                                        ]}>{s}</Text>
-                                    </TouchableOpacity>
-                                ))
-                            ) : (
-                                <Text style={styles.modalValue}>{product.size || 'Default'}</Text>
-                            )}
-                        </View>
-
-                        <View style={styles.modalRow}>
-                            <Text style={styles.modalLabel}>Shipping to:</Text>
-                            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        setOrderModalVisible(false);
-                                        navigation.navigate('Profile', {
-                                            screen: 'AddressScreen',
-                                            params: {
-                                                returnScreen: 'ProductDetails',
-                                                isOffer: route.params?.isOffer || false // Pass this so it can be returned
-                                            }
-                                        });
-                                    }}
-                                    style={styles.locationBtn}
-                                >
-                                    <Text style={styles.locationText}>
-                                        {selectedAddress
-                                            ? `${selectedAddress.city}, ${selectedAddress.street}`
-                                            : (user?.addresses?.length > 0 ? "Select Address" : "Add Address")
-                                        }
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <View style={styles.modalRow}>
-                            <Text style={styles.modalLabel}>Phone Number:</Text>
-                            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                <View style={styles.phoneInputContainer}>
-                                    <Phone size={16} color={COLORS.textLight} style={{ marginRight: 5 }} />
-                                    <TextInput
-                                        style={styles.phoneInput}
-                                        value={phoneNumber}
-                                        onChangeText={setPhoneNumber}
-                                        placeholder="Enter phone"
-                                        keyboardType="phone-pad"
-                                    />
+                                {/* Color Selection */}
+                                <Text style={styles.modalLabel}>Color:</Text>
+                                <View style={styles.optionsRow}>
+                                    {product.colors && product.colors.length > 0 ? (
+                                        product.colors.map((c, i) => (
+                                            <TouchableOpacity
+                                                key={i}
+                                                style={[
+                                                    styles.colorOptionBtn,
+                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected
+                                                ]}
+                                                onPress={() => setSelectedColor(c)}
+                                            >
+                                                <Image source={{ uri: c.image }} style={styles.colorOptionImg} />
+                                                <Text style={[
+                                                    styles.optionText,
+                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected
+                                                ]}>{c.name}</Text>
+                                            </TouchableOpacity>
+                                        ))
+                                    ) : (
+                                        <Text style={styles.modalValue}>{product.color || 'Default'}</Text>
+                                    )}
                                 </View>
-                            </View>
-                        </View>
 
-                        <View style={styles.modalRow}>
-                            <Text style={styles.modalLabel}>Quantity:</Text>
-                            <View style={styles.qtyPicker}>
-                                <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty > 1 && setOrderQty(orderQty - 1)}>
-                                    <Minus size={20} color={COLORS.primary} />
-                                </TouchableOpacity>
-                                <Text style={styles.qtyText}>{orderQty}</Text>
-                                <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty < (product.countInStock || 10) && setOrderQty(orderQty + 1)}>
-                                    <Plus size={20} color={COLORS.primary} />
-                                </TouchableOpacity>
-                            </View>
+                                {/* Size Selection */}
+                                <Text style={styles.modalLabel}>Size:</Text>
+                                <View style={styles.optionsRow}>
+                                    {product.sizes && product.sizes.length > 0 ? (
+                                        product.sizes.map((s, i) => (
+                                            <TouchableOpacity
+                                                key={i}
+                                                style={[
+                                                    styles.optionBtn,
+                                                    selectedSize === s && styles.optionBtnSelected
+                                                ]}
+                                                onPress={() => setSelectedSize(s)}
+                                            >
+                                                <Text style={[
+                                                    styles.optionText,
+                                                    selectedSize === s && styles.optionTextSelected
+                                                ]}>{s}</Text>
+                                            </TouchableOpacity>
+                                        ))
+                                    ) : (
+                                        <Text style={styles.modalValue}>{product.size || 'Default'}</Text>
+                                    )}
+                                </View>
+
+                                <View style={styles.modalRow}>
+                                    <Text style={styles.modalLabel}>Shipping to:</Text>
+                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setOrderModalVisible(false);
+                                                navigation.navigate('Profile', {
+                                                    screen: 'AddressScreen',
+                                                    params: {
+                                                        returnScreen: 'ProductDetails',
+                                                        isOffer: route.params?.isOffer || false
+                                                    }
+                                                });
+                                            }}
+                                            style={styles.locationBtn}
+                                        >
+                                            <Text style={styles.locationText} numberOfLines={1}>
+                                                {selectedAddress
+                                                    ? `${selectedAddress.city}, ${selectedAddress.street}`
+                                                    : (user?.addresses?.length > 0 ? "Select Address" : "Add Address")
+                                                }
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+
+                                <View style={styles.modalRow}>
+                                    <Text style={styles.modalLabel}>Phone Number:</Text>
+                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                        <View style={styles.phoneInputContainer}>
+                                            <Phone size={16} color={COLORS.textLight} style={{ marginRight: 5 }} />
+                                            <TextInput
+                                                style={styles.phoneInput}
+                                                value={phoneNumber}
+                                                onChangeText={setPhoneNumber}
+                                                placeholder="Enter phone"
+                                                keyboardType="phone-pad"
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.modalRow}>
+                                    <Text style={styles.modalLabel}>Quantity:</Text>
+                                    <View style={styles.qtyPicker}>
+                                        <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty > 1 && setOrderQty(orderQty - 1)}>
+                                            <Minus size={20} color={COLORS.primary} />
+                                        </TouchableOpacity>
+                                        <Text style={styles.qtyText}>{orderQty}</Text>
+                                        <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty < (product.countInStock || 10) && setOrderQty(orderQty + 1)}>
+                                            <Plus size={20} color={COLORS.primary} />
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                                <MyButton
+                                    title="Confirm Order"
+                                    onPress={handleConfirmOrder}
+                                    style={styles.modalOkBtn}
+                                />
+                            </ScrollView>
                         </View>
-                        <MyButton
-                            title="Ok"
-                            onPress={handleConfirmOrder}
-                            style={styles.modalOkBtn}
-                        />
-                    </View>
+                    </KeyboardAvoidingView>
                 </View>
             </Modal>
         </SafeAreaView >
@@ -837,6 +850,13 @@ const styles = StyleSheet.create({
     },
     variantSection: {
         flex: 1,
+    },
+    modalHandle: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#e0e0e0',
+        borderRadius: 3,
+        marginBottom: 15,
     },
 });
 

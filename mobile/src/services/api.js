@@ -10,11 +10,9 @@ const host = expoHost || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
 export const BASE_URL = 'https://boutiqueminimart.onrender.com';
 export const API_URL = `${BASE_URL}/api`;
 
-console.log('--- API CONFIGURATION ---');
-console.log('Host:', host);
-console.log('Base URL:', BASE_URL);
-console.log('Platform:', Platform.OS);
-console.log('-------------------------');
+// console.log('--- API CONFIGURATION ---');
+// console.log('Host:', host);
+// ... logs disabled for performance
 
 const instance = axios.create({
     baseURL: API_URL,

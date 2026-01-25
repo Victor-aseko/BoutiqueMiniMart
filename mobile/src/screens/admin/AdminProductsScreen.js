@@ -14,7 +14,7 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload } from 'lucide-react-native';
+import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload, Check } from 'lucide-react-native';
 import api, { BASE_URL } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../../theme/theme';
@@ -42,8 +42,10 @@ const AdminProductsScreen = ({ navigation }) => {
     const [colors, setColors] = useState([]); // [{ name, image }]
     const [sizes, setSizes] = useState([]); // [string]
     const [newSize, setNewSize] = useState('');
+
     const [newColorName, setNewColorName] = useState('');
     const [newColorImage, setNewColorImage] = useState('');
+    const [isOffer, setIsOffer] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -76,8 +78,10 @@ const AdminProductsScreen = ({ navigation }) => {
         setCategory('');
         setImage('');
         setCountInStock('');
+
         setColors([]);
         setSizes([]);
+        setIsOffer(false);
         setIsModalOpen(true);
     };
 
@@ -91,7 +95,9 @@ const AdminProductsScreen = ({ navigation }) => {
         setImage(product.image);
         setCountInStock(product.countInStock.toString());
         setColors(product.colors || []);
+
         setSizes(product.sizes || []);
+        setIsOffer(product.isOffer || false);
         setIsModalOpen(true);
     };
 
@@ -134,8 +140,10 @@ const AdminProductsScreen = ({ navigation }) => {
             colors,
             sizes,
             brand: 'MiniBoutique', // Default brand
+
             rating: 0,
-            numReviews: 0
+            numReviews: 0,
+            isOffer
         };
 
         try {
@@ -346,6 +354,18 @@ const AdminProductsScreen = ({ navigation }) => {
                                 onChangeText={setCategory}
                                 icon={Tag}
                             />
+
+
+
+                            <TouchableOpacity
+                                style={styles.offerToggle}
+                                onPress={() => setIsOffer(!isOffer)}
+                            >
+                                <View style={[styles.checkbox, isOffer && styles.checkboxChecked]}>
+                                    {isOffer && <Check size={14} color={COLORS.white} />}
+                                </View>
+                                <Text style={styles.offerLabel}>Mark as Special Offer</Text>
+                            </TouchableOpacity>
 
                             <View style={{ marginBottom: 15 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
@@ -687,6 +707,30 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
         marginRight: 5,
+    },
+    offerToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15,
+        paddingVertical: 10,
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        borderRadius: 4,
+        marginRight: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkboxChecked: {
+        backgroundColor: COLORS.primary,
+    },
+    offerLabel: {
+        fontSize: 16,
+        color: COLORS.primary,
+        fontWeight: '500',
     }
 });
 

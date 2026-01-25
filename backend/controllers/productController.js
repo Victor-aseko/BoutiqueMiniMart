@@ -100,6 +100,7 @@ const createProduct = asyncHandler(async (req, res) => {
         countInStock,
         colors,
         sizes,
+        isOffer,
     } = req.body;
 
     const product = new Product({
@@ -113,6 +114,7 @@ const createProduct = asyncHandler(async (req, res) => {
         colors: colors || [],
         sizes: sizes || [],
         description,
+        isOffer: isOffer || false,
     });
 
     const createdProduct = await product.save();
@@ -133,6 +135,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         countInStock,
         colors,
         sizes,
+        isOffer,
     } = req.body;
 
     const product = await Product.findById(req.params.id);
@@ -147,6 +150,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         product.countInStock = countInStock;
         product.colors = colors || [];
         product.sizes = sizes || [];
+        product.isOffer = isOffer;
 
         const updatedProduct = await product.save();
         res.json(updatedProduct);

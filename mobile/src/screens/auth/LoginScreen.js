@@ -25,7 +25,7 @@ WebBrowser.maybeCompleteAuthSession();
 const LoginScreen = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login, isLoading, error, clearError } = useAuth();
+    const { login, isLoading, error, setError, clearError } = useAuth();
 
     useEffect(() => {
         // Clear errors when navigating to this screen
@@ -44,7 +44,7 @@ const LoginScreen = ({ navigation, route }) => {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            alert('Please enter email and password');
+            setError('Please enter both email and password to continue.');
             return;
         }
         const success = await login(email, password);
@@ -66,14 +66,17 @@ const LoginScreen = ({ navigation, route }) => {
             ? "780227151309-5t3tohn4vplmq4ms3qocoh7ojbtusnfm.apps.googleusercontent.com" // Debug
             : "780227151309-ra956k5pbspsfu0fgginc2c5t4jdlcso.apps.googleusercontent.com", // Release
         iosClientId: "780227151309-o5m6385lhv9n1uffh4rsmrv7cah94eav.apps.googleusercontent.com",
+        webClientId: "780227151309-alj2ia0vf7pgsi27d23113rfsmonqfq7.apps.googleusercontent.com",
     }, {
-        projectNameForProxy: "@miniboutique/mobile",
-        // Using native redirect to avoid proxy 404s
+        // useProxy: true is required for Expo Go (development)
+        // This will use https://auth.expo.io as the base for redirection
+        useProxy: true,
         redirectUri: AuthSession.makeRedirectUri({
-            scheme: 'boutiqueminimart',
-            useProxy: false
-        })
+            useProxy: true,
+        }),
     });
+
+    // Configuration removed for performance
 
     useEffect(() => {
         if (response?.type === 'success') {
@@ -128,7 +131,11 @@ const LoginScreen = ({ navigation, route }) => {
                     </View>
 
                     <View style={styles.form}>
-                        {error && <Text style={styles.apiError}>{error}</Text>}
+                        {error && (
+                            <View style={styles.errorContainer}>
+                                <Text style={styles.errorText}>{error}</Text>
+                            </View>
+                        )}
                         <MyInput
                             label="Email"
                             placeholder="Enter your email"
@@ -247,10 +254,22 @@ const styles = StyleSheet.create({
         color: COLORS.accent,
         fontWeight: 'bold',
     },
-    apiError: {
-        color: COLORS.error,
+    errorContainer: {
+        backgroundColor: '#FEE2E2',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#FECACA',
+    },
+    errorText: {
+        color: '#B91C1C',
+        fontSize: 14,
         textAlign: 'center',
-        marginBottom: 10,
+        fontWeight: '600',
+    },
+    apiError: {
+        display: 'none', // replaced by errorContainer
     },
     divider: {
         flexDirection: 'row',

@@ -190,23 +190,35 @@ const MainNavigator = ({ navigation }) => {
     return (
         <Tab.Navigator
             screenOptions={{
+                tabBarShowLabel: true, // Force labels to show
                 tabBarActiveTintColor: COLORS.accent,
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    paddingBottom: Platform.OS === 'ios' ? 45 : 40,
-                    height: Platform.OS === 'ios' ? 120 : 105,
+                    height: 120, // Exactly as requested
+                    paddingBottom: Platform.OS === 'ios' ? 45 : 30, // Balanced padding
+                    paddingTop: 10,
                     borderTopWidth: 1,
                     borderTopColor: COLORS.border,
                     backgroundColor: COLORS.white,
+                    elevation: 15,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -3 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 5,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
-                    marginBottom: 15,
-                    fontWeight: '500',
+                    fontWeight: 'bold',
+                    marginTop: 5,
+                },
+                tabBarIconStyle: {
+                    marginTop: 5,
                 },
                 tabBarItemStyle: {
-                    flex: 1,
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                 }
             }}
         >

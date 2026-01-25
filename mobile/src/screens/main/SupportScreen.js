@@ -10,9 +10,9 @@ import {
     Platform,
     ActivityIndicator,
     Keyboard,
-    StatusBar,
-    SafeAreaView
+    StatusBar
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, Bot, Check, CheckCheck } from 'lucide-react-native';
 import { COLORS } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';

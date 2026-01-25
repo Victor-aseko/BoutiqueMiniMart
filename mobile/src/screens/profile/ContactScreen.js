@@ -196,10 +196,10 @@ const ContactScreen = () => {
                                 <Image source={facebookIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
-                                <Instagram size={20} color={COLORS.accent} />
+                                <Instagram size={24} color={COLORS.accent} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
-                                <Send size={20} color={'#000'} />
+                                <Send size={24} color={'#000'} />
                             </TouchableOpacity>
                         </View>
 

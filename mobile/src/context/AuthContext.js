@@ -148,6 +148,7 @@ export const AuthProvider = ({ children }) => {
             register,
             loginWithGoogle,
             logout,
+            setError,
             clearError,
             updateProfile,
             completeOnboarding
