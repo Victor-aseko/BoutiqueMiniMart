@@ -49,7 +49,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         const finalPrice = route.params?.isOffer
-            ? Math.floor(Number(product.price) * 0.9)
+            ? Math.floor(Number(product.price) * 0.95)
             : Number(product.price);
 
         const productToAdd = {
@@ -117,7 +117,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         const finalPrice = route.params?.isOffer
-            ? Math.floor(Number(product.price) * 0.9)
+            ? Math.floor(Number(product.price) * 0.95)
             : Number(product.price);
 
         setOrderModalVisible(false);
@@ -221,7 +221,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         {route.params?.isOffer ? (
                             <>
                                 <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.price))}</Text>
-                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price) * 0.9)} <Text style={styles.offTxt}>(10% OFF)</Text></Text>
+                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price) * 0.95)} <Text style={styles.offTxt}>(5% OFF)</Text></Text>
                             </>
                         ) : (
                             <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
@@ -329,7 +329,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     <Text style={styles.totalLabel}>Subtotal</Text>
                     <Text style={styles.totalPrice}>Kshs {
                         (route.params?.isOffer
-                            ? Math.floor(Number(product.price) * 0.9)
+                            ? Math.floor(Number(product.price) * 0.95)
                             : Math.floor(Number(product.price))
                         ) * qty
                     }</Text>
@@ -371,7 +371,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.modalName}>{product.name}</Text>
                                 <Text style={styles.modalPrice}>Kshs {
                                     (route.params?.isOffer
-                                        ? Math.floor(Number(product.price) * 0.9)
+                                        ? Math.floor(Number(product.price) * 0.95)
                                         : Math.floor(Number(product.price))
                                     ) * orderQty
                                 }</Text>

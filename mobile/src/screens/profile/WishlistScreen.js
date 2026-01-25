@@ -6,13 +6,11 @@ import { COLORS } from '../../theme/theme';
 import ProductCard from '../../components/ProductCard';
 
 const WishlistScreen = () => {
-    const { wishlist } = useWishlist();
+    const { wishlist, removeFromWishlist } = useWishlist();
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.headerRow}>
-                <Text style={styles.title}>My Wishlist</Text>
-            </View>
+            {/* Redundant header removed - using Stack header instead */}
             {wishlist.length === 0 ? (
                 <View style={styles.emptyBox}>
                     <Text style={styles.emptyText}>Your wishlist is empty.</Text>
@@ -21,7 +19,12 @@ const WishlistScreen = () => {
                 <FlatList
                     data={wishlist}
                     keyExtractor={item => item._id}
-                    renderItem={({ item }) => <ProductCard product={item} />}
+                    renderItem={({ item }) => (
+                        <ProductCard
+                            product={item}
+                            onRemove={removeFromWishlist}
+                        />
+                    )}
                     contentContainerStyle={styles.list}
                 />
             )}

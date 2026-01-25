@@ -1,16 +1,29 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, SIZES } from '../theme/theme';
-import { ShoppingCart } from 'lucide-react-native';
+import { ShoppingCart, Trash2 } from 'lucide-react-native';
 import Rating from './Rating';
 
-const ProductCard = ({ product, onPress, onAddToCart, style, isOffer = false }) => {
+const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer = false }) => {
     const originalPrice = Math.floor(Number(product.price));
-    const discountedPrice = Math.floor(originalPrice * 0.9); // 10% off
+    const discountedPrice = Math.floor(originalPrice * 0.95); // 5% off
 
     return (
         <TouchableOpacity style={[styles.container, style]} onPress={onPress} activeOpacity={0.8}>
             <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+
+            {onRemove && (
+                <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={(e) => {
+                        e.stopPropagation();
+                        onRemove(product._id);
+                    }}
+                >
+                    <Trash2 size={16} color={COLORS.error} />
+                </TouchableOpacity>
+            )}
+
             <View style={styles.info}>
                 <Text style={styles.category}>{product.category}</Text>
                 <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
@@ -61,6 +74,21 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: COLORS.border,
+        position: 'relative',
+    },
+    removeBtn: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        padding: 8,
+        borderRadius: 20,
+        zIndex: 10,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
     },
     image: {
         width: '100%',

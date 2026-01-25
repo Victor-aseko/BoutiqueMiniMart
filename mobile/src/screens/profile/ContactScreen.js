@@ -23,6 +23,8 @@ import MyButton from '../../components/MyButton';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
+const instagramIcon = require('../../../assets/icons/instagram.png');
+const tiktokIcon = require('../../../assets/icons/tiktok.png');
 
 
 const ContactScreen = () => {
@@ -196,10 +198,10 @@ const ContactScreen = () => {
                                 <Image source={facebookIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
-                                <Instagram size={24} color={COLORS.accent} />
+                                <Image source={instagramIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
-                                <Send size={24} color={'#000'} />
+                                <Image source={tiktokIcon} style={styles.socialIconImage} />
                             </TouchableOpacity>
                         </View>
 
@@ -397,8 +399,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     policyText: {
-        color: COLORS.textLight,
+        color: '#007AFF',
         fontSize: 12,
+        fontWeight: 'bold',
     },
     dot: {
         color: COLORS.textLight,

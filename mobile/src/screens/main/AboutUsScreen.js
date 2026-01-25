@@ -7,7 +7,8 @@ import {
     Dimensions,
     ImageBackground,
     TouchableOpacity,
-    Linking
+    Linking,
+    Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -23,6 +24,11 @@ import {
 import { COLORS, SIZES } from '../../theme/theme';
 
 const { width } = Dimensions.get('window');
+
+const whatsappIcon = require('../../../assets/icons/whatsapp.png');
+const facebookIcon = require('../../../assets/icons/facebook.png');
+const instagramIcon = require('../../../assets/icons/instagram.png');
+const tiktokIcon = require('../../../assets/icons/tiktok.png');
 
 const AboutUsScreen = ({ navigation }) => {
     const StatItem = ({ icon: Icon, value, label }) => (
@@ -148,6 +154,23 @@ const AboutUsScreen = ({ navigation }) => {
                     </View>
                 </View>
 
+                <View style={styles.mainFooter}>
+                    <View style={styles.footerLinks}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
+                            <Image source={whatsappIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
+                            <Image source={facebookIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
+                            <Image source={instagramIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
+                            <Image source={tiktokIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
                 {/* Footer Quote */}
                 <View style={styles.footerQuote}>
                     <Text style={styles.quoteText}>
@@ -170,7 +193,7 @@ const AboutUsScreen = ({ navigation }) => {
                     </View>
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 };
 
@@ -393,13 +416,37 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     policyText: {
-        color: COLORS.textLight,
+        color: '#007AFF',
         fontSize: 12,
+        fontWeight: 'bold',
     },
     dot: {
         color: COLORS.textLight,
         marginHorizontal: 10,
-    }
+    },
+    mainFooter: {
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    footerLinks: {
+        flexDirection: 'row',
+        marginBottom: 10,
+    },
+    socialIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 10,
+        overflow: 'hidden',
+    },
+    socialIconImage: {
+        width: 40,
+        height: 40,
+        resizeMode: 'contain',
+    },
 });
 
 export default AboutUsScreen;

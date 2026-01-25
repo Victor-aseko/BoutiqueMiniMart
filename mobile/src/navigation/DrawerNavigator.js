@@ -6,7 +6,7 @@ import {
     DrawerItem
 } from '@react-navigation/drawer';
 import { Home, ShoppingBag, Info, Phone, Package, ShoppingCart, User, LogOut } from 'lucide-react-native';
-import MainNavigator from './MainNavigator';
+import MainNavigator, { HeaderRight, HeaderLeft } from './MainNavigator';
 import { useCart } from '../context/CartContext';
 import ContactScreen from '../screens/profile/ContactScreen';
 import OrdersScreen from '../screens/main/OrdersScreen';
@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../theme/theme';
 import { View, Text, StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
+import BrandLogo from '../components/BrandLogo';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -50,7 +51,7 @@ const CustomDrawerContent = (props) => {
 };
 
 // Stack for Orders with header
-const OrdersStack = () => (
+const OrdersStack = ({ navigation }) => (
     <Stack.Navigator
         screenOptions={{
             headerShown: true,
@@ -64,18 +65,22 @@ const OrdersStack = () => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Orders" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
             name="OrdersScreen"
             component={OrdersScreen}
-            options={{ title: 'My Orders' }}
+            options={{ title: 'Orders' }}
         />
     </Stack.Navigator>
 );
 
 // Stack for Cart with header
-const CartStack = () => (
+const CartStack = ({ navigation }) => (
     <Stack.Navigator
         screenOptions={{
             headerShown: true,
@@ -89,12 +94,16 @@ const CartStack = () => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Cart" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
             name="CartScreen"
             component={CartScreen}
-            options={{ title: 'Shopping Cart' }}
+            options={{ title: 'Cart' }}
         />
     </Stack.Navigator>
 );
@@ -106,7 +115,7 @@ import AdminOrdersDashboard from '../screens/admin/AdminOrdersDashboard';
 import OrderDetailsScreen from '../screens/admin/OrderDetailsScreen';
 import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
 
-const ProfileStack = () => (
+const ProfileStack = ({ navigation }) => (
     <Stack.Navigator
         screenOptions={{
             headerShown: true,
@@ -120,12 +129,16 @@ const ProfileStack = () => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Profile" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
             name="ProfileScreen"
             component={ProfileScreen}
-            options={{ title: 'My Profile' }}
+            options={{ title: 'Profile' }}
         />
         <Stack.Screen
             name="RecentlyViewed"

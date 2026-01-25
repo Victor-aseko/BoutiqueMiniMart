@@ -11,7 +11,7 @@ import { useCart } from '../../context/CartContext';
 
 const { width } = Dimensions.get('window');
 
-const ShopScreen = ({ navigation }) => {
+const ShopScreen = ({ navigation, route }) => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +30,7 @@ const ShopScreen = ({ navigation }) => {
     // Filter options
     const sortOptions = [
         { label: 'Newest', value: 'newest' },
+        { label: 'In Stock', value: 'inStock' },
         { label: 'Low to High', value: 'lowHigh' },
         { label: 'High to Low', value: 'highLow' }
     ];
@@ -54,7 +55,20 @@ const ShopScreen = ({ navigation }) => {
 
     useEffect(() => {
         fetchCategories();
-    }, []);
+        if (route.params?.params?.category || route.params?.category) {
+            const cat = route.params.params?.category || route.params.category;
+            setSelectedCategory(cat);
+            // Reset other filters when navigating from Home category
+            setSearchQuery('');
+            setSelectedBrandFilter('All');
+            setSelectedPriceRange({ label: 'All Prices', min: 0, max: 999999 });
+            setSelectedSort('inStock'); // Default to showing in-stock items
+        }
+
+        if (route.params?.params?.search) {
+            setSearchQuery(route.params.params.search);
+        }
+    }, [route.params]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -62,8 +76,20 @@ const ShopScreen = ({ navigation }) => {
         }, [])
     );
 
-    // Normalize category names (e.g. "Clothing for Men" -> "Men")
-    const normalizeCategory = name => name ? name.replace(/^Clothing for\s*/i, '').trim() : name;
+    // Normalize category names for inclusive yet distinct matching
+    const normalizeCategory = name => {
+        if (!name) return '';
+        let n = name.toLowerCase();
+        // Check for 'bag' first as requested so 'Women's Bags' goes to Bags
+        if (n.includes('bag') || n.includes('handbag') || n.includes('purse') || n.includes('suitcase')) return 'bags';
+        // Check for 'women' first to avoid 'men' matching 'women'
+        if (n.includes('women')) return 'women';
+        if (n.includes('men')) return 'men';
+        if (n.includes('child') || n.includes('kid')) return 'children';
+        if (n.includes('shoe') || n.includes('footwear')) return 'shoes';
+        if (n.includes('bed')) return 'beddings';
+        return n;
+    };
     const normalizeText = s => (s || '').toString().trim().toLowerCase();
 
     useEffect(() => {
@@ -77,13 +103,14 @@ const ShopScreen = ({ navigation }) => {
     const fetchCategories = async () => {
         try {
             const response = await api.get('/categories');
-            // Normalize backend category names to shorter labels (e.g. "Clothing for Men" -> "Men")
-            const categoryNames = ['All', ...response.data.map(cat => normalizeCategory(cat.name))];
+            const mappedCategories = response.data.map(cat => normalizeCategory(cat.name));
+            // Ensure essential categories are present and remove duplicates
+            const categoryNames = ['All', ...new Set([...mappedCategories, 'men', 'women', 'children', 'shoes', 'bags', 'beddings'])];
             setCategories(categoryNames);
         } catch (err) {
             console.log('Error fetching categories', err);
             // Fallback to default categories
-            setCategories(['All', 'Men', 'Women', 'Children', 'Shoes', 'Beddings']);
+            setCategories(['All', 'Men', 'Women', 'Children', 'Shoes', 'Bags', 'Beddings']);
         }
     };
 
@@ -122,34 +149,65 @@ const ShopScreen = ({ navigation }) => {
     };
 
     // Apply filters with proper category matching
+    // Apply filters with proper category matching
     const filtered = useMemo(() => {
         return products.filter(p => {
-            const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase()));
+            const pName = normalizeText(p.name);
+            const pDesc = normalizeText(p.description);
+            const pBrand = normalizeText(p.brand);
+            const pCat = normalizeText(p.category);
 
-            // Match category by normalizing backend category values to UI labels (case-insensitive)
-            const productCategoryNormalized = normalizeText(normalizeCategory(p.category));
-            const selectedCategoryNormalized = normalizeText(selectedCategory);
-            const matchesCategory = selectedCategory === 'All' || productCategoryNormalized === selectedCategoryNormalized;
+            // Search Query
+            const query = normalizeText(searchQuery);
+            const matchesSearch = pName.includes(query) || pDesc.includes(query) || pBrand.includes(query);
 
-            // Match brand case-insensitively and handle option objects
-            const productBrandNormalized = normalizeText(p.brand);
+            // Category Filter
+            let matchesCategory = true;
+            if (selectedCategory !== 'All') {
+                const selected = normalizeText(selectedCategory);
+                const pCatNormalized = normalizeText(normalizeCategory(p.category));
+
+                if (selected === 'bags') {
+                    // Include bags, suitcases, handbags, purses and Jeep branded items
+                    matchesCategory = pCatNormalized.includes('bag') || pCatNormalized.includes('suitcase') ||
+                        pName.includes('bag') || pName.includes('handbag') || pName.includes('purse') ||
+                        pName.includes('jeep') || pName.includes('suitcase');
+                } else if (selected === 'shoes') {
+                    // Include any footwear
+                    matchesCategory = pCatNormalized.includes('shoe') || pCatNormalized.includes('footwear') || pName.includes('sneaker') || pName.includes('sandal') || pName.includes('boot');
+                } else if (selected === 'men' || selected === 'women' || selected === 'children' || selected === 'kids') {
+                    // STRICT EQUALITY is critical here to ensure "women" does not match "men"
+                    matchesCategory = pCatNormalized === selected || (selected === 'children' && pCatNormalized === 'kids') || (selected === 'kids' && pCatNormalized === 'children');
+                } else {
+                    // For other categories, we can be more flexible
+                    matchesCategory = pCatNormalized === selected || pCatNormalized.includes(selected);
+                }
+            }
+
+            // Brand Filter
             const selectedBrandRaw = typeof selectedBrandFilter === 'string' ? selectedBrandFilter : (selectedBrandFilter && (selectedBrandFilter.label || selectedBrandFilter.value));
-            const selectedBrandNormalized = normalizeText(selectedBrandRaw);
-            const matchesBrand = selectedBrandFilter === 'All' || productBrandNormalized === selectedBrandNormalized;
+            const selectedBrand = normalizeText(selectedBrandRaw);
+            const matchesBrand = selectedBrandFilter === 'All' || pBrand === selectedBrand;
+
+            // Price Filter
             const matchesPrice = p.price >= selectedPriceRange.min && p.price <= selectedPriceRange.max;
 
-            return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
+            // Stock Filter - Ensure we only show available items as requested
+            const matchesStock = p.countInStock > 0;
+
+            return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock;
         });
     }, [products, searchQuery, selectedCategory, selectedBrandFilter, selectedPriceRange]);
 
-    // Apply sorting
+    // Apply sorting and specific filters (like In Stock)
     const sortedProducts = useMemo(() => {
-        const list = [...filtered];
+        let list = [...filtered];
         if (selectedSort === 'highLow') list.sort((a, b) => b.price - a.price);
         else if (selectedSort === 'lowHigh') list.sort((a, b) => a.price - b.price);
         else if (selectedSort === 'newest') list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        else if (selectedSort === 'inStock') {
+            return list.filter(p => p.countInStock > 0);
+        }
         return list;
     }, [filtered, selectedSort]);
 
@@ -292,7 +350,9 @@ const ShopScreen = ({ navigation }) => {
                 title="Sort By"
                 options={sortOptions}
                 selectedValue={selectedSort}
-                onSelect={(option) => setSelectedSort(option.value)}
+                onSelect={(option) => {
+                    setSelectedSort(option.value);
+                }}
                 onClose={() => setSortModalVisible(false)}
             />
 

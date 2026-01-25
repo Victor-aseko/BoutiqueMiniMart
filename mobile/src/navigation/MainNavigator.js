@@ -4,6 +4,8 @@ import { Platform, TouchableOpacity, View, Text, StyleSheet } from 'react-native
 import { Home, ShoppingBag, Info, Menu, ShoppingCart, MessageSquare } from 'lucide-react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { Heart } from 'lucide-react-native';
 import { COLORS } from '../theme/theme';
 
 // Screens
@@ -13,24 +15,87 @@ import AboutUsScreen from '../screens/main/AboutUsScreen';
 import SupportScreen from '../screens/main/SupportScreen';
 import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
+import SearchScreen from '../screens/main/SearchScreen';
+import BrandLogo from '../components/BrandLogo';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Cart button shown in headers
-const CartButton = ({ navigation }) => {
-    const { cartCount } = useCart();
-    return (
-        <TouchableOpacity onPress={() => navigation.getParent()?.getParent()?.navigate('Cart')} style={{ marginRight: 15 }}>
-            <View>
-                <ShoppingCart size={22} color={COLORS.primary} />
-                {cartCount > 0 && (
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{cartCount}</Text>
-                    </View>
-                )}
-            </View>
+// Header Left with Screen Title
+export const HeaderLeft = ({ navigation, title }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 15 }}>
+        <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            style={{ marginRight: 10 }}
+        >
+            <Menu size={24} color={COLORS.primary} />
         </TouchableOpacity>
+        {title ? (
+            <Text style={{
+                fontSize: 16,
+                fontWeight: 'bold',
+                color: COLORS.primary,
+                width: 80, // Limit width to avoid crowding center
+            }} numberOfLines={1}>
+                {title}
+            </Text>
+        ) : null}
+    </View>
+);
+
+// Header Icons (Wishlist and Cart)
+export const HeaderRight = ({ navigation }) => {
+    const { cartCount } = useCart();
+    const { wishlist } = useWishlist();
+
+    return (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+            <TouchableOpacity
+                onPress={() => {
+                    // Try to navigate to Wishlist in Profile stack or just open it
+                    try {
+                        navigation.navigate('Profile', { screen: 'Wishlist' });
+                    } catch (e) {
+                        navigation.navigate('Wishlist');
+                    }
+                }}
+                style={{ marginRight: 12, padding: 5 }}
+            >
+                <View>
+                    <Heart size={22} color={COLORS.primary} />
+                    {wishlist.length > 0 && (
+                        <View style={drawerStyles.badge}>
+                            <Text style={drawerStyles.badgeText}>{wishlist.length}</Text>
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                onPress={() => {
+                    // Cart is a sibling in the Drawer navigator
+                    try {
+                        navigation.navigate('Cart');
+                    } catch (e) {
+                        // Fallback attempt
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Cart' }],
+                        });
+                    }
+                }}
+                style={{ padding: 5, marginRight: 5 }}
+            >
+                <View>
+                    <ShoppingCart size={22} color={COLORS.primary} />
+                    {cartCount > 0 && (
+                        <View style={drawerStyles.badge}>
+                            <Text style={drawerStyles.badgeText}>{cartCount}</Text>
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+        </View>
     );
 };
 
@@ -49,15 +114,10 @@ const HomeStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    style={{ marginLeft: 15 }}
-                >
-                    <Menu size={24} color={COLORS.primary} />
-                </TouchableOpacity>
-            ),
-
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title={props.label || 'Home'} />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
@@ -74,6 +134,11 @@ const HomeStack = ({ navigation }) => (
             name="AddReview"
             component={AddReviewScreen}
             options={{ title: 'Add Review' }}
+        />
+        <Stack.Screen
+            name="SearchScreen"
+            component={SearchScreen}
+            options={{ headerShown: false }}
         />
     </Stack.Navigator>
 );
@@ -92,15 +157,10 @@ const ShopStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    style={{ marginLeft: 15 }}
-                >
-                    <Menu size={24} color={COLORS.primary} />
-                </TouchableOpacity>
-            ),
-
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Shop" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
@@ -135,15 +195,10 @@ const AboutStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    style={{ marginLeft: 15 }}
-                >
-                    <Menu size={24} color={COLORS.primary} />
-                </TouchableOpacity>
-            ),
-
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="About" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
@@ -168,14 +223,10 @@ const SupportStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => navigation.openDrawer()}
-                    style={{ marginLeft: 15 }}
-                >
-                    <Menu size={24} color={COLORS.primary} />
-                </TouchableOpacity>
-            ),
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Support" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo />,
+            headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
@@ -259,6 +310,26 @@ const MainNavigator = ({ navigation }) => {
 };
 
 export default MainNavigator;
+
+const drawerStyles = StyleSheet.create({
+    badge: {
+        position: 'absolute',
+        right: -8,
+        top: -8,
+        backgroundColor: COLORS.error,
+        minWidth: 16,
+        height: 16,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 2,
+    },
+    badgeText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: '700',
+    }
+});
 
 const styles = StyleSheet.create({
     badge: {

@@ -15,20 +15,25 @@ import {
     Platform,
     Keyboard,
     Dimensions,
-    Image
+    Image,
+    ImageBackground,
+    Animated
 } from 'react-native';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Tag, Facebook, Instagram, Music, X, MessageSquare } from 'lucide-react-native';
+import { Search, Tag, Facebook, Instagram, Music, X, MessageSquare, Heart, ShoppingCart } from 'lucide-react-native';
 import { Linking } from 'react-native';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import ProductCard from '../../components/ProductCard';
 import { COLORS } from '../../theme/theme';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
+const instagramIcon = require('../../../assets/icons/instagram.png');
+const tiktokIcon = require('../../../assets/icons/tiktok.png');
 
 const HomeScreen = ({ navigation }) => {
     const [products, setProducts] = useState([]);
@@ -38,13 +43,76 @@ const HomeScreen = ({ navigation }) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [showAllArrivals, setShowAllArrivals] = useState(false);
     const [showAllOffers, setShowAllOffers] = useState(false);
+    const [categoryGroups, setCategoryGroups] = useState([]);
 
-    // Derived state for filtered products
-    const specialOffers = products.filter(p => p.isOffer);
-    const newArrivals = products.filter(p => !p.isOffer); // Optional: separate or just use all
+    // Normalize category names consistently with ShopScreen
+    const normalizeCategory = name => {
+        if (!name) return '';
+        let n = name.toLowerCase();
+        // Check for 'bag' first so 'Women's Bags' goes to Bags
+        if (n.includes('bag') || n.includes('handbag') || n.includes('purse') || n.includes('suitcase')) return 'bags';
+        if (n.includes('women')) return 'women';
+        if (n.includes('men')) return 'men';
+        if (n.includes('child') || n.includes('kid')) return 'children';
+        if (n.includes('shoe') || n.includes('footwear')) return 'shoes';
+        if (n.includes('bed')) return 'beddings';
+        return n;
+    };
+
+    // Extract categories matching the user request
+    useEffect(() => {
+        if (products.length > 0) {
+            // Helper to find image for a specific query
+            const findImage = (catLabel, query = '') => {
+                const normTarget = catLabel.toLowerCase();
+                const p = products.find(p => {
+                    const pCatNormalized = normalizeCategory(p.category);
+                    const pName = p.name.toLowerCase();
+
+                    // Match normalized category
+                    const catMatch = pCatNormalized === normTarget;
+
+                    // Match query if provided
+                    const queryMatch = query ? pName.includes(query.toLowerCase()) : true;
+
+                    return catMatch && queryMatch;
+                });
+                return p ? p.image : null;
+            };
+
+            // Define the 6 target categories as requested
+            const targets = [
+                { label: "SHOES", category: "shoes", defaultImage: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=60' },
+                { label: "WOMEN", category: "women", defaultImage: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=500&q=60' },
+                { label: "MEN", category: "men", query: "Classic Mens Shirt", defaultImage: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=500&q=60' },
+                { label: "CHILDREN", category: "children", query: "Kids Pajama set", defaultImage: 'https://images.unsplash.com/photo-1621451537084-482c73073a0f?auto=format&fit=crop&w=500&q=60' },
+                { label: "BAGS", category: "bags", defaultImage: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=500&q=60' },
+                { label: "BEDDINGS", category: "beddings", defaultImage: 'https://images.unsplash.com/photo-1522771753035-0a58223213af?auto=format&fit=crop&w=500&q=60' }
+            ];
+
+            const mappedData = targets.map(t => ({
+                ...t,
+                // Try to find image with specific query first if defined
+                image: findImage(t.category, t.query) || t.defaultImage
+            }));
+
+            // Group into chunks of 2 for the 2-row layout
+            const chunks = [];
+            for (let i = 0; i < mappedData.length; i += 2) {
+                chunks.push(mappedData.slice(i, i + 2));
+            }
+            setCategoryGroups(chunks);
+        }
+    }, [products]);
+
+    // Derived state for filtered products - only show in-stock items
+    const specialOffers = products.filter(p => p.isOffer && p.countInStock > 0);
+    const newArrivals = products.filter(p => !p.isOffer && p.countInStock > 0);
+    const inStockProducts = products.filter(p => p.countInStock > 0);
 
     const { user } = useAuth();
-    const { addToCart } = useCart();
+    const { addToCart, cartCount } = useCart();
+    const { wishlist } = useWishlist();
 
     // Simplified fetching logic to prevent redundant calls
     useFocusEffect(
@@ -55,9 +123,9 @@ const HomeScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (searchQuery.trim() === '') {
-            setFilteredProducts(products);
+            setFilteredProducts(inStockProducts);
         } else {
-            const filtered = products.filter(p =>
+            const filtered = inStockProducts.filter(p =>
                 p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -124,14 +192,100 @@ const HomeScreen = ({ navigation }) => {
         </View>
     );
 
+    const [titleText, setTitleText] = useState('');
+    const fullTitle = "CATEGORIES BY TYPE";
+
+    const [heroText, setHeroText] = useState('');
+    const [heroColor, setHeroColor] = useState(COLORS.white);
+    const fullHeroTitle = "MINIBOUTIQUE COLLECTION";
+    const neonColors = ['#FF0055', '#00FF99', '#00D4FF', '#FFCC00', '#FF00FF', '#8F00FF', '#50FF00', '#FF6600'];
+
+    useEffect(() => {
+        let currentText = '';
+        let index = 0;
+        const timer = setInterval(() => {
+            currentText += fullTitle[index];
+            setTitleText(currentText);
+            index++;
+            if (index >= fullTitle.length) clearInterval(timer);
+        }, 150);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const typeLoop = async () => {
+            while (!isCancelled) {
+                // Type in
+                let current = '';
+                for (let i = 0; i < fullHeroTitle.length; i++) {
+                    if (isCancelled) return;
+                    current += fullHeroTitle[i];
+                    setHeroText(current + (i % 2 === 0 ? '_' : ' ')); // Blinking cursor
+                    setHeroColor(neonColors[i % neonColors.length]);
+                    await new Promise(r => setTimeout(r, 140));
+                }
+
+                setHeroText(fullHeroTitle);
+                await new Promise(r => setTimeout(r, 2000)); // Pause at end
+
+                // Reset
+                if (!isCancelled) {
+                    setHeroText('');
+                    await new Promise(r => setTimeout(r, 500));
+                }
+            }
+        };
+
+        typeLoop();
+        return () => { isCancelled = true; };
+    }, []);
+
     const { width: windowWidth } = Dimensions.get('window');
     const CARD_WIDTH = (windowWidth - 40) / 2; // Reduced gap for larger images
+
+    const renderCategories = () => {
+        return (
+            <View style={styles.sectionContainer}>
+                <View style={styles.centeredSectionHeader}>
+                    <Text style={styles.centeredSectionTitle}>{titleText}</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 15 }}>
+                    {categoryGroups.map((group, colIndex) => (
+                        <View key={colIndex} style={{ marginRight: 10 }}>
+                            {group.map((item, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={[styles.categoryCard, { marginTop: index > 0 ? 10 : 0 }]}
+                                    onPress={() => navigation.navigate('ShopTab', {
+                                        screen: 'ShopScreen',
+                                        params: {
+                                            category: item.category
+                                        }
+                                    })}
+                                >
+                                    <Image source={{ uri: item.image }} style={styles.categoryImage} />
+                                    <View style={styles.categoryOverlay}>
+                                        <Text style={styles.categoryName} numberOfLines={1}>{item.label}</Text>
+                                        <View style={styles.categoryShopBtn}>
+                                            <Text style={styles.categoryShopBtnText}>SHOP NOW</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
 
     const renderNewArrivals = () => {
         // Show all products except maybe strictly offers? Or just all latest
         // For 'New Arrivals', usually we show the latest items. 
         // Let's stick to slicing the main sorted list, but we can prioritize non-offers if needed.
-        const displayProducts = products.slice(0, 4);
+        const displayProducts = inStockProducts.slice(0, 4);
         return (
             <View style={styles.newArrivalsContainer}>
                 <FlatList
@@ -174,7 +328,7 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                     <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
                         <View style={styles.productsGrid}>
-                            {products.map((product) => (
+                            {inStockProducts.map((product) => (
                                 <View key={product._id} style={{ width: '48%', marginBottom: 15 }}>
                                     <ProductCard
                                         product={product}
@@ -224,7 +378,7 @@ const HomeScreen = ({ navigation }) => {
                                         isOffer={true}
                                     />
                                     <View style={styles.offerBadge}>
-                                        <Text style={styles.offerBadgeText}>-10% OFF</Text>
+                                        <Text style={styles.offerBadgeText}>-5% OFF</Text>
                                     </View>
                                 </View>
                             ))}
@@ -259,7 +413,7 @@ const HomeScreen = ({ navigation }) => {
                                     isOffer={true}
                                 />
                                 <View style={styles.offerBadge}>
-                                    <Text style={styles.offerBadgeText}>-10% OFF</Text>
+                                    <Text style={styles.offerBadgeText}>-5% OFF</Text>
                                 </View>
                             </View>
                         ))}
@@ -279,10 +433,10 @@ const HomeScreen = ({ navigation }) => {
                         <Image source={facebookIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
-                        <Instagram size={24} color={COLORS.accent} />
+                        <Image source={instagramIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
-                        <Music size={24} color={'#000'} />
+                        <Image source={tiktokIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                 </View>
 
@@ -312,54 +466,119 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.headerContainer}>
+            <View style={styles.searchBarWrapper}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     keyboardVerticalOffset={10}
                 >
-                    <View style={styles.searchBar}>
-                        <Search size={20} color={COLORS.textLight} style={styles.searchIcon} />
-                        <RNTextInput
-                            placeholder="Search boutique products..."
-                            style={styles.searchInput}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholderTextColor={COLORS.textLight}
-                        />
+                    <View style={styles.searchRow}>
+                        <TouchableOpacity
+                            style={styles.searchBarButton}
+                            onPress={() => navigation.navigate('SearchScreen')}
+                        >
+                            <Search size={20} color={COLORS.textLight} style={styles.searchIcon} />
+                            <Text style={styles.searchText}>Search boutique products...</Text>
+                        </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
             </View>
 
-            <FlatList
-                data={searchQuery.trim() !== '' ? filteredProducts : []}
-                keyExtractor={(item) => item._id}
-                scrollEnabled={true}
-                renderItem={({ item }) => (
-                    <View style={styles.searchResultItem}>
-                        <ProductCard
-                            product={item}
-                            onPress={() => navigation.navigate('ProductDetails', { product: item })}
-                            onAddToCart={handleAddToCart}
-                        />
-                    </View>
-                )}
-                ListHeaderComponent={renderHeader}
-                ListFooterComponent={renderFooter}
-                contentContainerStyle={styles.list}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-                }
-                ListEmptyComponent={
-                    searchQuery.trim() !== '' && (
-                        <View style={styles.empty}>
-                            <Text>No products found</Text>
+            <ScrollView
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Hero Section */}
+                <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate('ShopTab')}
+                >
+                    <ImageBackground
+                        source={{ uri: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?auto=format&fit=crop&w=1350&q=80' }}
+                        style={styles.heroContainer}
+                        resizeMode="cover"
+                    >
+                        <View style={styles.heroOverlay}>
+                            <Text style={[styles.heroTitle, { color: heroColor, textShadowColor: heroColor }]}>{heroText}</Text>
+                            <TouchableOpacity
+                                style={styles.heroBtn}
+                                onPress={() => navigation.navigate('ShopTab')}
+                            >
+                                <Text style={styles.heroBtnText}>Shop Now</Text>
+                            </TouchableOpacity>
                         </View>
-                    )
-                }
-            />
+                    </ImageBackground>
+                </TouchableOpacity>
+
+                {/* New Arrivals Section */}
+                <View style={styles.sectionContainer}>
+                    {renderSectionHeader('New Arrivals', () => setShowAllArrivals(true))}
+                    {renderNewArrivals()}
+                </View>
+
+                {/* Special Offers Section */}
+                <View style={styles.offersSection}>
+                    {renderSectionHeader('Special Offers', () => setShowAllOffers(true), 'View Offers')}
+                    <View style={styles.offersContainer}>
+                        {/* Display offers horizontally */}
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
+                            {specialOffers.slice(0, 4).map((item, index) => (
+                                <View key={item._id} style={{ width: CARD_WIDTH, marginRight: 10, position: 'relative' }}>
+                                    <ProductCard
+                                        product={item}
+                                        onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: true })}
+                                        onAddToCart={handleAddToCart}
+                                        isOffer={true}
+                                    />
+                                    <View style={styles.offerBadge}>
+                                        <Text style={styles.offerBadgeText}>-5% OFF</Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+
+                {/* Category Section */}
+                {renderCategories()}
+
+                {/* Footer Section */}
+                <View style={styles.mainFooter}>
+                    <Text style={styles.footerBrand}>MiniBoutique Shop</Text>
+                    <Text style={styles.footerSlogan}>Your ultimate destination for quality & style.</Text>
+
+                    <View style={styles.footerLinks}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
+                            <Image source={whatsappIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
+                            <Image source={facebookIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
+                            <Image source={instagramIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
+                            <Image source={tiktokIcon} style={styles.socialIconImage} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.footerBottom}>
+                        <Text style={styles.footerCopyright}>© 2025 MiniBoutique. All rights reserved.</Text>
+                        <View style={styles.footerPolicies}>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://www.blueberiboutique.com/pages/privacy-policy?')}>
+                                <Text style={styles.policyText}>Privacy Policy</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.dot}>•</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL('https://www.blueberiboutique.com/pages/privacy-policy?')}>
+                                <Text style={styles.policyText}>Terms of Use</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+
+            </ScrollView>
+
             {renderAllArrivalsModal()}
             {renderAllOffersModal()}
-
         </SafeAreaView>
     );
 };
@@ -374,12 +593,18 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    headerContainer: {
-        paddingHorizontal: 15,
-        paddingVertical: 10,
+    searchBarWrapper: {
+        paddingHorizontal: 20,
+        paddingBottom: 15,
         backgroundColor: COLORS.white,
     },
-    searchBar: {
+    searchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 5,
+    },
+    searchBarButton: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.background,
@@ -388,22 +613,59 @@ const styles = StyleSheet.create({
         height: 50,
         borderWidth: 1,
         borderColor: COLORS.border,
-        marginBottom: 10,
     },
     searchIcon: {
         marginRight: 10,
     },
-    searchInput: {
+    searchText: {
         flex: 1,
-        fontSize: 16,
-        color: COLORS.primary,
-        padding: 0,
+        fontSize: 14,
+        color: COLORS.textLight,
+    },
+    headerIconBtn: {
+        position: 'relative',
+        padding: 5,
+        marginLeft: 8,
+    },
+    badge: {
+        position: 'absolute',
+        top: 0,
+        right: -5,
+        backgroundColor: COLORS.error,
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+    },
+    badgeText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    sectionContainer: {
+        paddingTop: 30,
+        paddingBottom: 10,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 15,
+        paddingHorizontal: 15,
+    },
+    centeredSectionHeader: {
+        width: '100%',
+        alignItems: 'center',
+        marginBottom: 20,
+        marginTop: 10,
+    },
+    centeredSectionTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        letterSpacing: 1.5,
     },
     sectionTitle: {
         fontSize: 20,
@@ -416,8 +678,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     newArrivalsContainer: {
-        paddingLeft: 10, // Reduced from 20 to decrease left margin
-        marginBottom: 20,
+        paddingLeft: 10,
+        marginBottom: 40,
         backgroundColor: COLORS.white,
         paddingBottom: 20,
     },
@@ -426,43 +688,12 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-between',
     },
-    productWrapper: {
-        width: '100%',
-        marginBottom: 15,
-    },
-    horizontalProductCard: {
-        width: 140,
-        marginRight: 10,
-    },
-    horizontalOfferCard: {
-        width: 140,
-        marginRight: 10,
-    },
-    offerCardContainer: {
-        position: 'relative',
-    },
-    list: {
-        paddingBottom: 20,
-    },
-    searchResultItem: {
-        paddingHorizontal: 15,
-        marginBottom: 15,
-    },
-    empty: {
-        alignItems: 'center',
-        marginTop: 50,
-    },
-    footer: {
-        marginTop: 10,
-        marginBottom: 0,
-    },
     offersSection: {
-        paddingHorizontal: 20,
-        marginBottom: 30,
+        marginBottom: 50,
+        marginTop: 10,
     },
     offersContainer: {
-        marginHorizontal: -10,
-        paddingHorizontal: 20,
+        paddingHorizontal: 0,
     },
     offerBadge: {
         position: 'absolute',
@@ -483,8 +714,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(229, 231, 235, 0.2)',
         paddingVertical: 25,
         paddingHorizontal: 20,
-        marginHorizontal: -20,
         alignItems: 'center',
+        marginTop: 20,
     },
     footerBrand: {
         fontSize: 18,
@@ -534,8 +765,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     policyText: {
-        color: COLORS.textLight,
+        color: '#007AFF',
         fontSize: 12,
+        fontWeight: 'bold',
     },
     dot: {
         color: COLORS.textLight,
@@ -563,9 +795,90 @@ const styles = StyleSheet.create({
     modalContent: {
         flex: 1,
     },
+
+    heroContainer: {
+        height: 520, // Increased height
+        width: '100%',
+        marginHorizontal: 0,
+        marginBottom: 30,
+        justifyContent: 'flex-end',
+    },
+    heroOverlay: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingBottom: 30, // Moved down from 60
+        backgroundColor: 'rgba(0,0,0,0.45)', // Darker overlay for better visibility
+    },
+    heroTitle: {
+        fontSize: 34,
+        fontWeight: '900',
+        marginBottom: 20,
+        textAlign: 'center',
+        letterSpacing: 3,
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 15,
+        textShadowColor: 'rgba(255, 255, 255, 0.8)', // Adjusting based on color state
+    },
+    heroBtn: {
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 25,
+        paddingVertical: 10,
+        borderRadius: 25,
+    },
+    heroBtnText: {
+        color: COLORS.primary,
+        fontWeight: 'bold',
+        fontSize: 14,
+        textTransform: 'uppercase',
+    },
     modalContentContainer: {
         padding: 15,
-    }
+    },
+    categoryCard: {
+        width: 200,
+        height: 180,
+        borderRadius: 15,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    categoryImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    categoryOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingVertical: 15,
+        paddingHorizontal: 10,
+        minHeight: 60,
+        justifyContent: 'center',
+    },
+    categoryName: {
+        color: COLORS.white,
+        fontWeight: 'bold',
+        fontSize: 14,
+        textTransform: 'uppercase',
+    },
+    categoryShopBtn: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    categoryShopBtnText: {
+        color: COLORS.primary,
+        fontSize: 9,
+        fontWeight: '900',
+    },
 });
 
 export default HomeScreen;
