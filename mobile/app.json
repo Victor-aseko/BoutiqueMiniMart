@@ -30,13 +30,12 @@
     },
     "extra": {
       "eas": {
-        "projectId": "2f51b5ba-f8eb-4245-92be-c71ababcc920"
+        "projectId": "9fde5af2-80d0-434f-bc40-ace3ca22c48f"
       }
     },
-    "owner": "miniboutique",
+    "owner": "aseko",
     "plugins": [
-      "expo-web-browser",
-      "expo-router"
+      "expo-web-browser"
     ]
   }
 }
