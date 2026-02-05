@@ -56,18 +56,18 @@ const OrdersStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: "white",
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Orders" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -85,18 +85,18 @@ const CartStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: "white",
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Cart" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -120,18 +120,18 @@ const ProfileStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: "white",
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Profile" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >

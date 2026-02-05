@@ -39,7 +39,7 @@ export default function App() {
             <RecentlyViewedProvider>
               <WishlistProvider>
                 <NotificationProvider>
-                  <StatusBar style="auto" />
+                  <StatusBar style="light" />
                   <OfflineNotice />
                   <AppNavigator linking={linking} />
                 </NotificationProvider>

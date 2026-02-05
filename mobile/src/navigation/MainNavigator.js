@@ -28,13 +28,13 @@ export const HeaderLeft = ({ navigation, title }) => (
             onPress={() => navigation.openDrawer()}
             style={{ marginRight: 10 }}
         >
-            <Menu size={24} color={COLORS.primary} />
+            <Menu size={24} color="white" />
         </TouchableOpacity>
         {title ? (
             <Text style={{
                 fontSize: 16,
                 fontWeight: 'bold',
-                color: COLORS.primary,
+                color: "white",
                 width: 80, // Limit width to avoid crowding center
             }} numberOfLines={1}>
                 {title}
@@ -62,7 +62,7 @@ export const HeaderRight = ({ navigation }) => {
                 style={{ marginRight: 12, padding: 5 }}
             >
                 <View>
-                    <Heart size={22} color={COLORS.primary} />
+                    <Heart size={22} color="white" />
                     {wishlist.length > 0 && (
                         <View style={drawerStyles.badge}>
                             <Text style={drawerStyles.badgeText}>{wishlist.length}</Text>
@@ -87,7 +87,7 @@ export const HeaderRight = ({ navigation }) => {
                 style={{ padding: 5, marginRight: 5 }}
             >
                 <View>
-                    <ShoppingCart size={22} color={COLORS.primary} />
+                    <ShoppingCart size={22} color="white" />
                     {cartCount > 0 && (
                         <View style={drawerStyles.badge}>
                             <Text style={drawerStyles.badgeText}>{cartCount}</Text>
@@ -105,18 +105,18 @@ const HomeStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: COLORS.white,
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Home" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -148,18 +148,18 @@ const ShopStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: COLORS.white,
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Shop" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -191,18 +191,18 @@ const AboutStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: COLORS.white,
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="About" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -219,18 +219,18 @@ const SupportStack = ({ navigation }) => (
         screenOptions={{
             headerShown: true,
             headerStyle: {
-                backgroundColor: COLORS.white,
+                backgroundColor: COLORS.accent,
                 borderBottomWidth: 1,
-                borderBottomColor: COLORS.border,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
             },
-            headerTintColor: COLORS.primary,
+            headerTintColor: COLORS.white,
             headerTitleStyle: {
                 fontWeight: 'bold',
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Support" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
-            headerTitle: () => <BrandLogo />,
+            headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
@@ -251,8 +251,8 @@ const MainNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    height: 120, // Exactly as requested
-                    paddingBottom: Platform.OS === 'ios' ? 45 : 30, // Balanced padding
+                    height: Platform.OS === 'ios' ? 100 : 90,
+                    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
                     paddingTop: 10,
                     borderTopWidth: 1,
                     borderTopColor: COLORS.border,
@@ -260,21 +260,19 @@ const MainNavigator = ({ navigation }) => {
                     elevation: 15,
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: -3 },
-                    shadowOpacity: 0.15,
+                    shadowOpacity: 0.1,
                     shadowRadius: 5,
                 },
                 tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: 'bold',
-                    marginTop: 5,
+                    fontSize: 11,
+                    fontWeight: '600',
+                    marginBottom: 5,
                 },
                 tabBarIconStyle: {
-                    marginTop: 5,
+                    marginBottom: 2,
                 },
                 tabBarItemStyle: {
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    height: Platform.OS === 'ios' ? 55 : 55,
                 }
             }}
         >

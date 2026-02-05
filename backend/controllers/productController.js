@@ -118,6 +118,38 @@ const createProduct = asyncHandler(async (req, res) => {
     });
 
     const createdProduct = await product.save();
+
+    // Notify all users about new arrival or special offer (Background Process)
+    const notifyAllUsers = async () => {
+        try {
+            const User = require('../models/User');
+            const Notification = require('../models/Notification');
+            const sendPushNotification = require('../utils/pushNotifications');
+
+            const users = await User.find({ isAdmin: false });
+            const title = createdProduct.isOffer ? 'Special Offer! 🏷️' : 'New Arrival! 👗';
+            const message = `${createdProduct.name} is now available in our ${createdProduct.category} collection.`;
+
+            // In-app notifications
+            const notifications = users.map(u => ({
+                user: u._id,
+                title: title,
+                message: message,
+                type: 'INFO'
+            }));
+            await Notification.insertMany(notifications);
+
+            // Push notifications
+            const tokens = users.map(u => u.pushToken).filter(token => !!token);
+            if (tokens.length > 0) {
+                await sendPushNotification(tokens, title, message, { screen: 'Shop' });
+            }
+        } catch (e) {
+            console.error('Failed to notify users about product update:', e);
+        }
+    };
+    notifyAllUsers();
+
     res.status(201).json(createdProduct);
 });
 
@@ -141,6 +173,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
+        const wasInStock = product.countInStock === 0;
         product.name = name;
         product.price = price;
         product.description = description;
@@ -153,6 +186,33 @@ const updateProduct = asyncHandler(async (req, res) => {
         product.isOffer = isOffer;
 
         const updatedProduct = await product.save();
+
+        // Notify users if restocked or newly put on offer
+        if ((wasInStock && updatedProduct.countInStock > 0) || (updatedProduct.isOffer && !product.isOffer)) {
+            const notifyProductUpdate = async () => {
+                try {
+                    const User = require('../models/User');
+                    const Notification = require('../models/Notification');
+                    const sendPushNotification = require('../utils/pushNotifications');
+
+                    const users = await User.find({ isAdmin: false });
+                    const title = updatedProduct.isOffer ? 'Huge Discount! 🏷️' : 'Back in Stock! ✨';
+                    const message = `${updatedProduct.name} is now ${updatedProduct.isOffer ? 'on special offer!' : 'back in stock!'}`;
+
+                    const notifications = users.map(u => ({ user: u._id, title, message, type: 'INFO' }));
+                    await Notification.insertMany(notifications);
+
+                    const tokens = users.map(u => u.pushToken).filter(t => !!t);
+                    if (tokens.length > 0) {
+                        await sendPushNotification(tokens, title, message, { screen: 'Shop' });
+                    }
+                } catch (e) {
+                    console.error('Failed to notify users about product update:', e);
+                }
+            };
+            notifyProductUpdate();
+        }
+
         res.json(updatedProduct);
     } else {
         res.status(404);

@@ -68,8 +68,20 @@ const addOrderItems = asyncHandler(async (req, res) => {
                     orderId: createdOrder._id
                 }));
                 await Notification.insertMany(notifications);
+
+                // Push Notifications for Admins
+                const sendPushNotification = require('../utils/pushNotifications');
+                const adminTokens = admins.map(admin => admin.pushToken).filter(token => !!token);
+                if (adminTokens.length > 0) {
+                    await sendPushNotification(
+                        adminTokens,
+                        'New Order Received! 🎉',
+                        `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} placed by ${req.user.name}`,
+                        { screen: 'Orders' }
+                    );
+                }
             } catch (e) {
-                console.error('Failed to create in-app notification for admins:', e);
+                console.error('Failed to create notification for admins:', e);
             }
         };
         notifyAdmins();
@@ -225,8 +237,20 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
                 type: 'ORDER_STATUS_UPDATE',
                 orderId: updatedOrder._id
             });
+
+            // Push Notification for User
+            const targetUser = await User.findById(order.user);
+            if (targetUser && targetUser.pushToken) {
+                const sendPushNotification = require('../utils/pushNotifications');
+                await sendPushNotification(
+                    [targetUser.pushToken],
+                    `Order Status Updated: ${updatedOrder.status} 📦`,
+                    `Your order #${updatedOrder._id.toString().slice(-6).toUpperCase()} is now ${updatedOrder.status}.`,
+                    { screen: 'Orders', orderId: updatedOrder._id }
+                );
+            }
         } catch (e) {
-            console.error('Failed to create in-app notification for user:', e);
+            console.error('Failed to create notification for user:', e);
         }
 
         res.json(updatedOrder);

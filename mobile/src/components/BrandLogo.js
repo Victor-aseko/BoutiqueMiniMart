@@ -4,17 +4,19 @@ import { COLORS } from '../theme/theme';
 
 const BRAND_RED = '#D63031';
 
-const BrandLogo = ({ fontSize = 10 }) => {
+const BrandLogo = ({ fontSize = 10, light = false }) => {
+    const textColor = light ? COLORS.white : COLORS.black;
+    const arcColor = light ? COLORS.white : COLORS.black;
+
     return (
         <View style={styles.container}>
             <View style={styles.logoWrapper}>
                 <View style={styles.textStack}>
                     <Text style={[styles.miniText, { fontSize: fontSize + 6 }]}>mini</Text>
-                    <Text style={[styles.boutiqueText, { fontSize: fontSize - 3 }]}>BOUTIQUE</Text>
+                    <Text style={[styles.boutiqueText, { fontSize: fontSize - 3, color: textColor }]}>BOUTIQUE</Text>
                 </View>
-                {/* Scaled down oval swoosh arc */}
                 <View style={styles.arcWrapper}>
-                    <View style={styles.ovalArc} />
+                    <View style={[styles.ovalArc, { borderColor: arcColor }]} />
                 </View>
             </View>
         </View>
@@ -44,7 +46,6 @@ const styles = StyleSheet.create({
     },
     boutiqueText: {
         fontWeight: 'bold',
-        color: COLORS.black,
         letterSpacing: 2,
         marginTop: -3,
     },
@@ -61,7 +62,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '90%',
         borderWidth: 2.5, // Thinner border for smaller size
-        borderColor: COLORS.black,
         borderRadius: 80,
         backgroundColor: 'transparent',
         borderTopWidth: 0,

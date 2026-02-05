@@ -254,24 +254,36 @@ const HomeScreen = ({ navigation }) => {
                     {categoryGroups.map((group, colIndex) => (
                         <View key={colIndex} style={{ marginRight: 10 }}>
                             {group.map((item, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[styles.categoryCard, { marginTop: index > 0 ? 10 : 0 }]}
-                                    onPress={() => navigation.navigate('ShopTab', {
-                                        screen: 'ShopScreen',
-                                        params: {
-                                            category: item.category
-                                        }
-                                    })}
-                                >
-                                    <Image source={{ uri: item.image }} style={styles.categoryImage} />
-                                    <View style={styles.categoryOverlay}>
+                                <View key={index} style={[styles.categoryCard, { marginTop: index > 0 ? 20 : 0 }]}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        style={styles.categoryImageContainer}
+                                        onPress={() => navigation.navigate('ShopTab', {
+                                            screen: 'ShopScreen',
+                                            params: {
+                                                category: item.category
+                                            }
+                                        })}
+                                    >
+                                        <Image source={{ uri: item.image }} style={styles.categoryImage} />
+                                    </TouchableOpacity>
+                                    <View style={styles.categoryInfo}>
                                         <Text style={styles.categoryName} numberOfLines={1}>{item.label}</Text>
-                                        <View style={styles.categoryShopBtn}>
-                                            <Text style={styles.categoryShopBtnText}>SHOP NOW</Text>
-                                        </View>
+                                        <TouchableOpacity
+                                            onPress={() => navigation.navigate('ShopTab', {
+                                                screen: 'ShopScreen',
+                                                params: {
+                                                    category: item.category
+                                                },
+                                                // This is where the tabBarStyle should be, but it's for the navigator, not a screen param.
+                                                // The instruction seems to imply a fix for MainNavigator, not here.
+                                                // Keeping the original structure as the instruction's code edit was malformed.
+                                            })}
+                                        >
+                                            <Text style={styles.categoryShopNowText}>SHOP NOW</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                </TouchableOpacity>
+                                </View>
                             ))}
                         </View>
                     ))}
@@ -857,46 +869,37 @@ const styles = StyleSheet.create({
     },
     categoryCard: {
         width: 200,
-        height: 180,
+        backgroundColor: COLORS.white,
         borderRadius: 15,
         overflow: 'hidden',
-        position: 'relative',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    categoryImageContainer: {
+        width: '100%',
+        height: 200,
     },
     categoryImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
     },
-    categoryOverlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        paddingVertical: 15,
-        paddingHorizontal: 10,
-        minHeight: 60,
-        justifyContent: 'center',
+    categoryInfo: {
+        padding: 12,
+        alignItems: 'center',
     },
     categoryName: {
-        color: COLORS.white,
-        fontWeight: 'bold',
-        fontSize: 14,
-        textTransform: 'uppercase',
-    },
-    categoryShopBtn: {
-        position: 'absolute',
-        bottom: 8,
-        right: 8,
-        backgroundColor: COLORS.white,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-    },
-    categoryShopBtnText: {
         color: COLORS.primary,
-        fontSize: 9,
+        fontWeight: 'bold',
+        fontSize: 15,
+        textTransform: 'uppercase',
+        marginBottom: 4,
+    },
+    categoryShopNowText: {
+        color: COLORS.accent,
+        fontSize: 12,
         fontWeight: '900',
+        letterSpacing: 1,
     },
 });
 

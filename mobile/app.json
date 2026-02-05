@@ -5,11 +5,11 @@
     "scheme": "boutiqueminimart",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/boutique.png",
+    "icon": "./assets/onboarding_trio_phone.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/boutique.png",
+      "image": "./assets/onboarding_trio_phone.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,14 +19,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/boutique.png",
+        "foregroundImage": "./assets/onboarding_trio_phone.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.aseko.mobile"
     },
     "web": {
-      "favicon": "./assets/boutique.png"
+      "favicon": "./assets/onboarding_trio_phone.png"
     },
     "extra": {
       "eas": {

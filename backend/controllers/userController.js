@@ -102,10 +102,28 @@ const addAddress = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Save user push token
+// @route   POST /api/users/push-token
+// @access  Private
+const savePushToken = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        user.pushToken = token;
+        await user.save();
+        res.json({ message: 'Push token saved successfully' });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
     updateUserPassword,
     getAddresses,
     addAddress,
+    savePushToken,
 };

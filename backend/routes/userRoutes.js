@@ -6,11 +6,13 @@ const {
     updateUserPassword,
     getAddresses,
     addAddress,
+    savePushToken,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/me').get(protect, getUserProfile).put(protect, updateUserProfile);
 router.route('/password').put(protect, updateUserPassword);
 router.route('/addresses').get(protect, getAddresses).post(protect, addAddress);
+router.route('/push-token').post(protect, savePushToken);
 
 module.exports = router;

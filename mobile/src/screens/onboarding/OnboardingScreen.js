@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { ArrowRight, ChevronRight } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -49,19 +50,26 @@ const OnboardingScreen = ({ navigation }) => {
     const rotateAnim = useRef(new Animated.Value(0)).current;
 
     const neonColors = [
+        '#8B4513', // Brown
+        '#007AFF', // Blue
         '#FFD700', // Gold
-        '#FFFFFF', // White
-        '#FFC107', // Amber Gold
-        '#00D4FF', // Cyan
-        '#FF9800', // Deep Orange Gold
-        '#FF00E5', // Magenta
-        '#FFD700', // Gold
-        '#00FF9C', // Spring Green
+        'rgba(20, 232, 73, 1)', // Green
+        '#AF52DE', // Purple
+        '#00D4FF', // Cyan        
+        'rgba(255, 255, 255, 1)', // White
     ];
     const [neonCycle, setNeonCycle] = useState(0);
 
     const slidesRef = useRef(null);
     const { completeOnboarding } = useAuth();
+    const { registerForPushNotificationsAsync } = useNotifications();
+
+    // Trigger permission request when user reaches the second screen
+    useEffect(() => {
+        if (currentIndex === 1) {
+            registerForPushNotificationsAsync();
+        }
+    }, [currentIndex]);
 
     // Reset animations whenever the main slide or the sub-cycle changes
     useEffect(() => {
@@ -207,14 +215,14 @@ const OnboardingScreen = ({ navigation }) => {
 
         return (
             <View style={[styles.container, { width }]}>
-                <View style={[styles.imageContainer, { alignItems: 'center', justifyContent: 'flex-start', backgroundColor: '#000', paddingTop: 40 }]}>
+                <View style={[styles.imageContainer, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }]}>
                     <Animated.Image
-                        source={require('../../../assets/onboarding/onboarding_trio_phone.png')}
+                        source={require('../../../assets/onboarding/onboarding_collections_v2.png')}
                         style={[
                             styles.image,
                             {
-                                width: width * 1.3, // Increased from 1.15
-                                height: height * 0.75, // Increased from 0.65
+                                width: width * 1.3,
+                                height: height * 0.75,
                                 transform: [
                                     { scale: scaleAnim },
                                     { translateY: floatAnim },
@@ -337,6 +345,7 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
+        overflow: 'hidden',
     },
     imageContainer: {
         ...StyleSheet.absoluteFillObject,
