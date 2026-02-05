@@ -192,7 +192,7 @@ const DrawerNavigator = () => {
                 name="MainTabs"
                 component={MainNavigator}
                 options={{
-                    title: 'Shop',
+                    title: 'Home',
                     drawerIcon: ({ color, size }) => <Home color={color} size={size} />
                 }}
             />

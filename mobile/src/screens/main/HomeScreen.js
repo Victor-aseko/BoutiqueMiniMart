@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
@@ -29,6 +29,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductCard from '../../components/ProductCard';
 import { COLORS } from '../../theme/theme';
+import AddToCartModal from '../../components/AddToCartModal';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
@@ -147,28 +148,26 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    const handleAddToCart = async (product) => {
-        if (!user) {
-            Alert.alert('Sign in required', 'Please sign in to add items to your cart.', [
-                { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
-                { text: 'Cancel', style: 'cancel' }
-            ]);
-            return;
-        }
+    const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [cartModalVisible, setCartModalVisible] = useState(false);
+
+    const handleAddToCart = useCallback((product) => {
+        setSelectedProductForCart(product);
+        setCartModalVisible(true);
+    }, []);
+
+    const navigateToDetails = useCallback((product, isOffer = false) => {
+        navigation.navigate('ProductDetails', { product, isOffer });
+    }, [navigation]);
+
+    const executeAddToCart = async (product, qty = 1, color, size) => {
         try {
-            const success = await addToCart(product, 1);
+            const success = await addToCart(product, qty, color, size);
             if (success) {
                 Alert.alert('Added to cart', 'The item has been successfully added to the cart. Please proceed to make an order or checkout.', [
                     { text: 'View Cart', onPress: () => { try { navigation.getParent()?.getParent()?.navigate('Cart'); } catch (e) { navigation.navigate('Cart'); } } },
                     { text: 'Continue Shopping', style: 'cancel' }
                 ]);
-                // Redirect to Shopping Cart (Drawer) instead of Orders
-                try {
-                    // climb to drawer navigator and open Cart
-                    navigation.getParent()?.getParent()?.navigate('Cart');
-                } catch (e) {
-                    navigation.navigate('Cart');
-                }
             } else {
                 Alert.alert('Failed', 'Failed to add item to cart. Please try again.');
             }
@@ -326,22 +325,29 @@ const HomeScreen = ({ navigation }) => {
                             <X size={24} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
-                    <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
-                        <View style={styles.productsGrid}>
-                            {inStockProducts.map((product) => (
-                                <View key={product._id} style={{ width: '48%', marginBottom: 15 }}>
-                                    <ProductCard
-                                        product={product}
-                                        onPress={() => {
-                                            setShowAllArrivals(false);
-                                            navigation.navigate('ProductDetails', { product });
-                                        }}
-                                        onAddToCart={handleAddToCart}
-                                    />
-                                </View>
-                            ))}
-                        </View>
-                    </ScrollView>
+                    <FlatList
+                        data={inStockProducts}
+                        keyExtractor={item => item._id}
+                        numColumns={2}
+                        columnWrapperStyle={styles.row}
+                        initialNumToRender={6}
+                        maxToRenderPerBatch={10}
+                        windowSize={5}
+                        removeClippedSubviews={true}
+                        contentContainerStyle={styles.modalContentContainer}
+                        renderItem={({ item }) => (
+                            <View style={{ width: '48%', marginBottom: 15 }}>
+                                <ProductCard
+                                    product={item}
+                                    onPress={() => {
+                                        setShowAllArrivals(false);
+                                        navigateToDetails(item);
+                                    }}
+                                    onAddToCart={handleAddToCart}
+                                />
+                            </View>
+                        )}
+                    />
                 </SafeAreaView>
             </Modal>
         );
@@ -364,26 +370,33 @@ const HomeScreen = ({ navigation }) => {
                             <X size={24} color={COLORS.primary} />
                         </TouchableOpacity>
                     </View>
-                    <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
-                        <View style={styles.productsGrid}>
-                            {limitedProducts.map((product) => (
-                                <View key={product._id} style={{ width: '48%', marginBottom: 15 }}>
-                                    <ProductCard
-                                        product={product}
-                                        onPress={() => {
-                                            setShowAllOffers(false);
-                                            navigation.navigate('ProductDetails', { product, isOffer: true });
-                                        }}
-                                        onAddToCart={handleAddToCart}
-                                        isOffer={true}
-                                    />
-                                    <View style={styles.offerBadge}>
-                                        <Text style={styles.offerBadgeText}>-5% OFF</Text>
-                                    </View>
+                    <FlatList
+                        data={limitedProducts}
+                        keyExtractor={item => item._id}
+                        numColumns={2}
+                        columnWrapperStyle={styles.row}
+                        initialNumToRender={6}
+                        maxToRenderPerBatch={10}
+                        windowSize={5}
+                        removeClippedSubviews={true}
+                        contentContainerStyle={styles.modalContentContainer}
+                        renderItem={({ item }) => (
+                            <View style={{ width: '48%', marginBottom: 15 }}>
+                                <ProductCard
+                                    product={item}
+                                    onPress={() => {
+                                        setShowAllOffers(false);
+                                        navigateToDetails(item, true);
+                                    }}
+                                    onAddToCart={handleAddToCart}
+                                    isOffer={true}
+                                />
+                                <View style={styles.offerBadge}>
+                                    <Text style={styles.offerBadgeText}>-5% OFF</Text>
                                 </View>
-                            ))}
-                        </View>
-                    </ScrollView>
+                            </View>
+                        )}
+                    />
                 </SafeAreaView>
             </Modal>
         );
@@ -429,13 +442,13 @@ const HomeScreen = ({ navigation }) => {
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
                         <Image source={whatsappIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/')}>
                         <Image source={facebookIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/')}>
                         <Image source={instagramIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/')}>
                         <Image source={tiktokIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                 </View>
@@ -579,6 +592,12 @@ const HomeScreen = ({ navigation }) => {
 
             {renderAllArrivalsModal()}
             {renderAllOffersModal()}
+            <AddToCartModal
+                visible={cartModalVisible}
+                onClose={() => setCartModalVisible(false)}
+                product={selectedProductForCart}
+                onAddToCart={executeAddToCart}
+            />
         </SafeAreaView>
     );
 };

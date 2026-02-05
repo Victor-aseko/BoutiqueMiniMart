@@ -159,13 +159,13 @@ const AboutUsScreen = ({ navigation }) => {
                         <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
                             <Image source={whatsappIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#https://www.facebook.com/')}>
                             <Image source={facebookIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#https://www.instagram.com/')}>
                             <Image source={instagramIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#https://www.tiktok.com/')}>
                             <Image source={tiktokIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
                     </View>

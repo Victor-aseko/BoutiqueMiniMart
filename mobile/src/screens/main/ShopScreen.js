@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Search, ChevronDown } from 'lucide-react-native';
 import api from '../../services/api';
 import ProductCard from '../../components/ProductCard';
+import AddToCartModal from '../../components/AddToCartModal';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -131,15 +132,20 @@ const ShopScreen = ({ navigation, route }) => {
         fetchProducts();
     };
 
-    const handleAddToCart = async (product) => {
-        if (!user) {
-            Alert.alert('Sign in required', 'Please sign in to add items to your cart.', [
-                { text: 'Sign In', onPress: () => navigation.navigate('Auth') },
-                { text: 'Cancel', style: 'cancel' }
-            ]);
-            return;
-        }
-        const success = await addToCart(product, 1);
+    const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [cartModalVisible, setCartModalVisible] = useState(false);
+
+    const handleAddToCart = React.useCallback((product) => {
+        setSelectedProductForCart(product);
+        setCartModalVisible(true);
+    }, []);
+
+    const navigateToDetails = React.useCallback((product) => {
+        navigation.navigate('ProductDetails', { product });
+    }, [navigation]);
+
+    const executeAddToCart = async (product, qty, color, size) => {
+        const success = await addToCart(product, qty, color, size);
         if (success) {
             Alert.alert('Added to cart', 'The item has been successfully added to the cart. Please proceed to make an order or checkout.', [
                 { text: 'View Cart', onPress: () => { try { navigation.getParent()?.getParent()?.navigate('Cart'); } catch (e) { navigation.navigate('Cart'); } } },
@@ -148,7 +154,6 @@ const ShopScreen = ({ navigation, route }) => {
         }
     };
 
-    // Apply filters with proper category matching
     // Apply filters with proper category matching
     const filtered = useMemo(() => {
         return products.filter(p => {
@@ -168,18 +173,14 @@ const ShopScreen = ({ navigation, route }) => {
                 const pCatNormalized = normalizeText(normalizeCategory(p.category));
 
                 if (selected === 'bags') {
-                    // Include bags, suitcases, handbags, purses and Jeep branded items
                     matchesCategory = pCatNormalized.includes('bag') || pCatNormalized.includes('suitcase') ||
                         pName.includes('bag') || pName.includes('handbag') || pName.includes('purse') ||
                         pName.includes('jeep') || pName.includes('suitcase');
                 } else if (selected === 'shoes') {
-                    // Include any footwear
                     matchesCategory = pCatNormalized.includes('shoe') || pCatNormalized.includes('footwear') || pName.includes('sneaker') || pName.includes('sandal') || pName.includes('boot');
                 } else if (selected === 'men' || selected === 'women' || selected === 'children' || selected === 'kids') {
-                    // STRICT EQUALITY is critical here to ensure "women" does not match "men"
                     matchesCategory = pCatNormalized === selected || (selected === 'children' && pCatNormalized === 'kids') || (selected === 'kids' && pCatNormalized === 'children');
                 } else {
-                    // For other categories, we can be more flexible
                     matchesCategory = pCatNormalized === selected || pCatNormalized.includes(selected);
                 }
             }
@@ -192,14 +193,14 @@ const ShopScreen = ({ navigation, route }) => {
             // Price Filter
             const matchesPrice = p.price >= selectedPriceRange.min && p.price <= selectedPriceRange.max;
 
-            // Stock Filter - Ensure we only show available items as requested
+            // Stock Filter
             const matchesStock = p.countInStock > 0;
 
             return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock;
         });
     }, [products, searchQuery, selectedCategory, selectedBrandFilter, selectedPriceRange]);
 
-    // Apply sorting and specific filters (like In Stock)
+    // Apply sorting
     const sortedProducts = useMemo(() => {
         let list = [...filtered];
         if (selectedSort === 'highLow') list.sort((a, b) => b.price - a.price);
@@ -210,6 +211,16 @@ const ShopScreen = ({ navigation, route }) => {
         }
         return list;
     }, [filtered, selectedSort]);
+
+    const renderProduct = React.useCallback(({ item }) => (
+        <View style={styles.productWrapper}>
+            <ProductCard
+                product={item}
+                onPress={() => navigateToDetails(item)}
+                onAddToCart={handleAddToCart}
+            />
+        </View>
+    ), [navigateToDetails, handleAddToCart]);
 
     const DropdownButton = ({ label, value, onPress }) => (
         <TouchableOpacity style={styles.dropdownBtn} onPress={onPress}>
@@ -268,16 +279,13 @@ const ShopScreen = ({ navigation, route }) => {
         <SafeAreaView style={styles.container}>
             {/* Header with Search */}
             <View style={styles.header}>
-                <View style={styles.searchBar}>
+                <TouchableOpacity
+                    style={styles.searchBar}
+                    onPress={() => navigation.navigate('SearchScreen')}
+                >
                     <Search size={20} color={COLORS.textLight} style={styles.searchIcon} />
-                    <TextInput
-                        placeholder="Search products..."
-                        style={styles.searchInput}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholderTextColor={COLORS.textLight}
-                    />
-                </View>
+                    <Text style={styles.searchText}>Search products...</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Filter and Sort Bar - Layout: Filters on Left, Sort on Right */}
@@ -326,16 +334,13 @@ const ShopScreen = ({ navigation, route }) => {
                     keyExtractor={item => item._id}
                     numColumns={2}
                     columnWrapperStyle={styles.row}
-                    renderItem={({ item }) => (
-                        <ProductCard
-                            product={item}
-                            onPress={() => navigation.navigate('ProductDetails', { product: item })}
-                            onAddToCart={handleAddToCart}
-                            style={{ width: '100%' }}
-                        />
-                    )}
+                    renderItem={renderProduct}
                     contentContainerStyle={styles.list}
                     refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={true}
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <Text style={styles.emptyText}>No products found</Text>
@@ -383,6 +388,12 @@ const ShopScreen = ({ navigation, route }) => {
                 onClose={() => setPriceModalVisible(false)}
                 isPrice={true}
             />
+            <AddToCartModal
+                visible={cartModalVisible}
+                onClose={() => setCartModalVisible(false)}
+                product={selectedProductForCart}
+                onAddToCart={executeAddToCart}
+            />
         </SafeAreaView>
     );
 };
@@ -416,6 +427,11 @@ const styles = StyleSheet.create({
     },
     searchIcon: {
         marginRight: 10,
+    },
+    searchText: {
+        flex: 1,
+        fontSize: 14,
+        color: COLORS.textLight,
     },
     searchInput: {
         flex: 1,
@@ -527,6 +543,10 @@ const styles = StyleSheet.create({
     row: {
         justifyContent: 'space-between',
         marginBottom: 10,
+    },
+    productWrapper: {
+        width: '48%',
+        marginBottom: 15,
     },
     empty: {
         alignItems: 'center',

@@ -7,13 +7,15 @@ import {
     TouchableOpacity,
     FlatList,
     ActivityIndicator,
-    Keyboard
+    Keyboard,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Search, X } from 'lucide-react-native';
 import { COLORS } from '../../theme/theme';
 import api from '../../services/api';
 import ProductCard from '../../components/ProductCard';
+import AddToCartModal from '../../components/AddToCartModal';
 import { useCart } from '../../context/CartContext';
 
 const SearchScreen = ({ navigation }) => {
@@ -62,9 +64,29 @@ const SearchScreen = ({ navigation }) => {
         inputRef.current?.focus();
     };
 
-    const handleAddToCart = async (product) => {
-        // Reuse logic or import helper if complex. For now basic add.
-        await addToCart(product, 1);
+    const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [cartModalVisible, setCartModalVisible] = useState(false);
+
+    const handleAddToCart = (product) => {
+        setSelectedProductForCart(product);
+        setCartModalVisible(true);
+    };
+
+    const executeAddToCart = async (product, qty, color, size) => {
+        try {
+            const success = await addToCart(product, qty, color, size);
+            if (success) {
+                Alert.alert('Added to cart', 'The item has been successfully added to the cart. Please proceed to make an order or checkout.', [
+                    { text: 'View Cart', onPress: () => { try { navigation.getParent()?.getParent()?.navigate('Cart'); } catch (e) { navigation.navigate('Cart'); } } },
+                    { text: 'Continue Shopping', style: 'cancel' }
+                ]);
+            } else {
+                Alert.alert('Failed', 'Failed to add item to cart.');
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            Alert.alert('Error', 'An error occurred while adding to cart.');
+        }
     };
 
     const renderItem = ({ item }) => (
@@ -126,6 +148,12 @@ const SearchScreen = ({ navigation }) => {
                     }
                 />
             )}
+            <AddToCartModal
+                visible={cartModalVisible}
+                onClose={() => setCartModalVisible(false)}
+                product={selectedProductForCart}
+                onAddToCart={executeAddToCart}
+            />
         </SafeAreaView>
     );
 };

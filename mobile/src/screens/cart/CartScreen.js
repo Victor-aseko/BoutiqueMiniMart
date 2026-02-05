@@ -14,10 +14,12 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS, SIZES } from '../../theme/theme';
 import MyButton from '../../components/MyButton';
+import AuthModal from '../../components/AuthModal';
 
 const CartScreen = ({ navigation }) => {
     const { cartItems, updateCartQty, removeFromCart, cartTotal } = useCart();
     const { user } = useAuth();
+    const [authModalVisible, setAuthModalVisible] = React.useState(false);
 
     const getShippingFee = (city, itemsPrice) => {
         if (!city) return 50; // Default for Nairobi/Unknown
@@ -38,12 +40,34 @@ const CartScreen = ({ navigation }) => {
         else if (distance < 300) baseFee = 250;
         else baseFee = 320;
 
-        return Math.ceil(baseFee + (itemsPrice * 0.01));
+        const handling = itemsPrice * 0.01;
+        return Math.ceil(baseFee + handling);
     };
 
     const userCity = user?.addresses?.find(a => a.isDefault)?.city || user?.addresses?.[0]?.city || 'Nairobi';
     const shippingPrice = getShippingFee(userCity, cartTotal);
     const finalTotal = cartTotal + shippingPrice;
+
+    const handleProceedToConfirm = React.useCallback(() => {
+        console.log('Proceeding to Confirm Orders with items:', cartItems.length);
+
+        // Use a more explicit navigation path to avoid ambiguity during auth state shifts
+        navigation.navigate('Orders', {
+            screen: 'OrdersScreen',
+            params: {
+                cartItems: cartItems.map(item => ({
+                    product: item.product?._id || item.product,
+                    name: item.name,
+                    image: item.image,
+                    price: item.price,
+                    qty: item.qty,
+                    color: item.color,
+                    size: item.size,
+                    _id: item._id
+                }))
+            }
+        });
+    }, [navigation, cartItems]);
 
     const renderItem = ({ item }) => (
         <View style={styles.cartItem}>
@@ -128,17 +152,37 @@ const CartScreen = ({ navigation }) => {
                     title="Checkout"
                     onPress={() => {
                         if (!user) {
-                            navigation.navigate('Auth');
-                            return;
+                            setAuthModalVisible(true);
+                        } else {
+                            handleProceedToConfirm();
                         }
-                        navigation.navigate('Orders', {
-                            screen: 'OrdersScreen',
-                            params: { cartItems }
-                        });
                     }}
                     style={styles.checkoutBtn}
                 />
             </View>
+
+            <AuthModal
+                visible={authModalVisible}
+                onClose={() => setAuthModalVisible(false)}
+                onAuthSuccess={handleProceedToConfirm}
+                navigation={navigation}
+                redirectTo={{
+                    tab: 'Orders',
+                    screen: 'OrdersScreen',
+                    params: {
+                        cartItems: cartItems.map(item => ({
+                            product: item.product?._id || item.product,
+                            name: item.name,
+                            image: item.image,
+                            price: item.price,
+                            qty: item.qty,
+                            color: item.color,
+                            size: item.size,
+                            _id: item._id
+                        }))
+                    }
+                }}
+            />
         </SafeAreaView>
     );
 };

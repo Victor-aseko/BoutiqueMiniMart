@@ -35,9 +35,22 @@ const SupportScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (!user) {
-            navigation.navigate('Auth');
+            // navigation.navigate('Auth'); // Don't force redirect if we want them to see the bot first
+        } else {
+            // Update the welcome message if they just logged in
+            setMessages(prev => {
+                if (prev.length > 0 && prev[0].id === '1') {
+                    const newMessages = [...prev];
+                    newMessages[0] = {
+                        ...newMessages[0],
+                        text: `Welcome ${user.name}! I'm your Boutique Assistant. How can I help you today?`
+                    };
+                    return newMessages;
+                }
+                return prev;
+            });
         }
-    }, [user, navigation]);
+    }, [user]);
 
     // Robust Keyboard Handling
     useEffect(() => {

@@ -8,12 +8,13 @@ import {
     TouchableOpacity,
     Dimensions,
     Animated,
-    StatusBar
+    StatusBar,
+    Easing
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRight, ChevronRight } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,6 +44,21 @@ const OnboardingScreen = ({ navigation }) => {
     // Animation valves for content
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideUpAnim = useRef(new Animated.Value(30)).current;
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+    const floatAnim = useRef(new Animated.Value(0)).current;
+    const rotateAnim = useRef(new Animated.Value(0)).current;
+
+    const neonColors = [
+        '#FFD700', // Gold
+        '#FFFFFF', // White
+        '#FFC107', // Amber Gold
+        '#00D4FF', // Cyan
+        '#FF9800', // Deep Orange Gold
+        '#FF00E5', // Magenta
+        '#FFD700', // Gold
+        '#00FF9C', // Spring Green
+    ];
+    const [neonCycle, setNeonCycle] = useState(0);
 
     const slidesRef = useRef(null);
     const { completeOnboarding } = useAuth();
@@ -61,6 +77,66 @@ const OnboardingScreen = ({ navigation }) => {
             }, 4000); // Change image/text every 4 seconds
         }
         return () => clearInterval(interval);
+    }, [currentIndex]);
+
+    // Complex "Sailing" animation for the phone (Float + Zoom + Swing)
+    useEffect(() => {
+        if (currentIndex === 0) {
+            Animated.loop(
+                Animated.parallel([
+                    // Vertical Float (Sailing)
+                    Animated.sequence([
+                        Animated.timing(floatAnim, {
+                            toValue: -30,
+                            duration: 4000,
+                            easing: Easing.bezier(0.42, 0, 0.58, 1),
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(floatAnim, {
+                            toValue: 20,
+                            duration: 4000,
+                            easing: Easing.bezier(0.42, 0, 0.58, 1),
+                            useNativeDriver: true,
+                        })
+                    ]),
+                    // Scaling (Zooming)
+                    Animated.sequence([
+                        Animated.timing(scaleAnim, {
+                            toValue: 1.1,
+                            duration: 4500,
+                            easing: Easing.inOut(Easing.sin),
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(scaleAnim, {
+                            toValue: 0.9,
+                            duration: 4500,
+                            easing: Easing.inOut(Easing.sin),
+                            useNativeDriver: true,
+                        })
+                    ]),
+                    // Rotating (Swinging)
+                    Animated.sequence([
+                        Animated.timing(rotateAnim, {
+                            toValue: 1,
+                            duration: 5500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                        }),
+                        Animated.timing(rotateAnim, {
+                            toValue: -1,
+                            duration: 5500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                        })
+                    ])
+                ])
+            ).start();
+
+            const neonInterval = setInterval(() => {
+                setNeonCycle(prev => (prev + 1) % neonColors.length);
+            }, 600); // Slightly faster for more "shimmer"
+            return () => clearInterval(neonInterval);
+        }
     }, [currentIndex]);
 
     const animateContent = () => {
@@ -97,18 +173,81 @@ const OnboardingScreen = ({ navigation }) => {
 
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
-    const StaticSlide = () => (
-        <View style={[styles.container, { width }]}>
-            <View style={styles.imageContainer}>
-                <Image source={require('../../../assets/onboarding/welcome_new.jpg')} style={styles.image} resizeMode="cover" />
-                <View style={styles.overlay} />
+    const NeonTitle = ({ text }) => {
+        return (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+                {text.split('').map((char, i) => (
+                    <Text
+                        key={i}
+                        style={[
+                            styles.title,
+                            {
+                                color: neonColors[(i + neonCycle) % neonColors.length],
+                                textShadowColor: neonColors[(i + neonCycle) % neonColors.length],
+                                textShadowRadius: 18,
+                                marginBottom: 0,
+                                fontSize: 28,
+                                textAlign: 'center',
+                                fontWeight: '900'
+                            }
+                        ]}
+                    >
+                        {char === ' ' ? '\u00A0' : char}
+                    </Text>
+                ))}
             </View>
-            <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideUpAnim }] }]}>
-                <Text style={styles.title}>Welcome to{"\n"}MiniBoutique</Text>
-                <Text style={styles.description}>Experience luxury at your fingertips. Discover the heartbeat of fashion in our curated halls.</Text>
-            </Animated.View>
-        </View>
-    );
+        );
+    };
+
+    const StaticSlide = () => {
+        const rotation = rotateAnim.interpolate({
+            inputRange: [-1, 1],
+            outputRange: ['-5deg', '5deg']
+        });
+
+        return (
+            <View style={[styles.container, { width }]}>
+                <View style={[styles.imageContainer, { alignItems: 'center', justifyContent: 'flex-start', backgroundColor: '#000', paddingTop: 40 }]}>
+                    <Animated.Image
+                        source={require('../../../assets/onboarding/onboarding_trio_phone.png')}
+                        style={[
+                            styles.image,
+                            {
+                                width: width * 1.3, // Increased from 1.15
+                                height: height * 0.75, // Increased from 0.65
+                                transform: [
+                                    { scale: scaleAnim },
+                                    { translateY: floatAnim },
+                                    { rotate: rotation }
+                                ],
+                                zIndex: 10
+                            }
+                        ]}
+                        resizeMode="contain"
+                    />
+                    <View style={[styles.overlay, { backgroundColor: 'transparent' }]} />
+                </View>
+                <Animated.View style={[styles.content, {
+                    opacity: fadeAnim,
+                    transform: [{ translateY: slideUpAnim }],
+                    bottom: height * 0.12,
+                    alignItems: 'center',
+                    zIndex: 20
+                }]}>
+                    <NeonTitle text="Welcome to MiniBoutique’s Collections" />
+                    <Text style={[styles.description, {
+                        marginTop: 15,
+                        textAlign: 'center',
+                        fontSize: 16,
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        fontWeight: '500',
+                    }]}>
+                        Experience luxury at your fingertips. Discover the heartbeat of fashion in our curated halls.
+                    </Text>
+                </Animated.View>
+            </View>
+        );
+    };
 
     const CycleSlide = () => {
         const item = CYCLE_DATA[cycleIndex];
@@ -153,21 +292,38 @@ const OnboardingScreen = ({ navigation }) => {
                 scrollEnabled={currentIndex === 0} // Restrict scroll on second page if desired, or keep for UX
             />
 
-            <View style={styles.footer}>
-                <View style={styles.paginator}>
-                    <View style={[styles.dot, { width: currentIndex === 0 ? 20 : 10, opacity: currentIndex === 0 ? 1 : 0.4 }]} />
-                    <View style={[styles.dot, { width: currentIndex === 1 ? 20 : 10, opacity: currentIndex === 1 ? 1 : 0.4 }]} />
-                </View>
+            <View style={[styles.footer, currentIndex === 0 && { justifyContent: 'flex-end' }]}>
+                {currentIndex !== 0 && (
+                    <View style={styles.paginator}>
+                        <View style={[styles.dot, { width: currentIndex === 0 ? 20 : 10, opacity: currentIndex === 0 ? 1 : 0.4 }]} />
+                        <View style={[styles.dot, { width: currentIndex === 1 ? 20 : 10, opacity: currentIndex === 1 ? 1 : 0.4 }]} />
+                    </View>
+                )}
 
                 <TouchableOpacity
-                    style={styles.actionButton}
+                    style={[
+                        styles.actionButton,
+                        currentIndex === 0 && {
+                            width: 60,
+                            height: 60,
+                            borderRadius: 30,
+                            paddingHorizontal: 0,
+                            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                            borderWidth: 1,
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                        }
+                    ]}
                     onPress={handleAction}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.actionText}>
-                        {currentIndex === 0 ? 'Next' : 'Get Started'}
-                    </Text>
-                    {currentIndex === 0 && <ArrowRight size={20} color={COLORS.white} style={{ marginLeft: 8 }} />}
+                    {currentIndex === 0 ? (
+                        <ChevronRight size={32} color={COLORS.white} />
+                    ) : (
+                        <>
+                            <Text style={styles.actionText}>Get Started</Text>
+                            <ArrowRight size={20} color={COLORS.white} style={{ marginLeft: 8 }} />
+                        </>
+                    )}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>

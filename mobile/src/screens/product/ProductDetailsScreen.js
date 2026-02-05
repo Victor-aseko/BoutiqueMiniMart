@@ -23,6 +23,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useRecentlyViewed } from '../../context/RecentlyViewedContext';
 import MyButton from '../../components/MyButton';
 import Rating from '../../components/Rating';
+import AuthModal from '../../components/AuthModal';
 
 const ProductDetailsScreen = ({ route, navigation }) => {
     const initialProduct = route.params?.product;
@@ -37,14 +38,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const { addToCart } = useCart();
     const { user } = useAuth();
+    const [authModalVisible, setAuthModalVisible] = useState(false);
     const { addToWishlist, wishlist } = useWishlist();
     const { addRecentlyViewed } = useRecentlyViewed();
 
     const handleAddToCart = async () => {
-        if (!user) {
-            navigation.navigate('Auth');
-            return;
-        }
+
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
@@ -101,6 +100,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     };
 
     const handleOrderNow = () => {
+        if (!user) {
+            setAuthModalVisible(true);
+        } else {
+            setOrderModalVisible(true);
+        }
+    };
+
+    const handleAuthSuccess = () => {
         setOrderModalVisible(true);
     };
 
@@ -489,6 +496,21 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
+
+            <AuthModal
+                visible={authModalVisible}
+                onClose={() => setAuthModalVisible(false)}
+                onAuthSuccess={handleAuthSuccess}
+                navigation={navigation}
+                redirectTo={{
+                    tab: 'MainTabs',
+                    screen: 'HomeTab',
+                    params: {
+                        screen: 'ProductDetails',
+                        params: { product: product }
+                    }
+                }}
+            />
         </SafeAreaView >
     );
 };

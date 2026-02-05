@@ -2,11 +2,16 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 
+import { useClerk, useUser } from '@clerk/clerk-expo';
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    const { signOut: clerkSignOut } = useClerk();
+    const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [authLoading, setAuthLoading] = useState(false);
     const [error, setError] = useState(null);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
@@ -26,6 +31,22 @@ export const AuthProvider = ({ children }) => {
 
         return () => api.interceptors.response.eject(interceptor);
     }, []);
+
+    // Automatic sync with backend if Clerk session exists but local state doesn't
+    useEffect(() => {
+        if (clerkLoaded && clerkUser && !user && !authLoading) {
+            console.log('Clerk session found after refresh. Syncing with backend...');
+            const syncSession = async () => {
+                await loginWithGoogle({
+                    email: clerkUser.primaryEmailAddress.emailAddress,
+                    name: clerkUser.fullName,
+                    picture: clerkUser.imageUrl,
+                    clerkId: clerkUser.id
+                });
+            };
+            syncSession();
+        }
+    }, [clerkUser, clerkLoaded, user]);
 
     const checkLoginStatus = async () => {
         try {
@@ -53,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (email, password) => {
-        setIsLoading(true);
+        setAuthLoading(true);
         setError(null);
         try {
             const response = await api.post('/auth/login', { email, password });
@@ -65,15 +86,16 @@ export const AuthProvider = ({ children }) => {
             return true;
         } catch (err) {
             console.error('Login error detail:', err.response?.data || err.message);
-            setError(err.response?.data?.message || 'Login failed');
+            const errorMsg = err.response?.data?.message || err.message || 'Login failed';
+            setError(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
             return false;
         } finally {
-            setIsLoading(false);
+            setAuthLoading(false);
         }
     };
 
     const register = async (name, email, password) => {
-        setIsLoading(true);
+        setAuthLoading(true);
         setError(null);
         try {
             const response = await api.post('/auth', { name, email, password });
@@ -88,12 +110,12 @@ export const AuthProvider = ({ children }) => {
             setError(err.response?.data?.message || 'Registration failed');
             return false;
         } finally {
-            setIsLoading(false);
+            setAuthLoading(false);
         }
     };
 
     const loginWithGoogle = async (userDataFromGoogle) => {
-        setIsLoading(true);
+        setAuthLoading(true);
         setError(null);
         try {
             const response = await api.post('/auth/google', userDataFromGoogle);
@@ -108,12 +130,16 @@ export const AuthProvider = ({ children }) => {
             setError(err.response?.data?.message || 'Google login failed');
             return false;
         } finally {
-            setIsLoading(false);
+            setAuthLoading(false);
         }
     };
 
     const logout = async () => {
         try {
+            // Also sign out of Clerk to prevent "hanging" on next login
+            if (clerkSignOut) {
+                await clerkSignOut();
+            }
             await AsyncStorage.removeItem('user');
             delete api.defaults.headers.common['Authorization'];
             setUser(null);
@@ -142,6 +168,7 @@ export const AuthProvider = ({ children }) => {
         <AuthContext.Provider value={{
             user,
             isLoading,
+            authLoading,
             error,
             hasSeenOnboarding,
             login,

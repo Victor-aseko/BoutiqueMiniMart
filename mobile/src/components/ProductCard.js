@@ -45,15 +45,7 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                     onPress={(e) => {
                         e.stopPropagation();
                         if (onAddToCart) {
-                            if (isOffer) {
-                                const discountedProduct = {
-                                    ...product,
-                                    price: discountedPrice
-                                };
-                                onAddToCart(discountedProduct);
-                            } else {
-                                onAddToCart(product);
-                            }
+                            onAddToCart(product);
                         }
                     }}
                 >

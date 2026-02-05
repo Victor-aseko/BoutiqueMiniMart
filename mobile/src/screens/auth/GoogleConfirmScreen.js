@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Alert } from 'react-native';
 
 const GoogleConfirmScreen = ({ navigation, route }) => {
-    const { userEmail, userName, userPicture, redirectTo } = route.params || {};
+    const { userEmail, userName, userPicture, redirectTo, isNewUser } = route.params || {};
     const { loginWithGoogle } = useAuth();
 
     const handleContinue = async () => {
@@ -57,7 +57,7 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Google Sign-In</Text>
+                <Text style={styles.headerTitle}>{isNewUser ? 'Create Account' : 'Google Sign-In'}</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -72,8 +72,12 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                     <CheckCircle size={24} color={COLORS.success} style={styles.checkIcon} />
                 </View>
 
-                <Text style={styles.welcomeText}>You're signing in as</Text>
-                <Text style={styles.brandText}>{userName || 'Google User'}</Text>
+                <Text style={styles.welcomeText}>
+                    {isNewUser ? "Welcome to MiniBoutique!" : "You're signing in as"}
+                </Text>
+                <Text style={styles.brandText}>
+                    {isNewUser ? "Create account as " + (userName || 'User') : (userName || 'Google User')}
+                </Text>
 
                 <View style={styles.emailBadge}>
                     <Text style={styles.emailText}>{userEmail}</Text>

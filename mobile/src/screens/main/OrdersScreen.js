@@ -200,15 +200,16 @@ const OrdersScreen = ({ navigation, route }) => {
                 throw new Error(data.message || 'Failed to place order');
             }
 
+            // Clear cart if this order came from the cart
+            if (route.params?.cartItems) {
+                console.log('Clearing cart after successful order');
+                clearCart();
+            }
+
             Alert.alert('Success', 'Order placed successfully!', [
                 {
                     text: 'OK', onPress: () => {
                         setPendingOrder(null);
-                        // Clear cart if this order came from the cart
-                        if (route.params?.cartItems) {
-                            console.log('Clearing cart after successful order');
-                            clearCart();
-                        }
                         navigation.setParams({ product: null, cartItems: null });
                         // Refresh orders
                         fetchOrders();

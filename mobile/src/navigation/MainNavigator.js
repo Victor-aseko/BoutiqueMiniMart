@@ -114,7 +114,7 @@ const HomeStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title={props.label || 'Home'} />,
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Home" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
             headerTitle: () => <BrandLogo />,
             headerTitleAlign: 'center',
@@ -177,6 +177,11 @@ const ShopStack = ({ navigation }) => (
             name="AddReview"
             component={AddReviewScreen}
             options={{ title: 'Add Review' }}
+        />
+        <Stack.Screen
+            name="SearchScreen"
+            component={SearchScreen}
+            options={{ headerShown: false }}
         />
     </Stack.Navigator>
 );

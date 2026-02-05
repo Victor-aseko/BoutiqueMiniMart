@@ -15,12 +15,12 @@ import MyInput from '../../components/MyInput';
 import { COLORS } from '../../theme/theme';
 import { User, Mail, Lock, ChevronLeft } from 'lucide-react-native';
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = ({ navigation, route }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const { register, isLoading, error, setError, clearError } = useAuth();
+    const { register, authLoading, error, setError, clearError } = useAuth();
 
     useEffect(() => {
         clearError();
@@ -44,7 +44,45 @@ const RegisterScreen = ({ navigation }) => {
             setError("Passwords do not match. Please check and try again.");
             return;
         }
-        await register(name, email, password);
+        try {
+            const success = await register(name, email, password);
+            if (success) {
+                const redirectTo = route?.params?.redirectTo;
+                if (redirectTo) {
+                    if (redirectTo.screen === 'OrdersScreen') {
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{
+                                name: 'Main',
+                                state: {
+                                    routes: [{
+                                        name: 'Orders',
+                                        state: {
+                                            routes: [{
+                                                name: 'OrdersScreen',
+                                                params: redirectTo.params
+                                            }]
+                                        }
+                                    }]
+                                }
+                            }]
+                        });
+                        return;
+                    }
+
+                    // Generic redirect
+                    navigation.navigate('Main', {
+                        screen: redirectTo.screen,
+                        params: redirectTo.params
+                    });
+                    return;
+                }
+                navigation.navigate('Main', { screen: 'Profile' });
+            }
+        } catch (error) {
+            console.error('Registration Exception:', error);
+            setError('An unexpected error occurred. Please try again.');
+        }
     };
 
     return (
@@ -107,9 +145,11 @@ const RegisterScreen = ({ navigation }) => {
                         <MyButton
                             title="Register"
                             onPress={handleRegister}
-                            loading={isLoading}
+                            loading={authLoading}
                             style={styles.registerBtn}
                         />
+
+
 
                         <View style={styles.footer}>
                             <Text style={styles.footerText}>Already have an account? </Text>
@@ -172,6 +212,7 @@ const styles = StyleSheet.create({
         color: COLORS.accent,
         fontWeight: 'bold',
     },
+
     errorContainer: {
         backgroundColor: '#FEE2E2',
         padding: 12,

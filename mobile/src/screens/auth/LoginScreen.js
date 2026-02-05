@@ -16,16 +16,19 @@ import MyButton from '../../components/MyButton';
 import MyInput from '../../components/MyInput';
 import { COLORS } from '../../theme/theme';
 import { Mail, Lock, ChevronLeft } from 'lucide-react-native';
+import { useOAuth, useUser } from '@clerk/clerk-expo';
+import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
+
+import * as Linking from 'expo-linking';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { login, isLoading, error, setError, clearError } = useAuth();
+    const [isNewGoogleUser, setIsNewGoogleUser] = useState(false);
+    const { login, authLoading, error, setError, clearError } = useAuth();
 
     useEffect(() => {
         // Clear errors when navigating to this screen
@@ -43,74 +46,112 @@ const LoginScreen = ({ navigation, route }) => {
     };
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            setError('Please enter both email and password to continue.');
-            return;
-        }
-        const success = await login(email, password);
-        if (success) {
-            // If a redirect destination was provided, navigate there
-            const redirectTo = route?.params?.redirectTo;
-            if (redirectTo) {
-                const tab = redirectTo.tab || 'HomeTab';
-                navigation.navigate('Main', { screen: tab, params: { screen: redirectTo.screen, params: redirectTo.params } });
+        try {
+            if (!email || !password) {
+                setError('Please enter both email and password to continue.');
                 return;
             }
 
-            navigation.navigate('Main', { screen: 'MainTabs', params: { screen: 'ProfileTab' } });
+            const success = await login(email, password);
+            if (success) {
+                // If a redirect destination was provided, navigate there
+                const redirectTo = route?.params?.redirectTo;
+                if (redirectTo) {
+                    console.log('Redirecting to:', redirectTo);
+
+                    if (redirectTo.screen === 'OrdersScreen') {
+                        // Reset the root navigator state to show the Orders screen
+                        // inside the Main drawer
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{
+                                name: 'Main',
+                                state: {
+                                    routes: [{
+                                        name: 'Orders',
+                                        state: {
+                                            routes: [{
+                                                name: 'OrdersScreen',
+                                                params: redirectTo.params
+                                            }]
+                                        }
+                                    }]
+                                }
+                            }]
+                        });
+                        return;
+                    }
+
+                    // Generic redirect
+                    navigation.navigate('Main', {
+                        screen: redirectTo.screen,
+                        params: redirectTo.params
+                    });
+                    return;
+                }
+
+                // Default redirect to Profile in the Drawer
+                navigation.navigate('Main', { screen: 'Profile' });
+            } else {
+                // Login failed - check if success was false but error wasn't set (rare)
+                if (!error) setError('Invalid credentials. Please try again.');
+            }
+        } catch (err) {
+            console.error('Login Exception:', err);
+            setError(typeof err === 'string' ? err : 'An unexpected error occurred. Please try again.');
         }
     };
 
-    const [request, response, promptAsync] = Google.useAuthRequest({
-        androidClientId: __DEV__
-            ? "780227151309-5t3tohn4vplmq4ms3qocoh7ojbtusnfm.apps.googleusercontent.com" // Debug
-            : "780227151309-ra956k5pbspsfu0fgginc2c5t4jdlcso.apps.googleusercontent.com", // Release
-        iosClientId: "780227151309-o5m6385lhv9n1uffh4rsmrv7cah94eav.apps.googleusercontent.com",
-        webClientId: "780227151309-alj2ia0vf7pgsi27d23113rfsmonqfq7.apps.googleusercontent.com",
-    }, {
-        // useProxy: true is required for Expo Go (development)
-        // This will use https://auth.expo.io as the base for redirection
-        useProxy: true,
-        redirectUri: AuthSession.makeRedirectUri({
-            useProxy: true,
-        }),
-    });
+    const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+    useWarmUpBrowser();
 
-    // Configuration removed for performance
+    const handleGoogleLogin = React.useCallback(async () => {
+        try {
+            const { createdSessionId, setActive, signUp } = await startOAuthFlow({
+                redirectUrl: Linking.createURL('/', { scheme: 'boutiqueminimart' })
+            });
+
+            if (signUp && signUp.status === 'complete') {
+                setIsNewGoogleUser(true);
+            } else {
+                setIsNewGoogleUser(false);
+            }
+
+            if (createdSessionId) {
+                await setActive({ session: createdSessionId });
+                console.log('Clerk Session Activated on LoginScreen');
+            }
+        } catch (err) {
+            console.error('OAuth error', err);
+            Alert.alert('Google Sign-In Error', 'The Google login process was cancelled or failed.');
+        }
+    }, [startOAuthFlow]);
+
+    // Effect to handle Clerk session activation and backend sync
+    const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
 
     useEffect(() => {
-        if (response?.type === 'success') {
-            const { authentication } = response;
-            handleGoogleSuccess(authentication.accessToken);
-        }
-    }, [response]);
+        if (clerkLoaded && clerkUser) {
+            console.log('Clerk User detected on LoginScreen:', clerkUser.id);
+            const syncWithBackend = async () => {
+                const googleData = {
+                    email: clerkUser.primaryEmailAddress.emailAddress,
+                    name: clerkUser.fullName,
+                    picture: clerkUser.imageUrl,
+                    clerkId: clerkUser.id
+                };
 
-    const handleGoogleSuccess = async (token) => {
-        try {
-            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const userData = await response.json();
-            console.log('Google User Data:', userData);
-            navigation.navigate('GoogleConfirm', {
-                userEmail: userData.email,
-                userName: userData.name,
-                userPicture: userData.picture,
-                redirectTo: route?.params?.redirectTo
-            });
-        } catch (err) {
-            console.error('Google Sign-In Error:', err);
-            Alert.alert('Authentication Error', 'Failed to fetch user data from Google');
+                navigation.navigate('GoogleConfirm', {
+                    userEmail: googleData.email,
+                    userName: googleData.name,
+                    userPicture: googleData.picture,
+                    redirectTo: route?.params?.redirectTo,
+                    isNewUser: isNewGoogleUser
+                });
+            };
+            syncWithBackend();
         }
-    };
-
-    const handleGoogleLogin = () => {
-        if (request) {
-            promptAsync();
-        } else {
-            Alert.alert('System Busy', 'Google authentication is initializing. Please try again.');
-        }
-    };
+    }, [clerkUser, clerkLoaded, isNewGoogleUser]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -166,7 +207,7 @@ const LoginScreen = ({ navigation, route }) => {
                         <MyButton
                             title="Sign In"
                             onPress={handleLogin}
-                            loading={isLoading}
+                            loading={authLoading}
                             style={styles.loginBtn}
                         />
 
@@ -187,7 +228,7 @@ const LoginScreen = ({ navigation, route }) => {
 
                         <View style={styles.footer}>
                             <Text style={styles.footerText}>Don't have an account? </Text>
-                            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                            <TouchableOpacity onPress={() => navigation.navigate('Register', { redirectTo: route?.params?.redirectTo })}>
                                 <Text style={styles.link}>Sign Up</Text>
                             </TouchableOpacity>
                         </View>
