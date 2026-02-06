@@ -60,8 +60,6 @@ const LoginScreen = ({ navigation, route }) => {
                     console.log('Redirecting to:', redirectTo);
 
                     if (redirectTo.screen === 'OrdersScreen') {
-                        // Reset the root navigator state to show the Orders screen
-                        // inside the Main drawer
                         navigation.getParent()?.reset({
                             index: 0,
                             routes: [{
@@ -82,7 +80,6 @@ const LoginScreen = ({ navigation, route }) => {
                         return;
                     }
 
-                    // Generic redirect
                     navigation.navigate('Main', {
                         screen: redirectTo.screen,
                         params: redirectTo.params
@@ -90,15 +87,46 @@ const LoginScreen = ({ navigation, route }) => {
                     return;
                 }
 
-                // Default redirect to Profile in the Drawer
-                navigation.navigate('Main', { screen: 'Profile' });
+                // Default redirect using navigate with nested screen
+                // We use navigate because we want to go into the Drawer -> ProfileStack -> ProfileScreen
+                try {
+                    // Navigate is safer than replace for cross-stack transitions
+                    navigation.navigate('Main', {
+                        screen: 'Profile',
+                        params: { screen: 'ProfileScreen' }
+                    });
+                } catch (e) {
+                    console.log('Direct navigation failed, attempting parent navigation');
+                    navigation.getParent()?.navigate('Main', { screen: 'Profile' });
+                }
+
+                // If we're still on the Auth stack after a short delay, force a reset
+                // This is a safety measure for production builds
+                setTimeout(() => {
+                    // Check if we are still in Login - if so, navigation failed to trigger
+                    try {
+                        const state = navigation.getState();
+                        const currentRoute = state?.routes[state.index]?.name;
+                        if (currentRoute === 'Login') {
+                            navigation.getParent()?.reset({
+                                index: 0,
+                                routes: [{ name: 'Main' }]
+                            });
+                        }
+                    } catch (e) {
+                        // If state check fails, just try reset anyway as last resort
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{ name: 'Main' }]
+                        });
+                    }
+                }, 800);
             } else {
-                // Login failed - check if success was false but error wasn't set (rare)
                 if (!error) setError('Invalid credentials. Please try again.');
             }
         } catch (err) {
             console.error('Login Exception:', err);
-            setError(typeof err === 'string' ? err : 'An unexpected error occurred. Please try again.');
+            setError('An unexpected error occurred. Please check your connection and try again.');
         }
     };
 
@@ -134,17 +162,12 @@ const LoginScreen = ({ navigation, route }) => {
         if (clerkLoaded && clerkUser) {
             console.log('Clerk User detected on LoginScreen:', clerkUser.id);
             const syncWithBackend = async () => {
-                const googleData = {
-                    email: clerkUser.primaryEmailAddress.emailAddress,
-                    name: clerkUser.fullName,
-                    picture: clerkUser.imageUrl,
-                    clerkId: clerkUser.id
-                };
+                const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
 
                 navigation.navigate('GoogleConfirm', {
-                    userEmail: googleData.email,
-                    userName: googleData.name,
-                    userPicture: googleData.picture,
+                    userEmail: email,
+                    userName: clerkUser.fullName || clerkUser.firstName || 'User',
+                    userPicture: clerkUser.imageUrl,
                     redirectTo: route?.params?.redirectTo,
                     isNewUser: isNewGoogleUser
                 });

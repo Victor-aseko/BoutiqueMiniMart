@@ -31,7 +31,7 @@ const CustomDrawerContent = (props) => {
             <DrawerContentScrollView {...props}>
                 <View style={styles.drawerHeader}>
                     <View style={styles.avatarPlaceholder}>
-                        <Text style={styles.avatarText}>{user?.name?.charAt(0).toUpperCase()}</Text>
+                        <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
                     </View>
                     <View style={styles.headerInfo}>
                         <Text style={styles.userName}>{user?.name}</Text>

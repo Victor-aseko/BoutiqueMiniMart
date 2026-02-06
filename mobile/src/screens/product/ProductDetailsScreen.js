@@ -11,7 +11,7 @@ import {
     TextInput,
     KeyboardAvoidingView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Heart, Share as ShareIcon, Phone } from 'lucide-react-native';
 import api from '../../services/api';
 import { useFocusEffect } from '@react-navigation/native';
@@ -26,6 +26,7 @@ import Rating from '../../components/Rating';
 import AuthModal from '../../components/AuthModal';
 
 const ProductDetailsScreen = ({ route, navigation }) => {
+    const insets = useSafeAreaInsets();
     const initialProduct = route.params?.product;
     const [product, setProduct] = useState(initialProduct || {});
     const [qty, setQty] = useState(1);
@@ -85,10 +86,6 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }, [product && product._id]);
 
     const toggleFavorite = () => {
-        if (!user) {
-            navigation.navigate('Auth');
-            return;
-        }
         const alreadyInWishlist = wishlist.find(p => p._id === product._id);
         if (alreadyInWishlist) {
             Alert.alert('Already in Wishlist');
@@ -372,7 +369,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                             <ScrollView
                                 style={{ width: '100%', maxHeight: SIZES.height * 0.8 }}
                                 showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ alignItems: 'center', paddingBottom: 40 }}
+                                contentContainerStyle={{ alignItems: 'center', paddingBottom: 60 + insets.bottom }}
                             >
                                 <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
                                 <Text style={styles.modalName}>{product.name}</Text>

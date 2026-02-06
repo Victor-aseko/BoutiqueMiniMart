@@ -10,7 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, Plus, MapPin, Trash2, Home, Briefcase } from 'lucide-react-native';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -19,6 +19,7 @@ import MyInput from '../../components/MyInput';
 import MyButton from '../../components/MyButton';
 
 const AddressScreen = ({ navigation, route }) => {
+    const insets = useSafeAreaInsets();
     const { user, updateProfile } = useAuth();
 
     useEffect(() => {
@@ -178,7 +179,10 @@ const AddressScreen = ({ navigation, route }) => {
                     style={styles.modalOverlay}
                 >
                     <View style={styles.modalContent}>
-                        <ScrollView showsVerticalScrollIndicator={false}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+                        >
                             <Text style={styles.modalTitle}>Add New Address</Text>
 
                             <MyInput

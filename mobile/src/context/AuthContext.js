@@ -35,18 +35,21 @@ export const AuthProvider = ({ children }) => {
     // Automatic sync with backend if Clerk session exists but local state doesn't
     useEffect(() => {
         if (clerkLoaded && clerkUser && !user && !authLoading) {
+            const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+            if (!email) return;
+
             console.log('Clerk session found after refresh. Syncing with backend...');
             const syncSession = async () => {
                 await loginWithGoogle({
-                    email: clerkUser.primaryEmailAddress.emailAddress,
-                    name: clerkUser.fullName,
+                    email: email,
+                    name: clerkUser.fullName || clerkUser.firstName || 'User',
                     picture: clerkUser.imageUrl,
                     clerkId: clerkUser.id
                 });
             };
             syncSession();
         }
-    }, [clerkUser, clerkLoaded, user]);
+    }, [clerkUser, clerkLoaded, !!user]);
 
     const checkLoginStatus = async () => {
         try {

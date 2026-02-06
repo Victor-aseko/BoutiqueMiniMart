@@ -251,28 +251,28 @@ const MainNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 100 : 90,
-                    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
-                    paddingTop: 10,
+                    height: Platform.OS === 'ios' ? 130 : 110,
+                    paddingBottom: Platform.OS === 'ios' ? 40 : 35,
+                    paddingTop: 12,
                     borderTopWidth: 1,
                     borderTopColor: COLORS.border,
                     backgroundColor: COLORS.white,
-                    elevation: 15,
+                    elevation: 20,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -3 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 5,
+                    shadowOffset: { width: 0, height: -4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
                 },
                 tabBarLabelStyle: {
                     fontSize: 11,
-                    fontWeight: '600',
-                    marginBottom: 5,
+                    fontWeight: '700',
+                    marginBottom: Platform.OS === 'ios' ? 0 : 5,
                 },
                 tabBarIconStyle: {
                     marginBottom: 2,
                 },
                 tabBarItemStyle: {
-                    height: Platform.OS === 'ios' ? 55 : 55,
+                    height: 65,
                 }
             }}
         >

@@ -34,7 +34,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
     const getShippingFee = (city, itemsPrice) => {
         if (!city) return 0;
-        const c = city.trim().toLowerCase();
+        const c = city.toString().trim().toLowerCase();
         let distance = 250; // default
 
         const distances = {
@@ -96,34 +96,51 @@ const OrdersScreen = ({ navigation, route }) => {
     );
 
     useEffect(() => {
-        // Check if we're just updating the address for an existing pending order
+        // 1. Handle incoming address selection (from AddressScreen)
         if (route.params?.selectedAddress && pendingOrder) {
+            console.log('Applying selected address to pending order');
             setPendingOrder(prev => ({
                 ...prev,
                 shippingAddress: route.params.selectedAddress,
-                location: route.params.selectedAddress.city
+                location: route.params.selectedAddress.city || prev.location
             }));
-            // Clear the param to prevent re-triggering
+            // IMPORTANT: Clear the selectedAddress param so we don't re-trigger this logic
             navigation.setParams({ selectedAddress: null });
             return;
         }
 
+        // 2. Handle initial order creation from ProductDetails
         if (route.params?.product) {
-            setPendingOrder({
-                items: [{
-                    product: route.params.product,
-                    qty: route.params.qty,
-                    color: route.params.color,
-                    size: route.params.size,
-                    price: route.params.price || route.params.product.price,
-                    name: route.params.product.name,
-                    image: route.params.product.image,
-                    colors: route.params.product.colors // for variant image resolution
-                }],
-                location: route.params.location,
-                shippingAddress: route.params.shippingAddress
-            });
-        } else if (route.params?.cartItems) {
+            // Only initialize if we don't have a pending order yet, OR if it's a DIFFERENT product
+            const isDifferentProduct = !pendingOrder ||
+                (pendingOrder.items[0]?.product?._id !== route.params.product._id &&
+                    pendingOrder.items[0]?.product !== route.params.product._id);
+
+            if (isDifferentProduct) {
+                console.log('Initializing pending order from product param');
+                setPendingOrder({
+                    items: [{
+                        product: route.params.product,
+                        qty: route.params.qty || 1,
+                        color: route.params.color || 'Default',
+                        size: route.params.size || 'Default',
+                        price: route.params.price || route.params.product.price,
+                        name: route.params.product.name,
+                        image: route.params.product.image,
+                        colors: route.params.product.colors || []
+                    }],
+                    location: route.params.location || 'Nairobi',
+                    shippingAddress: route.params.shippingAddress || null
+                });
+            }
+            // Clear the product param once consumed to prevent re-initialization loops
+            navigation.setParams({ product: null });
+            return;
+        }
+
+        // 3. Handle initial order creation from Cart
+        if (route.params?.cartItems) {
+            console.log('Initializing pending order from cartItems');
             setPendingOrder({
                 items: route.params.cartItems.map(item => ({
                     product: item.product?._id || item.product,
@@ -136,10 +153,12 @@ const OrdersScreen = ({ navigation, route }) => {
                     colors: item.product?.colors || []
                 })),
                 location: user?.addresses?.find(a => a.isDefault)?.city || 'Nairobi',
-                shippingAddress: user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0]
+                shippingAddress: user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null
             });
+            // Clear the cartItems param
+            navigation.setParams({ cartItems: null });
         }
-    }, [route.params]);
+    }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems]);
 
     const { clearCart } = useCart();
 

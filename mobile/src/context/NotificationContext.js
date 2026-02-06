@@ -46,9 +46,13 @@ export const NotificationProvider = ({ children }) => {
     }, [user]);
 
     const registerForPushNotificationsAsync = async () => {
-        let token;
+        if (IS_EXPO_GO) {
+            console.log('Skipping notification setup: expo-notifications is not supported in Expo Go (SDK 53+). Please use a development build/APK for push features.');
+            return null;
+        }
 
-        console.log('Registering for notifications... Environment:', IS_EXPO_GO ? 'Expo Go' : 'Standard');
+        let token;
+        console.log('Registering for notifications...');
 
         // Step 1: Request Permissions
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -64,22 +68,15 @@ export const NotificationProvider = ({ children }) => {
             return;
         }
 
-        // Step 2: Fetch Token (This part IS skipped in Expo Go to avoid crashes)
-        if (!IS_EXPO_GO) {
-            try {
-                const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
-                token = (await Notifications.getExpoPushTokenAsync({
-                    projectId: projectId,
-                })).data;
-                console.log('Push Token Generated:', token);
-            } catch (e) {
-                console.warn('Notification Token Error:', e.message);
-                if (Constants.appOwnership === 'expo') {
-                    console.warn('Note: Push notifications require a development build in Expo SDK 53+');
-                }
-            }
-        } else {
-            console.log('Token generation skipped in Expo Go');
+        // Step 2: Fetch Token
+        try {
+            const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
+            token = (await Notifications.getExpoPushTokenAsync({
+                projectId: projectId,
+            })).data;
+            console.log('Push Token Generated:', token);
+        } catch (e) {
+            console.warn('Notification Token Error:', e.message);
         }
 
         // Step 3: Send token to backend
@@ -107,24 +104,27 @@ export const NotificationProvider = ({ children }) => {
     useEffect(() => {
         if (user) {
             fetchNotifications();
-            registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
 
-            // This listener is fired whenever a notification is received while the app is foregrounded
-            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                // Refresh local notifications list when one arrives
-                fetchNotifications();
-            });
+            if (!IS_EXPO_GO) {
+                registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
 
-            // This listener is fired whenever a user taps on or interacts with a notification
-            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-                console.log('Notification tapped:', response);
-            });
+                // This listener is fired whenever a notification is received while the app is foregrounded
+                notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                    // Refresh local notifications list when one arrives
+                    fetchNotifications();
+                });
+
+                // This listener is fired whenever a user taps on or interacts with a notification
+                responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                    console.log('Notification tapped:', response);
+                });
+            }
 
             const interval = setInterval(fetchNotifications, 30000);
             return () => {
                 clearInterval(interval);
-                Notifications.removeNotificationSubscription(notificationListener.current);
-                Notifications.removeNotificationSubscription(responseListener.current);
+                if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
+                if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
             };
         } else {
             setNotifications([]);

@@ -98,8 +98,8 @@ const SupportScreen = ({ navigation }) => {
         try {
             // This now triggers an in-app Notification for Admins in the dashboard
             await api.post('/inquiries', {
-                name: user?.name || 'Unknown User',
-                email: user?.email || 'No email',
+                name: user?.name || 'Guest User',
+                email: user?.email || 'guest@boutiqueminimart.com',
                 subject: 'URGENT: Chat Support Request',
                 message: `User is asking about: "${userQuery}". Please reply immediately from the Inquiry section.`
             });

@@ -77,7 +77,22 @@ const RegisterScreen = ({ navigation, route }) => {
                     });
                     return;
                 }
-                navigation.navigate('Main', { screen: 'Profile' });
+                try {
+                    navigation.navigate('Main', { screen: 'Profile' });
+                } catch (e) {
+                    navigation.getParent()?.navigate('Main', { screen: 'Profile' });
+                }
+
+                // Safety reset for production builds
+                setTimeout(() => {
+                    const state = navigation.getState();
+                    if (state?.routes[state.index]?.name === 'Register') {
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{ name: 'Main' }]
+                        });
+                    }
+                }, 500);
             }
         } catch (error) {
             console.error('Registration Exception:', error);

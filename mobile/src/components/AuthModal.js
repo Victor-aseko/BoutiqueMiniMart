@@ -12,6 +12,7 @@ import {
     Alert
 } from 'react-native';
 import { X, Mail, Lock, User, ChevronRight, LogIn } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOAuth, useUser } from '@clerk/clerk-expo';
 import { useWarmUpBrowser } from '../hooks/useWarmUpBrowser';
 import { Image } from 'react-native';
@@ -23,6 +24,7 @@ import MyButton from './MyButton';
 import * as Linking from 'expo-linking';
 
 const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) => {
+    const insets = useSafeAreaInsets();
     const [isLogin, setIsLogin] = useState(true);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -66,11 +68,13 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
             onClose();
             // Bridging Clerk user to our backend confirmation flow
             setTimeout(() => {
+                const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+
                 navigation?.navigate('Auth', {
                     screen: 'GoogleConfirm',
                     params: {
-                        userEmail: clerkUser.primaryEmailAddress.emailAddress,
-                        userName: clerkUser.fullName,
+                        userEmail: email,
+                        userName: clerkUser.fullName || clerkUser.firstName || 'User',
                         userPicture: clerkUser.imageUrl,
                         redirectTo: redirectTo,
                         isNewUser: isNewGoogleUser
@@ -156,7 +160,10 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={[styles.form, { paddingBottom: 40 + insets.bottom }]}
+                        >
                             {error && (
                                 <View style={styles.errorContainer}>
                                     <Text style={styles.errorText}>{error}</Text>

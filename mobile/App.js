@@ -14,7 +14,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import OfflineNotice from './src/components/OfflineNotice';
 
-const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+
+if (!CLERK_PUBLISHABLE_KEY) {
+  console.warn("Clerk Publishable Key is missing! Auth features will not work correctly.");
+}
 
 
 const linking = {
@@ -41,6 +45,7 @@ export default function App() {
                 <NotificationProvider>
                   <StatusBar style="light" />
                   <OfflineNotice />
+
                   <AppNavigator linking={linking} />
                 </NotificationProvider>
               </WishlistProvider>
