@@ -136,7 +136,11 @@ const LoginScreen = ({ navigation, route }) => {
     const handleGoogleLogin = React.useCallback(async () => {
         try {
             const { createdSessionId, setActive, signUp } = await startOAuthFlow({
-                redirectUrl: Linking.createURL('/', { scheme: 'boutiqueminimart' })
+                redirectUrl: Linking.createURL('/', { scheme: 'boutiqueminimart' }),
+                additionalOAuthParameters: {
+                    prompt: 'select_account',
+                    access_type: 'offline'
+                }
             });
 
             if (signUp && signUp.status === 'complete') {
