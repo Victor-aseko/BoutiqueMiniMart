@@ -64,10 +64,11 @@ const OnboardingScreen = ({ navigation }) => {
     const { completeOnboarding } = useAuth();
     const { registerForPushNotificationsAsync } = useNotifications();
 
-    // Trigger permission request when user reaches the second screen
+    // Trigger permission request when user reached the Notification slide (index 2)
     useEffect(() => {
-        if (currentIndex === 1) {
-            registerForPushNotificationsAsync();
+        if (currentIndex === 2) {
+            // We can pre-trigger or wait for the button press
+            // registerForPushNotificationsAsync(); 
         }
     }, [currentIndex]);
 
@@ -166,8 +167,8 @@ const OnboardingScreen = ({ navigation }) => {
     };
 
     const handleAction = () => {
-        if (currentIndex === 0) {
-            slidesRef.current.scrollToIndex({ index: 1 });
+        if (currentIndex < 2) {
+            slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
         } else {
             completeOnboarding();
         }
@@ -273,19 +274,77 @@ const OnboardingScreen = ({ navigation }) => {
                 <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideUpAnim }] }]}>
                     <Text style={styles.title}>{item.title}</Text>
                     <Text style={styles.description}>{item.description}</Text>
+
+                    {/* Visual indicator for the cycling content */}
+                    <View style={styles.subPaginator}>
+                        {CYCLE_DATA.map((_, i) => (
+                            <View
+                                key={i}
+                                style={[
+                                    styles.subDot,
+                                    { backgroundColor: i === cycleIndex ? COLORS.accent : 'rgba(255,255,255,0.3)' }
+                                ]}
+                            />
+                        ))}
+                    </View>
                 </Animated.View>
             </View>
         );
     };
 
-    const DATA = [{ id: '1' }, { id: '2' }];
+    const NotificationSlide = () => {
+        return (
+            <View style={[styles.container, { width }]}>
+                <View style={[styles.imageContainer, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={styles.bellContainer}>
+                        <Animated.View style={[styles.bellRing, { transform: [{ scale: scaleAnim }] }]} />
+                        <View style={styles.bellCircle}>
+                            <Animated.View style={{ transform: [{ rotate: rotateAnim.interpolate({ inputRange: [-1, 1], outputRange: ['-20deg', '20deg'] }) }] }}>
+                                <Image
+                                    source={require('../../../assets/icons/tiktok.png')} // Fallback or use a generic notification icon if available
+                                    style={{ width: 80, height: 80, tintColor: COLORS.white }}
+                                />
+                            </Animated.View>
+                        </View>
+                    </View>
+                    <View style={styles.overlay} />
+                </View>
+                <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideUpAnim }], alignItems: 'center' }]}>
+                    <Text style={[styles.title, { textAlign: 'center' }]}>Stay Updated</Text>
+                    <Text style={[styles.description, { textAlign: 'center' }]}>
+                        Get instant alerts about Special Offers, Order Status, and New Arrivals directly on your phone.
+                    </Text>
+
+                    <TouchableOpacity
+                        style={styles.permissionBtn}
+                        onPress={async () => {
+                            const token = await registerForPushNotificationsAsync();
+                            if (token) {
+                                Alert.alert("Success", "Notifications enabled successfully!");
+                            } else {
+                                Alert.alert("Tip", "To receive updates, please ensure notifications are enabled in your phone settings.");
+                            }
+                        }}
+                    >
+                        <Text style={styles.permissionBtnText}>Enable Notifications</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        );
+    };
+
+    const DATA = [{ id: '1' }, { id: '2' }, { id: '3' }];
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
             <FlatList
                 data={DATA}
-                renderItem={({ index }) => index === 0 ? <StaticSlide /> : <CycleSlide />}
+                renderItem={({ index }) => {
+                    if (index === 0) return <StaticSlide />;
+                    if (index === 1) return <CycleSlide />;
+                    return <NotificationSlide />;
+                }}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 pagingEnabled
@@ -305,6 +364,7 @@ const OnboardingScreen = ({ navigation }) => {
                     <View style={styles.paginator}>
                         <View style={[styles.dot, { width: currentIndex === 0 ? 20 : 10, opacity: currentIndex === 0 ? 1 : 0.4 }]} />
                         <View style={[styles.dot, { width: currentIndex === 1 ? 20 : 10, opacity: currentIndex === 1 ? 1 : 0.4 }]} />
+                        <View style={[styles.dot, { width: currentIndex === 2 ? 20 : 10, opacity: currentIndex === 2 ? 1 : 0.4 }]} />
                     </View>
                 )}
 
@@ -418,6 +478,57 @@ const styles = StyleSheet.create({
     actionText: {
         color: COLORS.white,
         fontSize: 16,
+        fontWeight: 'bold',
+    },
+    subPaginator: {
+        flexDirection: 'row',
+        marginTop: 20,
+    },
+    subDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 6,
+    },
+    bellContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    bellCircle: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: COLORS.accent,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 10,
+        shadowColor: COLORS.accent,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.5,
+        shadowRadius: 15,
+        zIndex: 5,
+    },
+    bellRing: {
+        position: 'absolute',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        borderWidth: 2,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    permissionBtn: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 25,
+        marginTop: 30,
+    },
+    permissionBtnText: {
+        color: COLORS.white,
+        fontSize: 14,
         fontWeight: 'bold',
     },
 });

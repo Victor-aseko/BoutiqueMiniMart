@@ -12,8 +12,12 @@ const ProfileScreen = ({ navigation }) => {
     const { cartCount } = useCart();
 
     React.useEffect(() => {
-        if (!user) {
-            navigation.navigate('Auth');
+        if (!user && navigation.isFocused()) {
+            // Use reset to clear the internal navigation history and avoid crashes
+            navigation.getParent()?.reset({
+                index: 0,
+                routes: [{ name: 'Auth' }]
+            });
         }
     }, [user]);
 

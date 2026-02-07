@@ -36,7 +36,11 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                         }
                     });
                 } else {
-                    navigation.navigate('Main', { screen: 'MainTabs', params: { screen: 'ProfileTab' } });
+                    // Navigate to Profile stack in Drawer, and ProfileScreen within it
+                    navigation.navigate('Main', {
+                        screen: 'Profile',
+                        params: { screen: 'ProfileScreen' }
+                    });
                 }
             } else {
                 Alert.alert('Error', 'Failed to complete Google Sign-In with our server.');
@@ -48,13 +52,23 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
     };
 
     const handleCancel = () => {
-        navigation.goBack();
+        if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else {
+            navigation.navigate('Login');
+        }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => {
+                    if (navigation.canGoBack()) {
+                        navigation.goBack();
+                    } else {
+                        navigation.navigate('Login');
+                    }
+                }} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{isNewUser ? 'Create Account' : 'Google Sign-In'}</Text>

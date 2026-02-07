@@ -22,7 +22,7 @@ if (!IS_EXPO_GO) {
 }
 
 export const NotificationProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, isLoggingOut } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -102,6 +102,13 @@ export const NotificationProvider = ({ children }) => {
     };
 
     useEffect(() => {
+        // If logged out or logging out, clear and stop
+        if (!user || isLoggingOut) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
+
         if (user) {
             fetchNotifications();
 
@@ -126,11 +133,8 @@ export const NotificationProvider = ({ children }) => {
                 if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
                 if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
             };
-        } else {
-            setNotifications([]);
-            setUnreadCount(0);
         }
-    }, [user, fetchNotifications]);
+    }, [user, isLoggingOut, fetchNotifications]);
 
     const markAsRead = async (id) => {
         try {

@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
     const [authLoading, setAuthLoading] = useState(false);
     const [error, setError] = useState(null);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     useEffect(() => {
         checkLoginStatus();
@@ -34,22 +35,31 @@ export const AuthProvider = ({ children }) => {
 
     // Automatic sync with backend if Clerk session exists but local state doesn't
     useEffect(() => {
-        if (clerkLoaded && clerkUser && !user && !authLoading) {
+        // Only auto-sync if:
+        // 1. Clerk is loaded and has a user 
+        // 2. We don't have an app user yet
+        // 3. We are NOT currently logging out 
+        // 4. We are NOT currently processing an auth action
+        if (clerkLoaded && clerkUser && !user && !authLoading && !isLoggingOut) {
             const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
             if (!email) return;
 
-            console.log('Clerk session found after refresh. Syncing with backend...');
+            console.log('Clerk session found. Syncing with backend...');
             const syncSession = async () => {
-                await loginWithGoogle({
-                    email: email,
-                    name: clerkUser.fullName || clerkUser.firstName || 'User',
-                    picture: clerkUser.imageUrl,
-                    clerkId: clerkUser.id
-                });
+                try {
+                    await loginWithGoogle({
+                        email: email,
+                        name: clerkUser.fullName || clerkUser.firstName || 'User',
+                        picture: clerkUser.imageUrl,
+                        clerkId: clerkUser.id
+                    });
+                } catch (e) {
+                    console.log('Auto-sync failed', e);
+                }
             };
             syncSession();
         }
-    }, [clerkUser, clerkLoaded, !!user]);
+    }, [clerkUser, clerkLoaded, !!user, isLoggingOut, authLoading]);
 
     const checkLoginStatus = async () => {
         try {
@@ -138,16 +148,34 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        setError(null);
+
         try {
-            // Also sign out of Clerk to prevent "hanging" on next login
-            if (clerkSignOut) {
-                await clerkSignOut();
-            }
+            // 1. Clear local state and Storage immediately to avoid UI flickering/crashes
             await AsyncStorage.removeItem('user');
             delete api.defaults.headers.common['Authorization'];
             setUser(null);
+
+            // 2. Give UI a moment to unmount protected components before Clerk state changes
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // 3. Sign out of Clerk
+            if (clerkSignOut) {
+                try {
+                    await clerkSignOut();
+                } catch (ce) {
+                    console.log('Clerk signout error (ignoring):', ce);
+                }
+            }
         } catch (e) {
             console.log('Error logging out', e);
+        } finally {
+            // Keep the flag for a bit longer to ensure Clerk's state update is fully processed
+            setTimeout(() => {
+                setIsLoggingOut(false);
+            }, 1000);
         }
     };
 

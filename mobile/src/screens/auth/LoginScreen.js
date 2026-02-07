@@ -8,7 +8,8 @@ import {
     Platform,
     ScrollView,
     Image,
-    Alert
+    Alert,
+    ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
@@ -163,22 +164,30 @@ const LoginScreen = ({ navigation, route }) => {
     const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
 
     useEffect(() => {
-        if (clerkLoaded && clerkUser) {
+        // Only run this if the screen is focused to avoid loops when other screens are on top
+        const isFocused = navigation.isFocused();
+
+        if (clerkLoaded && clerkUser && isFocused && !authLoading) {
             console.log('Clerk User detected on LoginScreen:', clerkUser.id);
-            const syncWithBackend = async () => {
+
+            // Short delay to ensure session activation is settled
+            const timer = setTimeout(() => {
                 const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
 
-                navigation.navigate('GoogleConfirm', {
-                    userEmail: email,
-                    userName: clerkUser.fullName || clerkUser.firstName || 'User',
-                    userPicture: clerkUser.imageUrl,
-                    redirectTo: route?.params?.redirectTo,
-                    isNewUser: isNewGoogleUser
-                });
-            };
-            syncWithBackend();
+                if (email) {
+                    navigation.navigate('GoogleConfirm', {
+                        userEmail: email,
+                        userName: clerkUser.fullName || clerkUser.firstName || 'User',
+                        userPicture: clerkUser.imageUrl,
+                        redirectTo: route?.params?.redirectTo,
+                        isNewUser: isNewGoogleUser
+                    });
+                }
+            }, 500);
+
+            return () => clearTimeout(timer);
         }
-    }, [clerkUser, clerkLoaded, isNewGoogleUser]);
+    }, [clerkUser, clerkLoaded, isNewGoogleUser, authLoading]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -189,7 +198,13 @@ const LoginScreen = ({ navigation, route }) => {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => navigation.goBack()}
+                        onPress={() => {
+                            if (navigation.canGoBack()) {
+                                navigation.goBack();
+                            } else {
+                                navigation.navigate('Main');
+                            }
+                        }}
                     >
                         <ChevronLeft size={28} color={COLORS.primary} />
                     </TouchableOpacity>

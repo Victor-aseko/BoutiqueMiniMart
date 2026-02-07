@@ -411,22 +411,24 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
+        paddingLeft: 15, // Move to left
+        paddingRight: 80, // Keep it short
+        paddingVertical: 12,
         backgroundColor: COLORS.white,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
     },
     searchBar: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.background,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        height: 45,
+        backgroundColor: COLORS.white,
+        borderRadius: 22,
+        paddingHorizontal: 15,
+        height: 44,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.08)',
     },
     searchIcon: {
-        marginRight: 10,
+        marginRight: 8,
     },
     searchText: {
         flex: 1,

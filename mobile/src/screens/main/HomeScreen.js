@@ -625,25 +625,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     searchBarWrapper: {
-        paddingHorizontal: 20,
-        paddingBottom: 15,
+        paddingLeft: 15, // Move to left
+        paddingRight: 80, // Keep it short
+        paddingBottom: 10,
         backgroundColor: COLORS.white,
     },
     searchRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 5,
+        marginTop: 2,
     },
     searchBarButton: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.background,
-        borderRadius: 12,
-        paddingHorizontal: 15,
-        height: 50,
+        backgroundColor: COLORS.white, // Changed to white
+        borderRadius: 25,
+        paddingHorizontal: 20,
+        height: 46,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: 'rgba(0,0,0,0.08)', // Slightly more visible border
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
     },
     searchIcon: {
         marginRight: 10,

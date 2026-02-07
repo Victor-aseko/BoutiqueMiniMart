@@ -68,25 +68,28 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
     const { user: clerkUser, isLoaded } = useUser();
 
     useEffect(() => {
-        if (isLoaded && clerkUser && visible) {
-            onClose();
+        if (isLoaded && clerkUser && visible && !authLoading) {
             // Bridging Clerk user to our backend confirmation flow
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
 
-                navigation?.navigate('Auth', {
-                    screen: 'GoogleConfirm',
-                    params: {
-                        userEmail: email,
-                        userName: clerkUser.fullName || clerkUser.firstName || 'User',
-                        userPicture: clerkUser.imageUrl,
-                        redirectTo: redirectTo,
-                        isNewUser: isNewGoogleUser
-                    }
-                });
-            }, 600);
+                if (email) {
+                    onClose();
+                    navigation?.navigate('Auth', {
+                        screen: 'GoogleConfirm',
+                        params: {
+                            userEmail: email,
+                            userName: clerkUser.fullName || clerkUser.firstName || 'User',
+                            userPicture: clerkUser.imageUrl,
+                            redirectTo: redirectTo,
+                            isNewUser: isNewGoogleUser
+                        }
+                    });
+                }
+            }, 500);
+            return () => clearTimeout(timer);
         }
-    }, [clerkUser, isLoaded, visible, isNewGoogleUser]);
+    }, [clerkUser, isLoaded, visible, isNewGoogleUser, authLoading]);
 
     useEffect(() => {
         if (visible) {

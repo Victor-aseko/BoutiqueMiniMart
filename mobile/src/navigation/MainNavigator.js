@@ -251,28 +251,34 @@ const MainNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 130 : 110,
-                    paddingBottom: Platform.OS === 'ios' ? 40 : 35,
-                    paddingTop: 12,
-                    borderTopWidth: 1,
-                    borderTopColor: COLORS.border,
+                    height: Platform.OS === 'ios' ? 85 : 75,
+                    paddingBottom: Platform.OS === 'ios' ? 25 : 12,
+                    paddingTop: 8,
+                    paddingHorizontal: 25, // Added padding to pull icons together
+                    borderTopWidth: 0,
                     backgroundColor: COLORS.white,
-                    elevation: 20,
+                    elevation: 25,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -4 },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 8,
+                    shadowOffset: { width: 0, height: -6 },
+                    shadowOpacity: 0.12,
+                    shadowRadius: 10,
+                    position: 'absolute',
+                    bottom: 15,
+                    left: 20,
+                    right: 20,
+                    borderWidth: 0, // Removed border
                 },
                 tabBarLabelStyle: {
-                    fontSize: 11,
-                    fontWeight: '700',
-                    marginBottom: Platform.OS === 'ios' ? 0 : 5,
+                    fontSize: 10,
+                    fontWeight: '800',
+                    marginBottom: Platform.OS === 'ios' ? 0 : 4,
                 },
                 tabBarIconStyle: {
-                    marginBottom: 2,
+                    marginBottom: 0,
                 },
                 tabBarItemStyle: {
-                    height: 65,
+                    height: 50,
+                    padding: 0,
                 }
             }}
         >

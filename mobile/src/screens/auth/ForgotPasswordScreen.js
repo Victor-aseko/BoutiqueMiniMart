@@ -77,7 +77,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => {
+                    if (navigation.canGoBack()) {
+                        navigation.goBack();
+                    } else {
+                        navigation.navigate('Login');
+                    }
+                }} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
             </View>

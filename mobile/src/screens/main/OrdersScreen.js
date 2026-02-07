@@ -30,6 +30,7 @@ const OrdersScreen = ({ navigation, route }) => {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('Cash (Pay on Delivery)');
     const [shippingPrice, setShippingPrice] = useState(0);
+    const [isFromCart, setIsFromCart] = useState(false);
     const { unreadCount } = useNotifications();
 
     const getShippingFee = (city, itemsPrice) => {
@@ -134,6 +135,7 @@ const OrdersScreen = ({ navigation, route }) => {
                 });
             }
             // Clear the product param once consumed to prevent re-initialization loops
+            setIsFromCart(false);
             navigation.setParams({ product: null });
             return;
         }
@@ -156,6 +158,7 @@ const OrdersScreen = ({ navigation, route }) => {
                 shippingAddress: user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null
             });
             // Clear the cartItems param
+            setIsFromCart(true);
             navigation.setParams({ cartItems: null });
         }
     }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems]);
@@ -220,9 +223,10 @@ const OrdersScreen = ({ navigation, route }) => {
             }
 
             // Clear cart if this order came from the cart
-            if (route.params?.cartItems) {
+            if (isFromCart) {
                 console.log('Clearing cart after successful order');
                 clearCart();
+                setIsFromCart(false);
             }
 
             Alert.alert('Success', 'Order placed successfully!', [
@@ -246,6 +250,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
     const cancelPendingOrder = () => {
         setPendingOrder(null);
+        setIsFromCart(false);
         navigation.setParams({ product: null, cartItems: null });
     };
 

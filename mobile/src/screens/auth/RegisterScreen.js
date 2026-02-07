@@ -109,7 +109,13 @@ const RegisterScreen = ({ navigation, route }) => {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <TouchableOpacity
                         style={styles.backButton}
-                        onPress={() => navigation.goBack()}
+                        onPress={() => {
+                            if (navigation.canGoBack()) {
+                                navigation.goBack();
+                            } else {
+                                navigation.navigate('Main');
+                            }
+                        }}
                     >
                         <ChevronLeft size={28} color={COLORS.primary} />
                     </TouchableOpacity>
