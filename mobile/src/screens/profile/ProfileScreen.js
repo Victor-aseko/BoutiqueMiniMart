@@ -12,7 +12,21 @@ const ProfileScreen = ({ navigation }) => {
     const { cartCount } = useCart();
 
     // Navigation is handled by AppNavigator switching stacks based on user state
-    if (!user) return null;
+    if (!user) {
+        return (
+            <SafeAreaView style={[styles.container, styles.centered]}>
+                <UserIcon size={80} color={COLORS.border} />
+                <Text style={styles.emptyTitle}>Your Profile</Text>
+                <Text style={styles.emptySubtitle}>Log in to view your profile, manage orders, and save addresses.</Text>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Auth')}
+                    style={styles.loginCTA}
+                >
+                    <Text style={styles.loginCTAText}>Login / Register</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
 
     const MenuLink = ({ icon: Icon, label, onPress, badge }) => (
         <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -113,6 +127,40 @@ const ProfileScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
+    centered: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 30,
+    },
+    emptyTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginTop: 20,
+    },
+    emptySubtitle: {
+        fontSize: 16,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 30,
+    },
+    loginCTA: {
+        backgroundColor: COLORS.accent,
+        paddingHorizontal: 40,
+        paddingVertical: 15,
+        borderRadius: 30,
+        elevation: 4,
+        shadowColor: COLORS.accent,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    loginCTAText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',

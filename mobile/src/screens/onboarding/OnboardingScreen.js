@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { ArrowRight, ChevronRight } from 'lucide-react-native';
+import { ArrowRight, ChevronRight, Bell } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -49,6 +49,10 @@ const OnboardingScreen = ({ navigation }) => {
     const floatAnim = useRef(new Animated.Value(0)).current;
     const rotateAnim = useRef(new Animated.Value(0)).current;
 
+    // Notification animations
+    const bellAnim = useRef(new Animated.Value(0)).current;
+    const pulseAnim = useRef(new Animated.Value(0)).current;
+
     const neonColors = [
         '#8B4513', // Brown
         '#007AFF', // Blue
@@ -76,6 +80,37 @@ const OnboardingScreen = ({ navigation }) => {
     useEffect(() => {
         animateContent();
     }, [currentIndex, cycleIndex]);
+
+    // Notification Icon Animation (Index 2)
+    useEffect(() => {
+        if (currentIndex === 2) {
+            // Bell ringing loop
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(bellAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+                    Animated.timing(bellAnim, { toValue: -1, duration: 150, useNativeDriver: true }),
+                    Animated.timing(bellAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+                    Animated.timing(bellAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+                    Animated.delay(1200)
+                ])
+            ).start();
+
+            // Pulse loop
+            pulseAnim.setValue(0);
+            Animated.loop(
+                Animated.timing(pulseAnim, {
+                    toValue: 1,
+                    duration: 2000,
+                    easing: Easing.out(Easing.ease),
+                    useNativeDriver: true
+                })
+            ).start();
+        } else {
+            // Reset
+            bellAnim.setValue(0);
+            pulseAnim.setValue(0);
+        }
+    }, [currentIndex]);
 
     // Automatic cycling for the second screen
     useEffect(() => {
@@ -293,19 +328,40 @@ const OnboardingScreen = ({ navigation }) => {
     };
 
     const NotificationSlide = () => {
+        const bellRotation = bellAnim.interpolate({
+            inputRange: [-1, 1],
+            outputRange: ['-15deg', '15deg']
+        });
+
+        const pulseScale = pulseAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.8, 2.5]
+        });
+
+        const pulseOpacity = pulseAnim.interpolate({
+            inputRange: [0, 0.5, 1],
+            outputRange: [0.6, 0.3, 0]
+        });
+
         return (
             <View style={[styles.container, { width }]}>
-                <View style={[styles.imageContainer, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
-                    <View style={styles.bellContainer}>
-                        <Animated.View style={[styles.bellRing, { transform: [{ scale: scaleAnim }] }]} />
-                        <View style={styles.bellCircle}>
-                            <Animated.View style={{ transform: [{ rotate: rotateAnim.interpolate({ inputRange: [-1, 1], outputRange: ['-20deg', '20deg'] }) }] }}>
-                                <Image
-                                    source={require('../../../assets/icons/tiktok.png')} // Fallback or use a generic notification icon if available
-                                    style={{ width: 80, height: 80, tintColor: COLORS.white }}
-                                />
-                            </Animated.View>
-                        </View>
+                <View style={[styles.imageContainer, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
+
+                    {/* Pulsing Rings */}
+                    <Animated.View style={[
+                        styles.bellRing,
+                        {
+                            transform: [{ scale: pulseScale }],
+                            opacity: pulseOpacity,
+                            borderColor: COLORS.accent,
+                            borderWidth: 2
+                        }
+                    ]} />
+
+                    <View style={styles.bellCircle}>
+                        <Animated.View style={{ transform: [{ rotate: bellRotation }] }}>
+                            <Bell size={80} color={COLORS.white} fill={COLORS.white} />
+                        </Animated.View>
                     </View>
                     <View style={styles.overlay} />
                 </View>

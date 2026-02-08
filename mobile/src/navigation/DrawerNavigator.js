@@ -34,17 +34,33 @@ const CustomDrawerContent = (props) => {
                         <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : '?'}</Text>
                     </View>
                     <View style={styles.headerInfo}>
-                        <Text style={styles.userName}>{user?.name}</Text>
-                        <Text style={styles.userEmail}>{user?.email}</Text>
+                        <Text style={styles.userName}>{user?.name || 'Guest'}</Text>
+                        <Text style={styles.userEmail}>{user?.email || 'Login to sync your data'}</Text>
                     </View>
                 </View>
                 <DrawerItemList {...props} />
-                <DrawerItem
-                    label="Logout"
-                    onPress={logout}
-                    icon={({ color, size }) => <LogOut color={COLORS.error} size={size} />}
-                    labelStyle={{ color: COLORS.error }}
-                />
+                {user ? (
+                    <DrawerItem
+                        label="Logout"
+                        onPress={async () => {
+                            try {
+                                await logout();
+                                props.navigation.navigate('MainTabs');
+                            } catch (e) {
+                                console.log('Logout navigation error', e);
+                            }
+                        }}
+                        icon={({ color, size }) => <LogOut color={COLORS.error} size={size} />}
+                        labelStyle={{ color: COLORS.error }}
+                    />
+                ) : (
+                    <DrawerItem
+                        label="Login / Register"
+                        onPress={() => props.navigation.navigate('Auth')}
+                        icon={({ color, size }) => <User color={COLORS.accent} size={size} />}
+                        labelStyle={{ color: COLORS.accent }}
+                    />
+                )}
             </DrawerContentScrollView>
         </View>
     );

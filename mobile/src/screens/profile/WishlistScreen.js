@@ -23,7 +23,7 @@ const WishlistScreen = ({ navigation }) => {
         const success = await addToCart(product, qty, color, size);
         if (success) {
             Alert.alert('Added to cart', 'Item added to cart successfully.', [
-                { text: 'View Cart', onPress: () => { try { navigation.getParent()?.getParent()?.navigate('Cart'); } catch (e) { navigation.navigate('Cart'); } } },
+                { text: 'View Cart', onPress: () => navigation.navigate('Cart') },
                 { text: 'OK' }
             ]);
         }

@@ -83,12 +83,7 @@ const OrdersScreen = ({ navigation, route }) => {
         });
     };
 
-    useEffect(() => {
-        if (!user && navigation.isFocused()) {
-            navigation.navigate('Auth');
-            return;
-        }
-    }, [user, navigation]);
+    // Simplified: No auto-redirect. The UI will handle guest state by showing a login placeholder if no user is found.
 
     useFocusEffect(
         useCallback(() => {
@@ -345,7 +340,19 @@ const OrdersScreen = ({ navigation, route }) => {
                 )}
             </View>
 
-            {pendingOrder ? (
+            {!user && !pendingOrder ? (
+                <View style={styles.guestContainer}>
+                    <Package size={80} color={COLORS.border} />
+                    <Text style={styles.guestTitle}>Your Orders</Text>
+                    <Text style={styles.guestSubtitle}>Please login to view your order history and track your deliveries.</Text>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('Auth')}
+                        style={styles.guestLoginBtn}
+                    >
+                        <Text style={styles.guestLoginText}>Login / Register</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : pendingOrder ? (
                 <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
                     <View style={styles.pendingOrderContainer}>
                         <View style={styles.pendingHeader}>
@@ -746,7 +753,43 @@ const styles = StyleSheet.create({
         color: COLORS.accent,
         fontWeight: 'bold',
         fontSize: 13,
-    }
+    },
+    guestContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 30,
+        backgroundColor: COLORS.background,
+    },
+    guestTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginTop: 20,
+    },
+    guestSubtitle: {
+        fontSize: 16,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 30,
+    },
+    guestLoginBtn: {
+        backgroundColor: COLORS.accent,
+        paddingHorizontal: 40,
+        paddingVertical: 15,
+        borderRadius: 30,
+        elevation: 4,
+        shadowColor: COLORS.accent,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    guestLoginText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
 
 export default OrdersScreen;
