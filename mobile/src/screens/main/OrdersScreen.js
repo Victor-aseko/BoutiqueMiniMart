@@ -84,11 +84,11 @@ const OrdersScreen = ({ navigation, route }) => {
     };
 
     useEffect(() => {
-        if (!user) {
+        if (!user && navigation.isFocused()) {
             navigation.navigate('Auth');
             return;
         }
-    }, [user]);
+    }, [user, navigation]);
 
     useFocusEffect(
         useCallback(() => {
@@ -346,7 +346,7 @@ const OrdersScreen = ({ navigation, route }) => {
             </View>
 
             {pendingOrder ? (
-                <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
                     <View style={styles.pendingOrderContainer}>
                         <View style={styles.pendingHeader}>
                             <Text style={styles.pendingTitle}>Review Items</Text>
@@ -501,6 +501,7 @@ const styles = StyleSheet.create({
     },
     list: {
         padding: 15,
+        paddingBottom: 110,
     },
     orderCard: {
         backgroundColor: COLORS.white,

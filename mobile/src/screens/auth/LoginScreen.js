@@ -21,6 +21,7 @@ import { useOAuth, useUser } from '@clerk/clerk-expo';
 import { useWarmUpBrowser } from '../../hooks/useWarmUpBrowser';
 import * as WebBrowser from 'expo-web-browser';
 
+import { useIsFocused } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -29,6 +30,8 @@ const LoginScreen = ({ navigation, route }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isNewGoogleUser, setIsNewGoogleUser] = useState(false);
+    const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { login, authLoading, error, setError, clearError } = useAuth();
 
     useEffect(() => {
@@ -135,6 +138,8 @@ const LoginScreen = ({ navigation, route }) => {
     useWarmUpBrowser();
 
     const handleGoogleLogin = React.useCallback(async () => {
+        setIsGoogleLoading(true);
+        setIsProcessingGoogle(true);
         try {
             const { createdSessionId, setActive, signUp } = await startOAuthFlow({
                 redirectUrl: Linking.createURL('/', { scheme: 'boutiqueminimart' }),
@@ -153,41 +158,54 @@ const LoginScreen = ({ navigation, route }) => {
             if (createdSessionId) {
                 await setActive({ session: createdSessionId });
                 console.log('Clerk Session Activated on LoginScreen');
+            } else {
+                setIsGoogleLoading(false);
+                setIsProcessingGoogle(false);
             }
         } catch (err) {
             console.error('OAuth error', err);
+            setIsGoogleLoading(false);
+            setIsProcessingGoogle(false);
             Alert.alert('Google Sign-In Error', 'The Google login process was cancelled or failed.');
         }
     }, [startOAuthFlow]);
 
-    // Effect to handle Clerk session activation and backend sync
+    // Hook to check if screen is focused
+    const isFocused = useIsFocused();
     const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
 
     useEffect(() => {
-        // Only run this if the screen is focused to avoid loops when other screens are on top
-        const isFocused = navigation.isFocused();
-
         if (clerkLoaded && clerkUser && isFocused && !authLoading) {
-            console.log('Clerk User detected on LoginScreen:', clerkUser.id);
+            console.log('LoginScreen: User detected, transitioning to GoogleConfirm');
 
-            // Short delay to ensure session activation is settled
-            const timer = setTimeout(() => {
-                const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+            const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
 
-                if (email) {
-                    navigation.navigate('GoogleConfirm', {
-                        userEmail: email,
-                        userName: clerkUser.fullName || clerkUser.firstName || 'User',
-                        userPicture: clerkUser.imageUrl,
-                        redirectTo: route?.params?.redirectTo,
-                        isNewUser: isNewGoogleUser
-                    });
-                }
-            }, 500);
-
-            return () => clearTimeout(timer);
+            if (email) {
+                // Determine if it's a new user based on Clerk metadata if possible, 
+                // but use isNewGoogleUser state as a primary indicator from the flow
+                navigation.navigate('GoogleConfirm', {
+                    userEmail: email,
+                    userName: clerkUser.fullName || clerkUser.firstName || 'User',
+                    userPicture: clerkUser.imageUrl,
+                    redirectTo: route?.params?.redirectTo,
+                    isNewUser: isNewGoogleUser
+                });
+            }
         }
-    }, [clerkUser, clerkLoaded, isNewGoogleUser, authLoading]);
+    }, [clerkUser, clerkLoaded, isNewGoogleUser, authLoading, isFocused]);
+
+    const shouldShowLoader = !clerkLoaded;
+
+    if (shouldShowLoader) {
+        return (
+            <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={COLORS.accent} />
+                <Text style={{ marginTop: 20, color: COLORS.primary, fontWeight: '600' }}>
+                    Loading...
+                </Text>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -260,12 +278,19 @@ const LoginScreen = ({ navigation, route }) => {
                         </View>
 
                         <TouchableOpacity
-                            style={styles.googleBtn}
+                            style={[styles.googleBtn, isGoogleLoading && { opacity: 0.8 }]}
                             onPress={handleGoogleLogin}
                             activeOpacity={0.8}
+                            disabled={isGoogleLoading}
                         >
-                            <Image source={require('../../../assets/icons/google.png')} style={styles.googleIcon} />
-                            <Text style={styles.googleBtnText}>Continue with Google</Text>
+                            {isGoogleLoading ? (
+                                <ActivityIndicator color={COLORS.primary} size="small" />
+                            ) : (
+                                <>
+                                    <Image source={require('../../../assets/icons/google.png')} style={styles.googleIcon} />
+                                    <Text style={styles.googleBtnText}>Continue with Google</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
 
                         <View style={styles.footer}>

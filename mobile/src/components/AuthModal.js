@@ -31,14 +31,16 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isNewGoogleUser, setIsNewGoogleUser] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-    const { login, register, authLoading, error, setError, clearError } = useAuth();
+    const { login, register, authLoading, error, setError, clearError, user } = useAuth();
 
     // Clerk OAuth setup
     const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
     useWarmUpBrowser();
 
     const handleGoogleLogin = React.useCallback(async () => {
+        setIsGoogleLoading(true);
         try {
             const { createdSessionId, setActive, signUp } = await startOAuthFlow({
                 redirectUrl: Linking.createURL('/', { scheme: 'boutiqueminimart' }),
@@ -57,12 +59,59 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
             if (createdSessionId) {
                 await setActive({ session: createdSessionId });
                 console.log('Clerk Session Activated');
+            } else {
+                setIsGoogleLoading(false);
             }
         } catch (err) {
             console.error('OAuth error', err);
+            setIsGoogleLoading(false);
             setError('Google login failed or was cancelled.');
         }
     }, [startOAuthFlow]);
+
+    const performRedirect = React.useCallback(() => {
+        if (redirectTo) {
+            const { tab, screen, params } = redirectTo;
+            console.log('AuthModal: Performing redirect to', tab, screen);
+
+            // For cross-stack navigation from a nested screen, 
+            // navigate is often more reliable than reset unless we're at the root.
+            try {
+                // First try direct navigation which handles most drawer/tab switches
+                navigation.navigate(tab || 'MainTabs', {
+                    screen: screen || 'HomeTab',
+                    params: params
+                });
+            } catch (err) {
+                console.error('Redirect navigate error:', err);
+                // Fallback: Try to reset from parent if possible
+                try {
+                    const parentNav = navigation.getParent() || navigation;
+                    parentNav.reset({
+                        index: 0,
+                        routes: [{
+                            name: 'Main',
+                            state: {
+                                routes: [{
+                                    name: tab || 'MainTabs',
+                                    state: {
+                                        routes: [{
+                                            name: screen || 'HomeTab',
+                                            params: params
+                                        }]
+                                    }
+                                }]
+                            }
+                        }]
+                    });
+                } catch (resetErr) {
+                    console.error('Redirect reset error:', resetErr);
+                }
+            }
+        } else if (onAuthSuccess) {
+            onAuthSuccess();
+        }
+    }, [redirectTo, onAuthSuccess, navigation]);
 
     // Track Clerk user state to bridge to our backend
     const { user: clerkUser, isLoaded } = useUser();
@@ -74,22 +123,39 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
                 const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
 
                 if (email) {
-                    onClose();
-                    navigation?.navigate('Auth', {
-                        screen: 'GoogleConfirm',
-                        params: {
-                            userEmail: email,
-                            userName: clerkUser.fullName || clerkUser.firstName || 'User',
-                            userPicture: clerkUser.imageUrl,
-                            redirectTo: redirectTo,
-                            isNewUser: isNewGoogleUser
-                        }
-                    });
+                    // If user is already synced/logged in, just close and proceed
+                    if (isLoaded && clerkUser && user && user.email === email) {
+                        onClose();
+                        // Also trigger redirection if needed
+                        setTimeout(() => {
+                            performRedirect();
+                        }, 100);
+                        return;
+                    }
+
+                    // Delay navigation slightly to let modal closure state settle
+                    const navTimer = setTimeout(() => {
+                        console.log('AuthModal: Direct landing on GoogleConfirm');
+                        onClose();
+
+                        // Navigate directly to the screen within the stack
+                        navigation?.navigate('Auth', {
+                            screen: 'GoogleConfirm',
+                            params: {
+                                userEmail: email,
+                                userName: clerkUser.fullName || clerkUser.firstName || 'User',
+                                userPicture: clerkUser.imageUrl,
+                                redirectTo: redirectTo,
+                                isNewUser: isNewGoogleUser
+                            }
+                        });
+                    }, 50);
+                    return () => clearTimeout(navTimer);
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [clerkUser, isLoaded, visible, isNewGoogleUser, authLoading]);
+    }, [clerkUser, isLoaded, visible, isNewGoogleUser, authLoading, user, performRedirect, redirectTo]);
 
     useEffect(() => {
         if (visible) {
@@ -114,7 +180,7 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
                     onClose();
                     // Delay success callback to ensure modal is dismissed and state is stable
                     setTimeout(() => {
-                        onAuthSuccess();
+                        performRedirect();
                     }, 300);
                 }
             } else {
@@ -134,7 +200,7 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
                 if (success) {
                     onClose();
                     setTimeout(() => {
-                        onAuthSuccess();
+                        performRedirect();
                     }, 300);
                 }
             }
@@ -233,12 +299,19 @@ const AuthModal = ({ visible, onClose, onAuthSuccess, navigation, redirectTo }) 
                                     </View>
 
                                     <TouchableOpacity
-                                        style={styles.googleBtn}
+                                        style={[styles.googleBtn, isGoogleLoading && { opacity: 0.8 }]}
                                         onPress={handleGoogleLogin}
                                         activeOpacity={0.8}
+                                        disabled={isGoogleLoading}
                                     >
-                                        <Image source={require('../../assets/icons/google.png')} style={styles.googleIcon} />
-                                        <Text style={styles.googleBtnText}>Continue with Google</Text>
+                                        {isGoogleLoading ? (
+                                            <ActivityIndicator color={COLORS.primary} size="small" />
+                                        ) : (
+                                            <>
+                                                <Image source={require('../../assets/icons/google.png')} style={styles.googleIcon} />
+                                                <Text style={styles.googleBtnText}>Continue with Google</Text>
+                                            </>
+                                        )}
                                     </TouchableOpacity>
                                 </>
                             )}

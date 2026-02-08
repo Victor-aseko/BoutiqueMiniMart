@@ -34,6 +34,8 @@ const linking = {
   },
 };
 
+import { COLORS } from './src/theme/theme';
+
 export default function App() {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
@@ -43,7 +45,7 @@ export default function App() {
             <RecentlyViewedProvider>
               <WishlistProvider>
                 <NotificationProvider>
-                  <StatusBar style="light" />
+                  <StatusBar style="light" backgroundColor={COLORS.accent} />
                   <OfflineNotice />
 
                   <AppNavigator linking={linking} />

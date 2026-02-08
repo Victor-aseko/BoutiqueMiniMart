@@ -40,12 +40,14 @@ export const AuthProvider = ({ children }) => {
         // 2. We don't have an app user yet
         // 3. We are NOT currently logging out 
         // 4. We are NOT currently processing an auth action
-        if (clerkLoaded && clerkUser && !user && !authLoading && !isLoggingOut) {
-            const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
-            if (!email) return;
+        const checkAutoSync = async () => {
+            const manuallyLoggedOut = await AsyncStorage.getItem('manuallyLoggedOut');
 
-            console.log('Clerk session found. Syncing with backend...');
-            const syncSession = async () => {
+            if (clerkLoaded && clerkUser && !user && !authLoading && !isLoggingOut && manuallyLoggedOut !== 'true') {
+                const email = clerkUser.primaryEmailAddress?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+                if (!email) return;
+
+                console.log('Clerk session found. Syncing with backend...');
                 try {
                     await loginWithGoogle({
                         email: email,
@@ -56,9 +58,10 @@ export const AuthProvider = ({ children }) => {
                 } catch (e) {
                     console.log('Auto-sync failed', e);
                 }
-            };
-            syncSession();
-        }
+            }
+        };
+
+        checkAutoSync();
     }, [clerkUser, clerkLoaded, !!user, isLoggingOut, authLoading]);
 
     const checkLoginStatus = async () => {
@@ -96,6 +99,7 @@ export const AuthProvider = ({ children }) => {
             api.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
+            await AsyncStorage.setItem('manuallyLoggedOut', 'false');
             return true;
         } catch (err) {
             console.error('Login error detail:', err.response?.data || err.message);
@@ -117,6 +121,7 @@ export const AuthProvider = ({ children }) => {
             api.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
+            await AsyncStorage.setItem('manuallyLoggedOut', 'false');
             return true;
         } catch (err) {
             console.error('Registration error detail:', err.response?.data || err.message);
@@ -128,6 +133,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const loginWithGoogle = async (userDataFromGoogle) => {
+        if (user && user.email === userDataFromGoogle.email) return true;
+        if (authLoading) return false;
+
         setAuthLoading(true);
         setError(null);
         try {
@@ -137,6 +145,7 @@ export const AuthProvider = ({ children }) => {
             api.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
             setUser(userData);
             await AsyncStorage.setItem('user', JSON.stringify(userData));
+            await AsyncStorage.setItem('manuallyLoggedOut', 'false');
             return true;
         } catch (err) {
             console.error('Google login error detail:', err.response?.data || err.message);
@@ -153,26 +162,34 @@ export const AuthProvider = ({ children }) => {
         setError(null);
 
         try {
-            // 1. Clear local state and Storage immediately to avoid UI flickering/crashes
+            // 1. Mark as manually logged out immediately to block auto-sync
+            await AsyncStorage.setItem('manuallyLoggedOut', 'true');
+
+            // 2. Clear local storage 
             await AsyncStorage.removeItem('user');
             delete api.defaults.headers.common['Authorization'];
-            setUser(null);
 
-            // 2. Give UI a moment to unmount protected components before Clerk state changes
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            // 3. Sign out of Clerk
+            // 3. Sign out of Clerk FIRST before changing local user state
+            // This prevents the auto-sync effect from seeing (clerkUser && !user)
             if (clerkSignOut) {
                 try {
                     await clerkSignOut();
                 } catch (ce) {
-                    console.log('Clerk signout error (ignoring):', ce);
+                    console.log('Clerk signout detail:', ce);
                 }
             }
+
+            // 4. Give Clerk a moment to broadcast state change
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // 5. Finally clear local app user state
+            setUser(null);
+
         } catch (e) {
-            console.log('Error logging out', e);
+            console.log('Error during logout sequence', e);
+            // Fallback: ensure user is null even if Clerk signout fails
+            setUser(null);
         } finally {
-            // Keep the flag for a bit longer to ensure Clerk's state update is fully processed
             setTimeout(() => {
                 setIsLoggingOut(false);
             }, 1000);

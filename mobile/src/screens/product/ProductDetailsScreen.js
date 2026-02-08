@@ -500,11 +500,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 onAuthSuccess={handleAuthSuccess}
                 navigation={navigation}
                 redirectTo={{
-                    tab: 'MainTabs',
-                    screen: 'HomeTab',
+                    tab: 'Orders',
+                    screen: 'OrdersScreen',
                     params: {
-                        screen: 'ProductDetails',
-                        params: { product: product }
+                        product: { ...product, price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price },
+                        qty: qty,
+                        color: selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default',
+                        size: selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default',
+                        price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price
                     }
                 }}
             />

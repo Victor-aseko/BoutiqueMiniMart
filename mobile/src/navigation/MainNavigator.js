@@ -246,39 +246,36 @@ const MainNavigator = ({ navigation }) => {
     return (
         <Tab.Navigator
             screenOptions={{
-                tabBarShowLabel: true, // Force labels to show
+                tabBarShowLabel: true,
                 tabBarActiveTintColor: COLORS.accent,
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 85 : 75,
-                    paddingBottom: Platform.OS === 'ios' ? 25 : 12,
-                    paddingTop: 8,
-                    paddingHorizontal: 25, // Added padding to pull icons together
-                    borderTopWidth: 0,
+                    height: Platform.OS === 'ios' ? 120 : 110,
+                    paddingBottom: Platform.OS === 'ios' ? 30 : 25,
+                    paddingTop: 10,
+                    paddingHorizontal: 15,
                     backgroundColor: COLORS.white,
-                    elevation: 25,
+                    borderTopWidth: 1,
+                    borderTopColor: 'rgba(0,0,0,0.05)',
+                    elevation: 20,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -6 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 10,
-                    position: 'absolute',
-                    bottom: 15,
-                    left: 20,
-                    right: 20,
-                    borderWidth: 0, // Removed border
+                    shadowOffset: { width: 0, height: -4 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
                 },
                 tabBarLabelStyle: {
                     fontSize: 10,
                     fontWeight: '800',
-                    marginBottom: Platform.OS === 'ios' ? 0 : 4,
+                    marginBottom: Platform.OS === 'ios' ? 0 : 5,
                 },
                 tabBarIconStyle: {
-                    marginBottom: 0,
+                    marginBottom: -2, // Slight adjustment to move icons up relative to label
                 },
                 tabBarItemStyle: {
                     height: 50,
                     padding: 0,
+                    marginTop: -5 // Move the whole item up a bit
                 }
             }}
         >

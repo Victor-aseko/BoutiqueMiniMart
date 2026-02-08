@@ -43,7 +43,7 @@ const AboutUsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Section 1: Header & Intro */}
                 <View style={styles.headerSection}>
                     <View style={styles.overlay}>

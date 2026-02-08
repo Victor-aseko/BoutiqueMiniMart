@@ -259,6 +259,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
+        paddingBottom: 110,
     },
     addressCard: {
         flexDirection: 'row',

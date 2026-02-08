@@ -511,6 +511,7 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 40 }}
             >
                 {/* Hero Section */}
                 <TouchableOpacity
@@ -625,8 +626,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     searchBarWrapper: {
-        paddingLeft: 15, // Move to left
-        paddingRight: 80, // Keep it short
+        paddingLeft: 15,
+        paddingRight: 15, // Increased width
         paddingBottom: 10,
         backgroundColor: COLORS.white,
     },
@@ -682,7 +683,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     sectionContainer: {
-        paddingTop: 30,
+        paddingTop: 10,
         paddingBottom: 10,
     },
     sectionHeader: {
@@ -716,7 +717,7 @@ const styles = StyleSheet.create({
     },
     newArrivalsContainer: {
         paddingLeft: 10,
-        marginBottom: 40,
+        marginBottom: 20,
         backgroundColor: COLORS.white,
         paddingBottom: 20,
     },
@@ -726,8 +727,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     offersSection: {
-        marginBottom: 50,
-        marginTop: 10,
+        marginBottom: 10,
+        marginTop: 5,
     },
     offersContainer: {
         paddingHorizontal: 0,
@@ -752,7 +753,7 @@ const styles = StyleSheet.create({
         paddingVertical: 25,
         paddingHorizontal: 20,
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 10,
     },
     footerBrand: {
         fontSize: 18,
@@ -837,7 +838,7 @@ const styles = StyleSheet.create({
         height: 520, // Increased height
         width: '100%',
         marginHorizontal: 0,
-        marginBottom: 30,
+        marginBottom: 20,
         justifyContent: 'flex-end',
     },
     heroOverlay: {

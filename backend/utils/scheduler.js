@@ -1,17 +1,23 @@
 const Order = require('../models/Order');
 
+const Notification = require('../models/Notification');
+
 /**
- * Automates background tasks like cleaning up old orders.
+ * Automates background tasks like cleaning up old orders and notifications.
  * Runs once every 24 hours when the server starts.
  */
 const initScheduler = () => {
-    console.log('--- Order Cleanup Scheduler Initialized ---');
+    console.log('--- Cleanup Scheduler Initialized ---');
 
     // Run cleanup once on startup
     cleanupOldOrders();
+    cleanupOldNotifications();
 
     // Set interval to run every 24 hours (24 * 60 * 60 * 1000 ms)
-    setInterval(cleanupOldOrders, 24 * 60 * 60 * 1000);
+    setInterval(() => {
+        cleanupOldOrders();
+        cleanupOldNotifications();
+    }, 24 * 60 * 60 * 1000);
 };
 
 const cleanupOldOrders = async () => {
@@ -23,8 +29,6 @@ const cleanupOldOrders = async () => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // Delete orders where createdAt is less than sevenDaysAgo
-        // IMPORTANT: We might only want to delete 'Delivered' or 'Cancelled' orders, 
-        // but the request was to "clear orders that has last for 7 days".
         const result = await Order.deleteMany({
             createdAt: { $lt: sevenDaysAgo }
         });
@@ -36,6 +40,29 @@ const cleanupOldOrders = async () => {
         }
     } catch (error) {
         console.error('Error during scheduled order cleanup:', error);
+    }
+};
+
+const cleanupOldNotifications = async () => {
+    try {
+        console.log('Running scheduled task: Deleting notifications older than 3 days...');
+
+        // Calculate the date 3 days ago
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+        // Delete notifications where createdAt is less than threeDaysAgo
+        const result = await Notification.deleteMany({
+            createdAt: { $lt: threeDaysAgo }
+        });
+
+        if (result.deletedCount > 0) {
+            console.log(`Success: Deleted ${result.deletedCount} old notifications.`);
+        } else {
+            console.log('No notifications older than 3 days found.');
+        }
+    } catch (error) {
+        console.error('Error during scheduled notification cleanup:', error);
     }
 };
 

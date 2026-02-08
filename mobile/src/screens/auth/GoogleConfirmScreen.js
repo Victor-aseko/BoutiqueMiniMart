@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
     Image,
+    ActivityIndicator,
     ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +18,10 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
     const { userEmail, userName, userPicture, redirectTo, isNewUser } = route.params || {};
     const { loginWithGoogle } = useAuth();
 
+    const [isLoading, setIsLoading] = useState(false);
+
     const handleContinue = async () => {
+        setIsLoading(true);
         try {
             const success = await loginWithGoogle({
                 email: userEmail,
@@ -26,27 +30,57 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
             });
 
             if (success) {
-                if (redirectTo) {
-                    const { tab, screen, params } = redirectTo;
-                    navigation.navigate('Main', {
-                        screen: tab || 'MainTabs',
-                        params: {
-                            screen: screen || 'HomeTab',
-                            params: params
-                        }
-                    });
-                } else {
-                    // Navigate to Profile stack in Drawer, and ProfileScreen within it
-                    navigation.navigate('Main', {
-                        screen: 'Profile',
-                        params: { screen: 'ProfileScreen' }
-                    });
-                }
+                // Short delay to ensure state is synchronized across the app
+                setTimeout(() => {
+                    if (redirectTo) {
+                        const { tab, screen, params } = redirectTo;
+
+                        // Use reset for a cleaner transition across stacks
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{
+                                name: 'Main',
+                                state: {
+                                    routes: [{
+                                        name: tab || 'MainTabs',
+                                        state: {
+                                            routes: [{
+                                                name: screen || 'HomeTab',
+                                                params: params
+                                            }]
+                                        }
+                                    }]
+                                }
+                            }]
+                        });
+                    } else {
+                        // Default redirection to Profile or Home as requested
+                        // Navigating to Main -> Profile stack -> ProfileScreen
+                        navigation.getParent()?.reset({
+                            index: 0,
+                            routes: [{
+                                name: 'Main',
+                                state: {
+                                    routes: [{
+                                        name: 'Profile',
+                                        state: {
+                                            routes: [{
+                                                name: 'ProfileScreen'
+                                            }]
+                                        }
+                                    }]
+                                }
+                            }]
+                        });
+                    }
+                }, 100);
             } else {
+                setIsLoading(false);
                 Alert.alert('Error', 'Failed to complete Google Sign-In with our server.');
             }
         } catch (err) {
             console.error('Confirm error:', err);
+            setIsLoading(false);
             Alert.alert('Error', 'Something went wrong during login.');
         }
     };
@@ -55,20 +89,16 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
         if (navigation.canGoBack()) {
             navigation.goBack();
         } else {
-            navigation.navigate('Login');
+            // If we land directly here (e.g. from a deep link) and cancel, 
+            // go back to the main app experience
+            navigation.navigate('Main');
         }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => {
-                    if (navigation.canGoBack()) {
-                        navigation.goBack();
-                    } else {
-                        navigation.navigate('Login');
-                    }
-                }} style={styles.backBtn}>
+                <TouchableOpacity onPress={handleCancel} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{isNewUser ? 'Create Account' : 'Google Sign-In'}</Text>
@@ -106,10 +136,15 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
 
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity
-                        style={[styles.button, styles.continueBtn]}
+                        style={[styles.button, styles.continueBtn, isLoading && { opacity: 0.8 }]}
                         onPress={handleContinue}
+                        disabled={isLoading}
                     >
-                        <Text style={styles.continueText}>Continue</Text>
+                        {isLoading ? (
+                            <ActivityIndicator color={COLORS.white} />
+                        ) : (
+                            <Text style={styles.continueText}>Continue</Text>
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity

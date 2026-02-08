@@ -411,8 +411,8 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingLeft: 15, // Move to left
-        paddingRight: 80, // Keep it short
+        paddingLeft: 15,
+        paddingRight: 15, // Increased width
         paddingVertical: 12,
         backgroundColor: COLORS.white,
     },
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     list: {
-        paddingBottom: 20,
+        paddingBottom: 40,
         paddingHorizontal: 10,
     },
     row: {
