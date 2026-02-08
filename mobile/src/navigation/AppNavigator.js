@@ -27,11 +27,10 @@ const AppNavigator = ({ linking }) => {
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!hasSeenOnboarding ? (
                     <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+                ) : user ? (
+                    <Stack.Screen name="Main" component={DrawerNavigator} />
                 ) : (
-                    <>
-                        <Stack.Screen name="Main" component={DrawerNavigator} />
-                        <Stack.Screen name="Auth" component={AuthNavigator} />
-                    </>
+                    <Stack.Screen name="Auth" component={AuthNavigator} />
                 )}
             </Stack.Navigator>
         </NavigationContainer>

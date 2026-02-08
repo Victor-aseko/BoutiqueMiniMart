@@ -162,16 +162,15 @@ const SupportScreen = ({ navigation }) => {
 
                 const formatItem = (p) => {
                     const colors = p.colors?.map(c => c.name).join(', ') || 'Various shades';
-                    const sizes = p.sizes?.join(', ') || 'Standard';
-                    return `✨ *${p.name}*\n💰 KSh ${p.price.toLocaleString()}\n🎨 Colors: ${colors}\n📏 Sizes: ${sizes}`;
+                    return `• ${p.name}\n  - Price: KSh ${p.price.toLocaleString()}\n  - Colors: ${colors}`;
                 };
 
-                let response = "I've scanned our vault! 🛍️ Here are our top shoe picks for you:\n\n";
+                let responseText = "I've scanned our vault! 🛍️ Here are our top shoe picks for you:\n\n";
                 if (menShoes.length > 0) {
-                    response += `👟 **For Men:**\n${menShoes.map(formatItem).join('\n\n')}\n\n`;
+                    responseText += `👟 **For Men:**\n${menShoes.map(formatItem).join('\n\n')}\n\n`;
                 }
                 if (womenShoes.length > 0) {
-                    response += `👠 **For Women:**\n${womenShoes.map(formatItem).join('\n\n')}\n\n`;
+                    responseText += `👠 **For Women:**\n${womenShoes.map(formatItem).join('\n\n')}\n\n`;
                 }
 
                 if (menShoes.length === 0 && womenShoes.length === 0) {
@@ -179,7 +178,14 @@ const SupportScreen = ({ navigation }) => {
                     return "Our shoe collection is flying off the shelves! 🏃‍♂️ I don't see a match in live stock right now, but I've notified our team to check the arrivals for you. Is there another style you're interested in?";
                 }
 
-                return response + "Would you like me to guide you on how to place an order for any of these? 😊";
+                return {
+                    text: responseText + "Tap the button below to see our full Ultra-Modern Shoe Collection!",
+                    action: {
+                        type: 'NAVIGATE_SHOP',
+                        label: 'View All Shoes',
+                        params: { category: 'Shoes' }
+                    }
+                };
             }
 
             // Targeted categories requested by user

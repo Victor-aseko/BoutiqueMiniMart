@@ -11,16 +11,7 @@ const ProfileScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
     const { cartCount } = useCart();
 
-    React.useEffect(() => {
-        if (!user && navigation.isFocused()) {
-            // Use reset to clear the internal navigation history and avoid crashes
-            navigation.getParent()?.reset({
-                index: 0,
-                routes: [{ name: 'Auth' }]
-            });
-        }
-    }, [user]);
-
+    // Navigation is handled by AppNavigator switching stacks based on user state
     if (!user) return null;
 
     const MenuLink = ({ icon: Icon, label, onPress, badge }) => (

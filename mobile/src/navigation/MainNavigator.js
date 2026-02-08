@@ -251,7 +251,7 @@ const MainNavigator = ({ navigation }) => {
                 tabBarInactiveTintColor: COLORS.textLight,
                 headerShown: false,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 120 : 110,
+                    height: Platform.OS === 'ios' ? 110 : 100,
                     paddingBottom: Platform.OS === 'ios' ? 30 : 25,
                     paddingTop: 10,
                     paddingHorizontal: 15,
