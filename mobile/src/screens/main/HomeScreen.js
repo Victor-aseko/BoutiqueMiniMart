@@ -454,13 +454,13 @@ const HomeScreen = ({ navigation }) => {
                     <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
                         <Image source={whatsappIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#facebook')}>
                         <Image source={facebookIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#instagram')}>
                         <Image source={instagramIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/')}>
+                    <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('#tiktok')}>
                         <Image source={tiktokIcon} style={styles.socialIconImage} />
                     </TouchableOpacity>
                 </View>
@@ -511,7 +511,7 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 40 }}
+                contentContainerStyle={{ paddingBottom: -10 }}
             >
                 {/* Hero Section */}
                 <TouchableOpacity
@@ -576,13 +576,13 @@ const HomeScreen = ({ navigation }) => {
                         <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://chat.whatsapp.com/IVGjYlhsLZb4h0oeXbJ98P')}>
                             <Image source={whatsappIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.facebook.com/yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('facebook.com#')}>
                             <Image source={facebookIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.instagram.com/yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https:#')}>
                             <Image source={instagramIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://www.tiktok.com/@yourpage')}>
+                        <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('tiktok#')}>
                             <Image source={tiktokIcon} style={styles.socialIconImage} />
                         </TouchableOpacity>
                     </View>
