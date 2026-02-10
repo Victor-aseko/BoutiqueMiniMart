@@ -8,18 +8,18 @@ import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
-// SILENCE PATCH: Disable module in Expo Go to avoid SDK 53+ red-box errors
-const IS_EXPO_GO = Constants.appOwnership === 'expo';
+// SILENCE PATCH: Detect environment more robustly
+// In SDK 51+, Constants.appOwnership is often replaced by executionEnvironment
+const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 
-if (!IS_EXPO_GO) {
-    Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-            shouldShowAlert: true,
-            shouldPlaySound: true,
-            shouldSetBadge: true,
-        }),
-    });
-}
+// Enable notifications globally by default if not in Expo Go
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
+});
 
 export const NotificationProvider = ({ children }) => {
     const { user, isLoggingOut } = useAuth();
@@ -47,58 +47,64 @@ export const NotificationProvider = ({ children }) => {
 
     const registerForPushNotificationsAsync = async () => {
         if (IS_EXPO_GO) {
-            console.log('Skipping notification setup: expo-notifications is not supported in Expo Go (SDK 53+). Please use a development build/APK for push features.');
+            console.log('Push Notifications: Skipping setup because Expo Go does not support FCM/APNs in SDK 53+. Please use a Development Build or APK.');
+            return null;
+        }
+
+        if (!Device.isDevice) {
+            console.log('Push Notifications: Must use physical device for Push Notifications');
             return null;
         }
 
         let token;
-        console.log('Registering for notifications...');
-
-        // Step 1: Request Permissions
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-        }
-
-        if (finalStatus !== 'granted') {
-            console.log('Permission not granted');
-            return;
-        }
-
-        // Step 2: Fetch Token
         try {
+            // Step 1: Request Permissions
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+
+            if (finalStatus !== 'granted') {
+                console.log('Push Notifications: Permission not granted');
+                return null;
+            }
+
+            // Step 2: Fetch Token
             const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
+            if (!projectId) {
+                console.warn('Push Notifications: Project ID missing from app.json/Constants');
+            }
+
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId: projectId,
             })).data;
-            console.log('Push Token Generated:', token);
-        } catch (e) {
-            console.warn('Notification Token Error:', e.message);
-        }
+            console.log('Push Notifications: Token Generated:', token);
+            setExpoPushToken(token);
 
-        // Step 3: Send token to backend
-        if (user && token) {
-            try {
+            // Step 3: Send token to backend
+            if (user && token) {
                 await api.post('/users/push-token', { token });
-                console.log('Push token saved to backend');
-            } catch (error) {
-                console.error('Error saving push token:', error);
+                console.log('Push Notifications: Token saved to backend');
             }
-        }
-        // Step 4: Android Channel
-        if (Platform.OS === 'android') {
-            Notifications.setNotificationChannelAsync('default', {
-                name: 'default',
-                importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
-                lightColor: '#FF231F7C',
-            });
-        }
 
-        return token;
+            // Step 4: Android Channel
+            if (Platform.OS === 'android') {
+                Notifications.setNotificationChannelAsync('default', {
+                    name: 'default',
+                    importance: Notifications.AndroidImportance.MAX,
+                    vibrationPattern: [0, 250, 250, 250],
+                    lightColor: '#FF231F7C',
+                });
+            }
+
+            return token;
+        } catch (e) {
+            console.error('Push Notifications: Setup Error:', e.message);
+            return null;
+        }
     };
 
     useEffect(() => {
@@ -112,20 +118,19 @@ export const NotificationProvider = ({ children }) => {
         if (user) {
             fetchNotifications();
 
-            if (!IS_EXPO_GO) {
-                registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+            // Setup push
+            registerForPushNotificationsAsync();
 
-                // This listener is fired whenever a notification is received while the app is foregrounded
-                notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                    // Refresh local notifications list when one arrives
-                    fetchNotifications();
-                });
+            // Foreground listener
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                console.log('Notification Received in Foreground:', notification);
+                fetchNotifications();
+            });
 
-                // This listener is fired whenever a user taps on or interacts with a notification
-                responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-                    console.log('Notification tapped:', response);
-                });
-            }
+            // Tap listener
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                console.log('Notification Interaction:', response);
+            });
 
             const interval = setInterval(fetchNotifications, 30000);
             return () => {
@@ -158,6 +163,19 @@ export const NotificationProvider = ({ children }) => {
         }
     };
 
+    const deleteNotification = async (id) => {
+        try {
+            await api.delete(`/notifications/${id}`);
+            setNotifications(prev => prev.filter(n => n._id !== id));
+            // Recalculate unread count
+            const unread = notifications.filter(n => n._id !== id && !n.isRead).length;
+            setUnreadCount(unread);
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+            Alert.alert('Error', 'Failed to delete notification');
+        }
+    };
+
     return (
         <NotificationContext.Provider value={{
             notifications,
@@ -167,6 +185,7 @@ export const NotificationProvider = ({ children }) => {
             fetchNotifications,
             markAsRead,
             markAllAsRead,
+            deleteNotification,
             registerForPushNotificationsAsync
         }}>
             {children}

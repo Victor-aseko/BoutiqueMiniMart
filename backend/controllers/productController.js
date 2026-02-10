@@ -127,6 +127,8 @@ const createProduct = asyncHandler(async (req, res) => {
             const sendPushNotification = require('../utils/pushNotifications');
 
             const users = await User.find({ isAdmin: false });
+            console.log(`Notification System: Found ${users.length} users to notify`);
+
             const title = createdProduct.isOffer ? 'Special Offer! 🏷️' : 'New Arrival! 👗';
             const message = `${createdProduct.name} is now available in our ${createdProduct.category} collection.`;
 
@@ -137,15 +139,21 @@ const createProduct = asyncHandler(async (req, res) => {
                 message: message,
                 type: 'INFO'
             }));
-            await Notification.insertMany(notifications);
+            if (notifications.length > 0) {
+                await Notification.insertMany(notifications);
+                console.log(`Notification System: Created ${notifications.length} in-app notifications`);
+            }
 
             // Push notifications
             const tokens = users.map(u => u.pushToken).filter(token => !!token);
+            console.log(`Notification System: Collected ${tokens.length} valid push tokens`);
+
             if (tokens.length > 0) {
                 await sendPushNotification(tokens, title, message, { screen: 'Shop' });
+                console.log('Notification System: Push notification batch sent to Expo');
             }
         } catch (e) {
-            console.error('Failed to notify users about product update:', e);
+            console.error('Notification System: Error sending updates:', e);
         }
     };
     notifyAllUsers();
@@ -174,6 +182,8 @@ const updateProduct = asyncHandler(async (req, res) => {
 
     if (product) {
         const wasInStock = product.countInStock === 0;
+        const wasOffer = !!product.isOffer;
+
         product.name = name;
         product.price = price;
         product.description = description;
@@ -188,7 +198,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         const updatedProduct = await product.save();
 
         // Notify users if restocked or newly put on offer
-        if ((wasInStock && updatedProduct.countInStock > 0) || (updatedProduct.isOffer && !product.isOffer)) {
+        if ((wasInStock && updatedProduct.countInStock > 0) || (updatedProduct.isOffer && !wasOffer)) {
             const notifyProductUpdate = async () => {
                 try {
                     const User = require('../models/User');
@@ -196,18 +206,26 @@ const updateProduct = asyncHandler(async (req, res) => {
                     const sendPushNotification = require('../utils/pushNotifications');
 
                     const users = await User.find({ isAdmin: false });
+                    console.log(`Notification System (Update): Found ${users.length} users to notify`);
+
                     const title = updatedProduct.isOffer ? 'Huge Discount! 🏷️' : 'Back in Stock! ✨';
                     const message = `${updatedProduct.name} is now ${updatedProduct.isOffer ? 'on special offer!' : 'back in stock!'}`;
 
                     const notifications = users.map(u => ({ user: u._id, title, message, type: 'INFO' }));
-                    await Notification.insertMany(notifications);
+                    if (notifications.length > 0) {
+                        await Notification.insertMany(notifications);
+                        console.log(`Notification System (Update): Created ${notifications.length} in-app notifications`);
+                    }
 
                     const tokens = users.map(u => u.pushToken).filter(t => !!t);
+                    console.log(`Notification System (Update): Collected ${tokens.length} valid push tokens`);
+
                     if (tokens.length > 0) {
                         await sendPushNotification(tokens, title, message, { screen: 'Shop' });
+                        console.log('Notification System (Update): Push notification batch sent to Expo');
                     }
                 } catch (e) {
-                    console.error('Failed to notify users about product update:', e);
+                    console.error('Notification System (Update): Error sending updates:', e);
                 }
             };
             notifyProductUpdate();

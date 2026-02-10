@@ -9,6 +9,7 @@ import { CartProvider } from './src/context/CartContext';
 import { RecentlyViewedProvider } from './src/context/RecentlyViewedContext';
 import { WishlistProvider } from './src/context/WishlistContext';
 import { NotificationProvider } from './src/context/NotificationContext';
+import { ChatProvider } from './src/context/ChatContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -45,10 +46,12 @@ export default function App() {
             <RecentlyViewedProvider>
               <WishlistProvider>
                 <NotificationProvider>
-                  <StatusBar style="light" backgroundColor={COLORS.accent} />
-                  <OfflineNotice />
+                  <ChatProvider>
+                    <StatusBar style="light" backgroundColor={COLORS.accent} />
+                    <OfflineNotice />
 
-                  <AppNavigator linking={linking} />
+                    <AppNavigator linking={linking} />
+                  </ChatProvider>
                 </NotificationProvider>
               </WishlistProvider>
             </RecentlyViewedProvider>

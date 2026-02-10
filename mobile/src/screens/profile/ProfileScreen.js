@@ -114,7 +114,16 @@ const ProfileScreen = ({ navigation }) => {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Account Actions</Text>
                     <View style={styles.menuList}>
-                        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+                        <TouchableOpacity
+                            style={styles.logoutBtn}
+                            onPress={async () => {
+                                try {
+                                    await logout();
+                                } catch (e) {
+                                    console.log('Logout error on profile', e);
+                                }
+                            }}
+                        >
                             <LogOut size={20} color={COLORS.error} />
                             <Text style={styles.logoutText}>Logout</Text>
                         </TouchableOpacity>

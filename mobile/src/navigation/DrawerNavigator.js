@@ -14,10 +14,12 @@ import CartScreen from '../screens/cart/CartScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import AddressScreen from '../screens/profile/AddressScreen';
 import NotificationsScreen from '../screens/main/NotificationsScreen';
+import SupportScreen from '../screens/main/SupportScreen';
 import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../theme/theme';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Bot } from 'lucide-react-native';
 import BrandLogo from '../components/BrandLogo';
 
 const Drawer = createDrawerNavigator();
@@ -45,9 +47,13 @@ const CustomDrawerContent = (props) => {
                         onPress={async () => {
                             try {
                                 await logout();
-                                props.navigation.navigate('MainTabs');
+                                // Navigate to Home (MainTabs) after state is cleared
+                                // Using a small timeout to ensure native stability on Android
+                                setTimeout(() => {
+                                    props.navigation.navigate('MainTabs');
+                                }, 100);
                             } catch (e) {
-                                console.log('Logout navigation error', e);
+                                console.log('Logout error in drawer', e);
                             }
                         }}
                         icon={({ color, size }) => <LogOut color={COLORS.error} size={size} />}
@@ -120,6 +126,35 @@ const CartStack = ({ navigation }) => (
             name="CartScreen"
             component={CartScreen}
             options={{ title: 'Cart' }}
+        />
+    </Stack.Navigator>
+);
+
+// Stack for Support with header
+const SupportStack = ({ navigation }) => (
+    <Stack.Navigator
+        screenOptions={{
+            headerShown: true,
+            headerStyle: {
+                backgroundColor: COLORS.accent,
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(0,0,0,0.1)',
+            },
+            headerTintColor: "white",
+            headerTitleStyle: {
+                fontWeight: 'bold',
+                fontSize: 18,
+            },
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Assistant" />,
+            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerTitle: () => <BrandLogo light />,
+            headerTitleAlign: 'center',
+        }}
+    >
+        <Stack.Screen
+            name="SupportScreen"
+            component={SupportScreen}
+            options={{ title: 'Boutique Assistant' }}
         />
     </Stack.Navigator>
 );
@@ -237,6 +272,14 @@ const DrawerNavigator = () => {
                 options={{
                     title: 'My Profile',
                     drawerIcon: ({ color, size }) => <User color={color} size={size} />
+                }}
+            />
+            <Drawer.Screen
+                name="Support"
+                component={SupportStack}
+                options={{
+                    title: 'AI Assistant',
+                    drawerIcon: ({ color, size }) => <Bot color={color} size={size} />
                 }}
             />
             <Drawer.Screen

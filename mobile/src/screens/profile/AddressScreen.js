@@ -23,8 +23,13 @@ const AddressScreen = ({ navigation, route }) => {
     const { user, updateProfile } = useAuth();
 
     useEffect(() => {
+        // If user is logged out, redirect after the current render cycle completes
+        // This prevents native crashes on Android APKs caused by rapid transitions
         if (!user) {
-            navigation.navigate('Auth');
+            const timer = setTimeout(() => {
+                navigation.navigate('Auth');
+            }, 100);
+            return () => clearTimeout(timer);
         }
     }, [user]);
 

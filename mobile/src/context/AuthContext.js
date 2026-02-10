@@ -162,37 +162,39 @@ export const AuthProvider = ({ children }) => {
         setError(null);
 
         try {
-            // 1. Mark as manually logged out immediately to block auto-sync
+            console.log('Starting logout sequence...');
+
+            // 1. Mark as manually logged out immediately to block auto-sync effects
             await AsyncStorage.setItem('manuallyLoggedOut', 'true');
 
-            // 2. Clear local storage 
-            await AsyncStorage.removeItem('user');
-            delete api.defaults.headers.common['Authorization'];
-
-            // 3. Sign out of Clerk FIRST before changing local user state
-            // This prevents the auto-sync effect from seeing (clerkUser && !user)
+            // 2. Sign out of Clerk FIRST
+            // This is the most critical part for stability in production APKs
             if (clerkSignOut) {
                 try {
                     await clerkSignOut();
                 } catch (ce) {
-                    console.log('Clerk signout detail:', ce);
+                    console.log('Clerk signout detail (non-fatal):', ce);
                 }
             }
 
-            // 4. Give Clerk a moment to broadcast state change
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // 3. Clear local storage and tokens
+            await AsyncStorage.removeItem('user');
+            delete api.defaults.headers.common['Authorization'];
 
-            // 5. Finally clear local app user state
+            // 4. Finally, clear local app user state
+            // This triggers re-renders across the app
             setUser(null);
+            console.log('Logout sequence completed successfully');
 
         } catch (e) {
-            console.log('Error during logout sequence', e);
-            // Fallback: ensure user is null even if Clerk signout fails
+            console.error('Error during logout sequence:', e);
+            // Fallback: Ensure user state is cleared even if something fails
             setUser(null);
         } finally {
+            // Wait before allowing another auth action to let the system settle
             setTimeout(() => {
                 setIsLoggingOut(false);
-            }, 1000);
+            }, 800);
         }
     };
 

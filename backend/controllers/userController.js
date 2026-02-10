@@ -119,6 +119,19 @@ const savePushToken = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Get boutique admin specifically for chat
+// @route   GET /api/users/admin
+// @access  Private
+const getBoutiqueAdmin = asyncHandler(async (req, res) => {
+    const admin = await User.findOne({ isAdmin: true }).select('_id name email');
+    if (admin) {
+        res.json(admin);
+    } else {
+        res.status(404);
+        throw new Error('Boutique admin not found');
+    }
+});
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
@@ -126,4 +139,5 @@ module.exports = {
     getAddresses,
     addAddress,
     savePushToken,
+    getBoutiqueAdmin,
 };

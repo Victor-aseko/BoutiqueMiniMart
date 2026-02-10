@@ -13,6 +13,7 @@ import HomeScreen from '../screens/main/HomeScreen';
 import ShopScreen from '../screens/main/ShopScreen';
 import AboutUsScreen from '../screens/main/AboutUsScreen';
 import SupportScreen from '../screens/main/SupportScreen';
+import ChatScreen from '../screens/main/ChatScreen';
 import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
 import SearchScreen from '../screens/main/SearchScreen';
@@ -228,16 +229,16 @@ const SupportStack = ({ navigation }) => (
                 fontWeight: 'bold',
                 fontSize: 18,
             },
-            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Support" />,
+            headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Messages" />,
             headerRight: () => <HeaderRight navigation={navigation} />,
             headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
     >
         <Stack.Screen
-            name="SupportScreen"
-            component={SupportScreen}
-            options={{ title: 'Support' }}
+            name="ChatScreen"
+            component={ChatScreen}
+            options={{ title: 'Boutique Messages' }}
         />
     </Stack.Navigator>
 );
@@ -304,10 +305,10 @@ const MainNavigator = ({ navigation }) => {
                 }}
             />
             <Tab.Screen
-                name="SupportTab"
+                name="ChatTab"
                 component={SupportStack}
                 options={{
-                    tabBarLabel: 'Support',
+                    tabBarLabel: 'Messages',
                     tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
                 }}
             />
