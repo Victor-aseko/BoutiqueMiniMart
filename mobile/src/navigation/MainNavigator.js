@@ -310,6 +310,7 @@ const MainNavigator = ({ navigation }) => {
                 options={{
                     tabBarLabel: 'Messages',
                     tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
+                    tabBarKeyboardHidesTabBar: true,
                 }}
             />
         </Tab.Navigator>

@@ -1,242 +1,457 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Image } from 'react-native';
-import { GiftedChat, Bubble, Send, InputToolbar, Actions } from 'react-native-gifted-chat';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Platform, Animated, KeyboardAvoidingView, Keyboard, Dimensions, FlatList } from 'react-native';
+import { GiftedChat, Bubble, Send, InputToolbar, Composer, Message, MessageText } from 'react-native-gifted-chat';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { COLORS } from '../../theme/theme';
-import { Image as ImageIcon, Send as SendIcon, ChevronLeft } from 'lucide-react-native';
+import { Image as ImageIcon, Send as SendIcon, X, CornerUpLeft, ChevronLeft, User as UserIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../services/api';
+import dayjs from 'dayjs';
+import { Swipeable } from 'react-native-gesture-handler';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ChatScreen = ({ navigation }) => {
     const { user } = useAuth();
-    const { messages, sendMessage, fetchMessages, isLoading, activeChat, setActiveChat } = useChat();
-    const [admin, setAdmin] = useState(null);
+    const {
+        messages,
+        sendMessage,
+        fetchMessages,
+        isLoading,
+        onlineUsers,
+        conversations,
+        fetchConversations,
+        setActiveChat,
+        activeChat
+    } = useChat();
+
+    const [primaryAdmin, setPrimaryAdmin] = useState(null);
+    const [allAdmins, setAllAdmins] = useState([]);
     const [isLocalLoading, setIsLocalLoading] = useState(true);
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+    const headerHeight = useHeaderHeight();
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
-        const getAdmin = async () => {
+        const getAdmins = async () => {
             try {
+                // Get the main admin for customer reference
                 const response = await api.get('/users/admin');
-                setAdmin(response.data);
-                setActiveChat(response.data._id);
-                fetchMessages(response.data._id);
+                setPrimaryAdmin(response.data);
+
+                // If the user isn't an admin, they chat with the primary stylist
+                if (!user?.isAdmin) {
+                    fetchMessages(response.data._id);
+                }
+
+                // Try to get all admins to verify "Online" status for the Boutique
+                // If there's no bulk endpoint, we at least have the primary one
+                setAllAdmins([response.data]);
             } catch (error) {
-                console.error('Error fetching admin:', error);
+                console.error('Error fetching admins:', error);
             } finally {
                 setIsLocalLoading(false);
             }
         };
 
         if (user) {
-            getAdmin();
+            getAdmins();
+        } else {
+            setIsLocalLoading(false);
         }
+
+        const keyboardDidShow = (e) => setKeyboardHeight(e.endCoordinates.height);
+        const keyboardDidHide = () => setKeyboardHeight(0);
+
+        const showSubscription = Keyboard.addListener('keyboardDidShow', keyboardDidShow);
+        const hideSubscription = Keyboard.addListener('keyboardDidHide', keyboardDidHide);
+
+        const timer = setTimeout(() => setIsLocalLoading(false), 5000);
+
+        return () => {
+            clearTimeout(timer);
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
     }, [user]);
 
     const onSend = useCallback((newMessages = []) => {
-        if (!admin) return;
-        const { text, image } = newMessages[0];
-        sendMessage(admin._id, text, image);
-    }, [admin, sendMessage]);
+        // If I am an admin, I send to the customer. If I am a customer, I send to the primary stylist.
+        const recipientId = user?.isAdmin ? selectedCustomer?._id : primaryAdmin?._id;
+        if (!recipientId) {
+            console.log('No recipient found for message');
+            return;
+        }
 
-    const handlePickImage = async () => {
+        const message = newMessages[0];
+        let finalText = message.text || (message.image ? '📷 Sent an image' : '');
+
+        if (replyingTo) {
+            const replyText = replyingTo.text || (replyingTo.image ? '📷 Media message' : 'Message');
+            finalText = `|REPLY|${replyingTo.user.name}|${replyText}|${finalText}`;
+            setReplyingTo(null);
+        }
+
+        sendMessage(recipientId, finalText, message.image);
+    }, [primaryAdmin, selectedCustomer, sendMessage, replyingTo, user?.isAdmin]);
+
+    const handlePickMedia = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') return;
+
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: ['images', 'videos'],
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 0.5,
+            quality: 0.7,
         });
 
         if (!result.canceled) {
             const formData = new FormData();
+            const asset = result.assets[0];
             formData.append('image', {
-                uri: result.assets[0].uri,
-                type: 'image/jpeg',
-                name: 'chat_image.jpg',
+                uri: asset.uri,
+                type: asset.type === 'video' ? 'video/mp4' : 'image/jpeg',
+                name: asset.uri.split('/').pop(),
             });
 
             try {
+                setIsLocalLoading(true);
                 const uploadRes = await api.post('/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
-                onSend([{ image: uploadRes.data.url, user: { _id: user._id } }]);
+                onSend([{ image: uploadRes.data.image, user: { _id: user._id } }]);
             } catch (error) {
-                console.error('Error uploading chat image:', error);
+                console.error('Error uploading:', error);
+            } finally {
+                setIsLocalLoading(false);
             }
         }
     };
 
-    const renderActions = (props) => (
-        <Actions
-            {...props}
-            containerStyle={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: 4, marginBottom: 0 }}
-            icon={() => <ImageIcon size={24} color={COLORS.accent} />}
-            onPressActionButton={handlePickImage}
-        />
-    );
+    const renderCustomView = (props) => {
+        const { currentMessage } = props;
+        if (currentMessage.text && typeof currentMessage.text === 'string' && currentMessage.text.startsWith('|REPLY|')) {
+            const parts = currentMessage.text.split('|');
+            return (
+                <View style={[styles.bubbleReplyBox, {
+                    backgroundColor: currentMessage.user._id === user._id ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)'
+                }]}>
+                    <View style={styles.bubbleReplyLine} />
+                    <View style={styles.bubbleReplyTextColumn}>
+                        <Text style={[styles.bubbleReplyNameText, { color: currentMessage.user._id === user._id ? '#FFF' : COLORS.accent }]}>
+                            {parts[2]}
+                        </Text>
+                        <Text style={[styles.bubbleReplyContentText, { color: currentMessage.user._id === user._id ? '#EEE' : COLORS.textLight }]} numberOfLines={1}>
+                            {parts[3]}
+                        </Text>
+                    </View>
+                </View>
+            );
+        }
+        return null;
+    };
+
+    const renderMessageText = (props) => {
+        let textStr = props.currentMessage.text;
+        if (textStr && typeof textStr === 'string' && textStr.startsWith('|REPLY|')) {
+            textStr = textStr.split('|')[4] || '';
+        }
+        return <MessageText {...props} text={textStr} />;
+    };
 
     const renderBubble = (props) => (
         <Bubble
             {...props}
+            renderCustomView={renderCustomView}
+            renderMessageText={renderMessageText}
             wrapperStyle={{
-                right: { backgroundColor: COLORS.accent },
-                left: { backgroundColor: '#F0F0F0' }
+                right: { backgroundColor: COLORS.accent, borderRadius: 15, marginBottom: 5, padding: 2 },
+                left: { backgroundColor: '#F0F0F0', borderRadius: 15, marginBottom: 5, padding: 2 }
             }}
             textStyle={{
-                right: { color: COLORS.white },
-                left: { color: COLORS.primary }
+                right: { color: COLORS.white, fontSize: 14, lineHeight: 20 },
+                left: { color: COLORS.primary, fontSize: 14, lineHeight: 20 }
             }}
         />
     );
 
     const renderSend = (props) => (
-        <Send {...props} containerStyle={{ justifyContent: 'center', paddingHorizontal: 10 }}>
-            <View style={{ backgroundColor: COLORS.accent, borderRadius: 20, padding: 8 }}>
-                <SendIcon size={20} color={COLORS.white} />
+        <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
+            <View style={styles.sendIconPill}>
+                <SendIcon size={18} color={COLORS.white} />
             </View>
         </Send>
     );
 
-    if (isLocalLoading) {
+    const renderComposer = (props) => (
+        <Composer {...props} textInputStyle={styles.composerStyle} placeholder="Type your message..." multiline />
+    );
+
+    const renderDay = (props) => {
+        if (!props.currentMessage) return null;
+        const date = dayjs(props.currentMessage.createdAt);
+        const now = dayjs();
+        let dateText = date.isSame(now, 'day') ? 'Today' : (date.isSame(now.subtract(1, 'day'), 'day') ? 'Yesterday' : date.format('MMMM D, YYYY'));
+        if (props.previousMessage && dayjs(props.previousMessage.createdAt).isSame(date, 'day')) return null;
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.accent} />
-                <Text style={styles.loadingText}>Connecting to Stylist...</Text>
+            <View style={styles.daySeparatorWrap}>
+                <View style={styles.daySeparatorPill}>
+                    <Text style={styles.daySeparatorText}>{dateText}</Text>
+                </View>
             </View>
         );
-    }
+    };
+
+    const renderMessage = (props) => {
+        const { currentMessage } = props;
+        const renderLeftActions = (progress, dragX) => {
+            const scale = dragX.interpolate({ inputRange: [0, 50], outputRange: [0, 1], extrapolate: 'clamp' });
+            return (
+                <View style={styles.swipeHintWrap}>
+                    <Animated.View style={{ transform: [{ scale }] }}><CornerUpLeft size={22} color={COLORS.accent} /></Animated.View>
+                </View>
+            );
+        };
+        return (
+            <Swipeable renderLeftActions={renderLeftActions} onSwipeableLeftOpen={() => setReplyingTo(currentMessage)}>
+                <Message {...props} />
+            </Swipeable>
+        );
+    };
+
+    const renderAccessory = () => {
+        if (!replyingTo) return null;
+        const textStr = replyingTo.text || '';
+        const displayName = textStr && typeof textStr === 'string' && textStr.startsWith('|REPLY|') ? textStr.split('|')[4] : (textStr || (replyingTo.image ? '📷 Media message' : 'Message'));
+        return (
+            <View style={styles.replyPreviewHeader}>
+                <View style={styles.replyPreviewLine} />
+                <View style={styles.replyPreviewInfo}>
+                    <Text style={styles.replyPreviewName}>{replyingTo.user.name}</Text>
+                    <Text style={styles.replyPreviewMsg} numberOfLines={1}>{displayName}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setReplyingTo(null)} style={styles.replyPreviewClose}><X size={16} color={COLORS.textLight} /></TouchableOpacity>
+            </View>
+        );
+    };
+
+    const renderConversationItem = ({ item }) => {
+        const isOnline = onlineUsers.has(item._id);
+        return (
+            <TouchableOpacity
+                style={styles.convoItem}
+                onPress={() => {
+                    setSelectedCustomer(item);
+                    fetchMessages(item._id);
+                }}
+            >
+                <View style={styles.convoAvatar}>
+                    <UserIcon size={24} color={COLORS.white} />
+                    {isOnline && <View style={styles.onlineDot} />}
+                </View>
+                <View style={styles.convoInfo}>
+                    <Text style={styles.convoName}>{item.name}</Text>
+                    <Text style={styles.convoLastMsg} numberOfLines={1}>{item.lastMessage || 'Click to respond...'}</Text>
+                </View>
+                {item.unreadCount > 0 && (
+                    <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
+                    </View>
+                )}
+            </TouchableOpacity>
+        );
+    };
 
     if (!user) {
         return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.loadingText}>Please login to chat with our stylist.</Text>
-                <TouchableOpacity
-                    style={styles.loginBtn}
-                    onPress={() => navigation.navigate('Auth')}
-                >
-                    <Text style={styles.loginBtnText}>Login Now</Text>
+            <View style={styles.simpleCenter}>
+                <Text style={styles.simpleText}>Please login to chat with our stylist.</Text>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Auth')}>
+                    <Text style={styles.actionBtnText}>Login Now</Text>
                 </TouchableOpacity>
             </View>
         );
     }
 
+    if (isLocalLoading) {
+        return <View style={styles.simpleCenter}><ActivityIndicator size="large" color={COLORS.accent} /></View>;
+    }
+
+    // SHARED ADMIN WORKSPACE: All admins see this list
+    if (user.isAdmin && !selectedCustomer) {
+        return (
+            <View style={styles.mainContainer}>
+                <View style={styles.chatHeader}>
+                    <Text style={[styles.stylistTitle, { fontSize: 18 }]}>Boutique Dashboard (Stylist)</Text>
+                    <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Active Admin</Text></View>
+                </View>
+                <FlatList
+                    data={conversations}
+                    keyExtractor={item => item._id}
+                    renderItem={renderConversationItem}
+                    contentContainerStyle={{ padding: 15 }}
+                    refreshing={isLoading}
+                    onRefresh={fetchConversations}
+                    ListEmptyComponent={
+                        <View style={styles.emptyState}>
+                            <UserIcon size={50} color={COLORS.border} />
+                            <Text style={styles.emptyText}>No customer conversations yet.</Text>
+                        </View>
+                    }
+                />
+            </View>
+        );
+    }
+
+    const isCustomerOnline = selectedCustomer && onlineUsers.has(selectedCustomer._id);
+
+    // For customers, the "Stylist" is online if ANY admin is online (checking primary one for now as a reliable proxy)
+    const isStylistOnline = allAdmins.some(admin => onlineUsers.has(admin?._id));
+
+    const headerTitle = user.isAdmin ? selectedCustomer?.name : 'Boutique Stylist';
+    const activeHeaderOnline = user.isAdmin ? isCustomerOnline : isStylistOnline;
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.stylistInfo}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>S</Text>
-                        <View style={[styles.onlineDot, { backgroundColor: isAdminOnline ? '#4CAF50' : '#BBB' }]} />
-                    </View>
-                    <View>
-                        <Text style={styles.stylistName}>Boutique Stylist</Text>
-                        <Text style={[styles.statusText, { color: isAdminOnline ? '#4CAF50' : COLORS.textLight }]}>
-                            {isAdminOnline ? 'Online - Ready to help' : 'Offline - Be Right Back'}
-                        </Text>
-                    </View>
+        <View style={styles.mainContainer}>
+            <View style={styles.chatHeader}>
+                {user.isAdmin && (
+                    <TouchableOpacity onPress={() => setSelectedCustomer(null)} style={{ marginRight: 15 }}>
+                        <ChevronLeft size={28} color={COLORS.primary} />
+                    </TouchableOpacity>
+                )}
+                <View style={[styles.avatarWrap, { backgroundColor: user.isAdmin ? COLORS.primary : COLORS.accent }]}>
+                    <Text style={styles.avatarChar}>{headerTitle.charAt(0)}</Text>
+                    <View style={[styles.onlineIndicator, { backgroundColor: activeHeaderOnline ? '#4CAF50' : '#BBB' }]} />
+                </View>
+                <View>
+                    <Text style={styles.stylistTitle}>{headerTitle}</Text>
+                    <Text style={styles.stylistStatus}>{activeHeaderOnline ? 'Online Now' : 'Currently Offline'}</Text>
                 </View>
             </View>
 
-            <GiftedChat
-                messages={messages}
-                onSend={messages => onSend(messages)}
-                user={{
-                    _id: user._id,
-                    name: user.name,
-                }}
-                renderBubble={renderBubble}
-                renderSend={renderSend}
-                renderActions={renderActions}
-                placeholder="Type your message..."
-                alwaysShowSend
-                scrollToBottom
-                infiniteScroll
-                loadEarlier={isLoading}
-                renderLoading={() => <ActivityIndicator size="small" color={COLORS.accent} />}
-            />
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : headerHeight + 5}
+            >
+                <View style={{ flex: 1 }}>
+                    <GiftedChat
+                        messages={messages}
+                        onSend={messages => onSend(messages)}
+                        user={{ _id: user._id, name: user.name }}
+                        renderBubble={renderBubble}
+                        renderSend={renderSend}
+                        renderDay={renderDay}
+                        renderComposer={renderComposer}
+                        renderAccessory={renderAccessory}
+                        renderMessage={renderMessage}
+                        alwaysShowSend={true}
+                        scrollToBottom
+                        infiniteScroll
+                        loadEarlier={isLoading}
+                        renderLoading={() => <ActivityIndicator size="small" color={COLORS.accent} />}
+                        isKeyboardInternallyHandled={false}
+                        bottomOffset={0}
+                        renderInputToolbar={(props) => (
+                            <InputToolbar
+                                {...props}
+                                containerStyle={styles.toolbarStyle}
+                                primaryStyle={{ alignItems: 'center' }}
+                            />
+                        )}
+                        renderActions={() => (
+                            <TouchableOpacity onPress={handlePickMedia} style={styles.mediaBtn}>
+                                <ImageIcon size={22} color={COLORS.accent} />
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+            </KeyboardAvoidingView>
+            {!keyboardHeight && <View style={{ height: Platform.OS === 'ios' ? insets.bottom : 10 }} />}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    mainContainer: { flex: 1, backgroundColor: '#F8F9FA' },
+    chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+    avatarWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    avatarChar: { color: COLORS.white, fontWeight: 'bold' },
+    onlineIndicator: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.white },
+    stylistTitle: { fontSize: 14, fontWeight: 'bold', color: COLORS.primary },
+    stylistStatus: { fontSize: 11, color: '#4CAF50' },
+    toolbarStyle: {
+        borderTopWidth: 1,
+        borderTopColor: '#EEE',
         backgroundColor: COLORS.white,
+        paddingVertical: 4,
+        width: SCREEN_WIDTH,
+        minHeight: 54,
+        justifyContent: 'center'
     },
-    header: {
-        paddingTop: 10,
-        paddingBottom: 15,
-        paddingHorizontal: 20,
-        backgroundColor: COLORS.white,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    stylistInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    avatar: {
-        width: 45,
-        height: 45,
-        borderRadius: 22.5,
-        backgroundColor: COLORS.accent,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    avatarText: {
-        color: COLORS.white,
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    onlineDot: {
-        position: 'absolute',
-        bottom: 2,
-        right: 2,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: '#4CAF50',
-        borderWidth: 2,
-        borderColor: COLORS.white,
-    },
-    stylistName: {
-        fontSize: 16,
-        fontWeight: 'bold',
+    mediaBtn: { padding: 5, marginLeft: 8, justifyContent: 'center' },
+    composerStyle: {
+        backgroundColor: '#F1F3F5',
+        borderRadius: 22,
+        paddingHorizontal: 16,
+        paddingTop: 8,
+        paddingBottom: 8,
+        fontSize: 14,
         color: COLORS.primary,
+        marginTop: 5,
+        marginBottom: 5,
+        marginLeft: 8,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+        marginRight: 4,
+        minHeight: 40
     },
-    statusText: {
-        fontSize: 12,
-        color: '#4CAF50',
-        fontWeight: '600',
-    },
-    loadingContainer: {
-        flex: 1,
+    sendContainer: {
+        width: 50,
+        height: 44,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
-        padding: 20
+        marginRight: 2,
     },
-    loadingText: {
-        marginTop: 15,
-        fontSize: 16,
-        color: COLORS.textLight,
-        textAlign: 'center'
-    },
-    loginBtn: {
-        marginTop: 20,
-        backgroundColor: COLORS.accent,
-        paddingHorizontal: 30,
-        paddingVertical: 12,
-        borderRadius: 25,
-    },
-    loginBtnText: {
-        color: COLORS.white,
-        fontWeight: 'bold',
-        fontSize: 16,
-    }
+    sendIconPill: { backgroundColor: COLORS.accent, width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+    daySeparatorWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 18 },
+    daySeparatorPill: { backgroundColor: '#E9ECEF', paddingHorizontal: 14, paddingVertical: 4, borderRadius: 12 },
+    daySeparatorText: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+    swipeHintWrap: { justifyContent: 'center', paddingLeft: 22, width: 60 },
+    replyPreviewHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderTopWidth: 1, borderTopColor: '#EEE' },
+    replyPreviewLine: { width: 4, backgroundColor: COLORS.accent, borderRadius: 2, marginRight: 10, height: '90%' },
+    replyPreviewInfo: { flex: 1 },
+    replyPreviewName: { fontSize: 12, fontWeight: 'bold', color: COLORS.accent },
+    replyPreviewMsg: { fontSize: 12, color: COLORS.textLight },
+    replyPreviewClose: { padding: 6 },
+    bubbleReplyBox: { margin: 5, padding: 8, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
+    bubbleReplyLine: { width: 3, backgroundColor: COLORS.accent, borderRadius: 2, marginRight: 8, height: '90%' },
+    bubbleReplyTextColumn: { flex: 1 },
+    bubbleReplyNameText: { fontSize: 11, fontWeight: 'bold' },
+    bubbleReplyContentText: { fontSize: 11 },
+    simpleCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white },
+    simpleText: { marginBottom: 20, color: COLORS.textLight },
+    actionBtn: { backgroundColor: COLORS.accent, paddingHorizontal: 25, paddingVertical: 10, borderRadius: 20 },
+    actionBtnText: { color: COLORS.white, fontWeight: 'bold' },
+    adminBadge: { marginLeft: 'auto', backgroundColor: 'rgba(9, 132, 227, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+    adminBadgeText: { color: COLORS.primary, fontSize: 10, fontWeight: 'bold' },
+    convoItem: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: COLORS.white, borderRadius: 12, marginBottom: 10, elevation: 1 },
+    convoAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#4CAF50', borderWidth: 2, borderColor: COLORS.white },
+    convoInfo: { flex: 1 },
+    convoName: { fontSize: 16, fontWeight: 'bold', color: COLORS.primary },
+    convoLastMsg: { fontSize: 13, color: COLORS.textLight, marginTop: 2 },
+    unreadBadge: { backgroundColor: COLORS.error, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    unreadBadgeText: { color: COLORS.white, fontSize: 10, fontWeight: 'bold' },
+    emptyState: { alignItems: 'center', marginTop: 100 },
+    emptyText: { color: COLORS.textLight, marginTop: 20, fontSize: 14 },
 });
 
 export default ChatScreen;

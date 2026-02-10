@@ -35,29 +35,32 @@ const linking = {
   },
 };
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { COLORS } from './src/theme/theme';
 
 export default function App() {
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-      <SafeAreaProvider>
-        <AuthProvider>
-          <CartProvider>
-            <RecentlyViewedProvider>
-              <WishlistProvider>
-                <NotificationProvider>
-                  <ChatProvider>
-                    <StatusBar style="light" backgroundColor={COLORS.accent} />
-                    <OfflineNotice />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <CartProvider>
+              <RecentlyViewedProvider>
+                <WishlistProvider>
+                  <NotificationProvider>
+                    <ChatProvider>
+                      <StatusBar style="light" backgroundColor={COLORS.accent} />
+                      <OfflineNotice />
 
-                    <AppNavigator linking={linking} />
-                  </ChatProvider>
-                </NotificationProvider>
-              </WishlistProvider>
-            </RecentlyViewedProvider>
-          </CartProvider>
-        </AuthProvider>
-      </SafeAreaProvider>
-    </ClerkProvider>
+                      <AppNavigator linking={linking} />
+                    </ChatProvider>
+                  </NotificationProvider>
+                </WishlistProvider>
+              </RecentlyViewedProvider>
+            </CartProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }

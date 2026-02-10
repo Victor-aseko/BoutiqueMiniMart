@@ -8,18 +8,20 @@ import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
-// SILENCE PATCH: Detect environment more robustly
-// In SDK 51+, Constants.appOwnership is often replaced by executionEnvironment
 const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 
-// Enable notifications globally by default if not in Expo Go
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
-});
+if (IS_EXPO_GO) {
+    console.log('--- NOTICE: Native Push Notifications are disabled in Expo Go (SDK 53+). Please use a Development Build for real-time alerts. ---');
+} else {
+    // Enable notifications globally by default if not in Expo Go
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+        }),
+    });
+}
 
 export const NotificationProvider = ({ children }) => {
     const { user, isLoggingOut } = useAuth();
@@ -118,25 +120,27 @@ export const NotificationProvider = ({ children }) => {
         if (user) {
             fetchNotifications();
 
-            // Setup push
-            registerForPushNotificationsAsync();
+            // Setup push and listeners ONLY if not in Expo Go
+            if (!IS_EXPO_GO) {
+                registerForPushNotificationsAsync();
 
-            // Foreground listener
-            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                console.log('Notification Received in Foreground:', notification);
-                fetchNotifications();
-            });
+                // Foreground listener
+                notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                    console.log('Notification Received in Foreground:', notification);
+                    fetchNotifications();
+                });
 
-            // Tap listener
-            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-                console.log('Notification Interaction:', response);
-            });
+                // Tap listener
+                responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                    console.log('Notification Interaction:', response);
+                });
+            }
 
             const interval = setInterval(fetchNotifications, 30000);
             return () => {
                 clearInterval(interval);
-                if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
-                if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
+                if (notificationListener.current) notificationListener.current.remove();
+                if (responseListener.current) responseListener.current.remove();
             };
         }
     }, [user, isLoggingOut, fetchNotifications]);

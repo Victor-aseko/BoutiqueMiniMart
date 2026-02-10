@@ -17,6 +17,7 @@ export const ChatProvider = ({ children }) => {
     const [isTyping, setIsTyping] = useState(false);
 
     const [onlineUsers, setOnlineUsers] = useState(new Set());
+    const [conversations, setConversations] = useState([]);
 
     const connectSocket = useCallback(() => {
         if (!user || !user._id) return;
@@ -32,7 +33,14 @@ export const ChatProvider = ({ children }) => {
         });
 
         newSocket.on('receiveMessage', (message) => {
-            setMessages((prev) => [...prev, message]);
+            // Update messages if the message is for the current active chat
+            if (activeChat === message.sender || activeChat === message.recipient) {
+                setMessages((prev) => [...prev, message]);
+            }
+            // Always refresh conversations list for admins to show new message alerts
+            if (user.isAdmin) {
+                fetchConversations();
+            }
         });
 
         newSocket.on('userStatus', ({ userId, status }) => {
@@ -47,20 +55,38 @@ export const ChatProvider = ({ children }) => {
         setSocket(newSocket);
 
         return () => newSocket.close();
-    }, [user]);
+    }, [user, activeChat]);
 
     useEffect(() => {
         if (user) {
             connectSocket();
+            if (user.isAdmin) {
+                fetchConversations();
+            }
         } else {
             if (socket) socket.close();
             setSocket(null);
         }
     }, [user, connectSocket]);
 
+    const fetchConversations = async () => {
+        if (!user || !user.isAdmin) return;
+        try {
+            const response = await api.get('/messages/users');
+            setConversations(response.data);
+        } catch (error) {
+            console.error('--- CHAT LIST ERROR ---');
+            console.error('Status:', error.response?.status);
+            console.error('Response Body:', JSON.stringify(error.response?.data, null, 2));
+            console.error('Error Msg:', error.message);
+            setConversations([]);
+        }
+    };
+
     const fetchMessages = async (recipientId) => {
         if (!user) return;
         setIsLoading(true);
+        setActiveChat(recipientId);
         try {
             const response = await api.get(`/messages/${recipientId}`);
             const formattedMessages = response.data.map(msg => ({
@@ -69,7 +95,7 @@ export const ChatProvider = ({ children }) => {
                 createdAt: msg.createdAt,
                 user: {
                     _id: msg.sender,
-                    name: msg.sender === user._id ? user.name : 'Boutique Stylist',
+                    name: msg.sender === user._id ? user.name : (msg.senderName || 'Boutique Stylist'),
                     avatar: msg.sender === user._id ? null : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Stylist'
                 },
                 image: msg.image
@@ -130,7 +156,9 @@ export const ChatProvider = ({ children }) => {
             fetchMessages,
             sendMessage,
             isTyping,
-            onlineUsers
+            onlineUsers,
+            conversations,
+            fetchConversations
         }}>
             {children}
         </ChatContext.Provider>

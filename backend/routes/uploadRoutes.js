@@ -18,7 +18,8 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'boutique_mini_mart',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov'],
+        resource_type: 'auto',
     },
 });
 
