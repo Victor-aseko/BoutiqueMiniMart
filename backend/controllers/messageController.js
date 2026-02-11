@@ -214,5 +214,6 @@ module.exports = {
     markMessagesRead,
     getChatUsers,
     deleteMessage,
-    deleteConversation
+    deleteConversation,
+    updateMessage
 };
