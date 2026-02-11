@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Platform, Animated, KeyboardAvoidingView, Keyboard, Dimensions, FlatList, Alert } from 'react-native';
 import { GiftedChat, Bubble, Send, InputToolbar, Composer, Message, MessageText, Time } from 'react-native-gifted-chat';
 import { useHeaderHeight } from '@react-navigation/elements';
@@ -46,12 +46,13 @@ const ChatScreen = ({ navigation }) => {
 
     const [primaryAdmin, setPrimaryAdmin] = useState(null);
     const [allAdmins, setAllAdmins] = useState([]);
-    const [isLocalLoading, setIsLocalLoading] = useState(true);
+    const [isLocalLoading, setIsLocalLoading] = useState(false);
     const [replyingTo, setReplyingTo] = useState(null);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [inputText, setInputText] = useState('');
     const [editingMessageId, setEditingMessageId] = useState(null);
+    const [typingResetKey, setTypingResetKey] = useState(0);
 
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
@@ -115,6 +116,7 @@ const ChatScreen = ({ navigation }) => {
                 setMessages(prev => prev.map(m => m._id === editingMessageId ? { ...m, text: message.text } : m));
                 setEditingMessageId(null);
                 setInputText('');
+                setTypingResetKey(prev => prev + 1); // Reset the input field completely
                 return;
             } catch (error) {
                 console.error('Error updating message:', error);
@@ -134,7 +136,16 @@ const ChatScreen = ({ navigation }) => {
         sendMessage(recipientId, finalText, message.image);
     }, [primaryAdmin, selectedCustomer, sendMessage, replyingTo, user?.isAdmin]);
 
-    const handleDeleteConversation = (userId, name) => {
+    const handleInputTextChanged = useCallback((text) => {
+        setInputText(text);
+    }, []);
+
+    const handleSend = useCallback((messages) => {
+        onSend(messages);
+        setInputText('');
+    }, [onSend]);
+
+    const handleDeleteConversation = useCallback((userId, name) => {
         Alert.alert(
             "Delete Chat",
             `Are you sure you want to delete all messages with ${name}? This cannot be undone.`,
@@ -161,55 +172,60 @@ const ChatScreen = ({ navigation }) => {
                 }
             ]
         );
-    };
+    }, [selectedCustomer?._id, setSelectedCustomer, setMessages, fetchConversations]);
 
-    const handleMessageOptions = (message) => {
+    const handleMessageOptions = useCallback((message) => {
         if (!message || !user) return;
         const isMine = message.user?._id?.toString() === user?._id?.toString();
         const isAdmin = user?.isAdmin;
         const canDelete = isMine || isAdmin;
 
-        const options = [
-            { text: "Cancel", style: "cancel" }
-        ];
+        const options = [];
 
+        // 1. Edit Option (if it's my message)
         if (isMine && message.text) {
             options.push({
                 text: "Edit Message ✏️",
                 onPress: () => {
                     setEditingMessageId(message._id);
                     setInputText(message.text);
+                    setTypingResetKey(prev => prev + 1);
                 }
             });
         }
 
+        // 2. Delete Option
         if (canDelete) {
             options.push({
-                text: "Delete",
+                text: "Delete Message 🗑️",
                 style: "destructive",
                 onPress: () => {
                     Alert.alert(
                         "Delete Message",
-                        "Are you sure? This will remove it for everyone.",
+                        "Are you sure you want to delete this message?",
                         [
-                            { text: "No", style: "cancel" },
-                            {
-                                text: "Yes, Delete",
-                                style: "destructive",
-                                onPress: () => performDelete(message._id)
-                            }
+                            { text: "Cancel", style: "cancel" },
+                            { text: "Delete", style: "destructive", onPress: () => performDelete(message._id) }
                         ]
                     );
                 }
             });
         }
 
-        if (options.length > 1) {
-            Alert.alert("Message Options", "Choose an action", options);
-        }
-    };
+        // 3. Always add a Cancel option at the end
+        options.push({ text: "Cancel", style: "cancel" });
 
-    const performDelete = async (messageId) => {
+        // Alert.alert supports up to 3 buttons (Edit, Delete, Cancel)
+        if (options.length > 0) {
+            Alert.alert(
+                "Message Options",
+                "What would you like to do?",
+                options
+            );
+        }
+    }, [user, performDelete, setEditingMessageId, setInputText, setTypingResetKey]);
+
+    const performDelete = useCallback(async (messageId) => {
         try {
             await api.delete(`/messages/${messageId}`);
             // Optimistic update
@@ -222,9 +238,9 @@ const ChatScreen = ({ navigation }) => {
             console.error('Error deleting message:', error);
             Alert.alert("Error", "Could not delete message. Please try again.");
         }
-    };
+    }, [user, selectedCustomer, primaryAdmin, fetchMessages]);
 
-    const handlePickMedia = async () => {
+    const handlePickMedia = useCallback(async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') return;
 
@@ -256,9 +272,9 @@ const ChatScreen = ({ navigation }) => {
                 setIsLocalLoading(false);
             }
         }
-    };
+    }, [user, onSend]);
 
-    const renderCustomView = (props) => {
+    const renderCustomView = useCallback((props) => {
         const { currentMessage } = props;
         if (currentMessage.replyData) {
             const { name, repliedToText } = currentMessage.replyData;
@@ -279,9 +295,9 @@ const ChatScreen = ({ navigation }) => {
             );
         }
         return null;
-    };
+    }, [user, COLORS.accent, COLORS.textLight]);
 
-    const renderBubble = (props) => {
+    const renderBubble = useCallback((props) => {
         const { currentMessage } = props;
         return (
             <Bubble
@@ -314,10 +330,10 @@ const ChatScreen = ({ navigation }) => {
                 }}
             />
         );
-    };
+    }, [renderCustomView, handleMessageOptions, COLORS.accent, COLORS.primary, SCREEN_WIDTH]);
 
-    const renderSend = (props) => {
-        const isTyped = inputText.trim().length > 0;
+    const renderSend = useCallback((props) => {
+        const isTyped = props.text && props.text.trim().length > 0;
         return (
             <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
                 <View style={[
@@ -331,20 +347,18 @@ const ChatScreen = ({ navigation }) => {
                 </View>
             </Send>
         );
-    };
+    }, [COLORS.accent]);
 
-    const renderComposer = (props) => (
+    const renderComposer = useCallback((props) => (
         <Composer
             {...props}
             textInputStyle={styles.composerStyle}
             placeholder="Type your message..."
             multiline
-            text={inputText}
-            onTextChanged={text => setInputText(text)}
         />
-    );
+    ), []);
 
-    const renderTime = (props) => (
+    const renderTime = useCallback((props) => (
         <Time
             {...props}
             timeTextStyle={{
@@ -352,9 +366,9 @@ const ChatScreen = ({ navigation }) => {
                 left: { color: COLORS.textLight, fontSize: 10 },
             }}
         />
-    );
+    ), [COLORS.textLight]);
 
-    const renderDay = (props) => {
+    const renderDay = useCallback((props) => {
         if (!props.currentMessage) return null;
         const date = dayjs(props.currentMessage.createdAt);
         const now = dayjs();
@@ -383,9 +397,9 @@ const ChatScreen = ({ navigation }) => {
                 </View>
             </View>
         );
-    };
+    }, []);
 
-    const renderMessage = (props) => {
+    const renderMessage = useCallback((props) => {
         const { currentMessage } = props;
         const renderLeftActions = (progress, dragX) => {
             const scale = dragX.interpolate({ inputRange: [0, 50], outputRange: [0, 1], extrapolate: 'clamp' });
@@ -400,9 +414,9 @@ const ChatScreen = ({ navigation }) => {
                 <Message {...props} />
             </Swipeable>
         );
-    };
+    }, [setReplyingTo, COLORS.accent]);
 
-    const renderAccessory = () => {
+    const renderAccessory = useCallback(() => {
         if (!replyingTo && !editingMessageId) return null;
 
         if (editingMessageId) {
@@ -411,9 +425,13 @@ const ChatScreen = ({ navigation }) => {
                     <View style={[styles.replyPreviewLine, { backgroundColor: COLORS.warning || '#FF9F43' }]} />
                     <View style={styles.replyPreviewInfo}>
                         <Text style={[styles.replyPreviewName, { color: COLORS.warning || '#FF9F43' }]}>Editing Message</Text>
-                        <Text style={styles.replyPreviewMsg} numberOfLines={1}>{inputText}</Text>
+                        <Text style={styles.replyPreviewMsg} numberOfLines={1}>Modify your text in the box below</Text>
                     </View>
-                    <TouchableOpacity onPress={() => { setEditingMessageId(null); setInputText(''); }} style={styles.replyPreviewClose}>
+                    <TouchableOpacity onPress={() => {
+                        setEditingMessageId(null);
+                        setInputText('');
+                        setTypingResetKey(prev => prev + 1);
+                    }} style={styles.replyPreviewClose}>
                         <X size={16} color={COLORS.textLight} />
                     </TouchableOpacity>
                 </View>
@@ -431,9 +449,23 @@ const ChatScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => setReplyingTo(null)} style={styles.replyPreviewClose}><X size={16} color={COLORS.textLight} /></TouchableOpacity>
             </View>
         );
-    };
+    }, [replyingTo, editingMessageId, setEditingMessageId, setInputText, setReplyingTo, COLORS.warning, COLORS.textLight]);
 
-    const renderConversationItem = ({ item }) => {
+    const renderInputToolbar = useCallback((props) => (
+        <InputToolbar
+            {...props}
+            containerStyle={styles.toolbarStyle}
+            primaryStyle={{ alignItems: 'center', paddingRight: 8, justifyContent: 'center' }}
+        />
+    ), []);
+
+    const renderActions = useCallback(() => (
+        <TouchableOpacity onPress={handlePickMedia} style={styles.mediaBtn}>
+            <ImageIcon size={22} color={COLORS.accent} />
+        </TouchableOpacity>
+    ), [handlePickMedia, COLORS.accent]);
+
+    const renderConversationItem = useCallback(({ item }) => {
         const isOnline = onlineUsers.has(item._id);
         return (
             <TouchableOpacity
@@ -467,7 +499,7 @@ const ChatScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </TouchableOpacity>
         );
-    };
+    }, [onlineUsers, setSelectedCustomer, fetchMessages, COLORS.white, COLORS.error, formatDate, handleDeleteConversation]);
 
     if (!user) {
         return (
@@ -518,6 +550,19 @@ const ChatScreen = ({ navigation }) => {
     const headerTitle = user.isAdmin ? selectedCustomer?.name : 'Boutique Stylist';
     const activeHeaderOnline = user.isAdmin ? isCustomerOnline : isStylistOnline;
 
+    const chatUser = useMemo(() => ({
+        _id: user._id,
+        name: user.name
+    }), [user._id, user.name]);
+
+    const handleLongPress = useCallback((context, message) => {
+        handleMessageOptions(message);
+    }, [handleMessageOptions]);
+
+    const renderLoading = useCallback(() => (
+        <ActivityIndicator size="small" color={COLORS.accent} />
+    ), []);
+
     return (
         <View style={styles.mainContainer}>
             <View style={styles.chatHeader}>
@@ -549,13 +594,11 @@ const ChatScreen = ({ navigation }) => {
             >
                 <View style={{ flex: 1 }}>
                     <GiftedChat
+                        key={`chat-${typingResetKey}`}
                         messages={messages}
-                        onSend={messages => {
-                            onSend(messages);
-                            setInputText('');
-                        }}
-                        user={{ _id: user._id, name: user.name }}
-                        onInputTextChanged={text => setInputText(text)}
+                        onSend={handleSend}
+                        user={chatUser}
+                        initialText={inputText}
                         renderBubble={renderBubble}
                         renderSend={renderSend}
                         renderDay={renderDay}
@@ -563,27 +606,16 @@ const ChatScreen = ({ navigation }) => {
                         renderTime={renderTime}
                         renderAccessory={renderAccessory}
                         renderMessage={renderMessage}
-                        onLongPress={(context, message) => handleMessageOptions(message)}
+                        onLongPress={handleLongPress}
                         alwaysShowSend={true}
                         scrollToBottom
                         infiniteScroll
                         loadEarlier={isLoading}
-                        renderLoading={() => <ActivityIndicator size="small" color={COLORS.accent} />}
-                        isKeyboardInternallyHandled={false}
+                        renderLoading={renderLoading}
                         bottomOffset={0}
                         minInputToolbarHeight={60}
-                        renderInputToolbar={(props) => (
-                            <InputToolbar
-                                {...props}
-                                containerStyle={styles.toolbarStyle}
-                                primaryStyle={{ alignItems: 'center', paddingRight: 8, justifyContent: 'center' }}
-                            />
-                        )}
-                        renderActions={() => (
-                            <TouchableOpacity onPress={handlePickMedia} style={styles.mediaBtn}>
-                                <ImageIcon size={22} color={COLORS.accent} />
-                            </TouchableOpacity>
-                        )}
+                        renderInputToolbar={renderInputToolbar}
+                        renderActions={renderActions}
                     />
                 </View>
             </KeyboardAvoidingView>
