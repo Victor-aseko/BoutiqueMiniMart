@@ -13,6 +13,7 @@ import { ChatProvider } from './src/context/ChatContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import OfflineNotice from './src/components/OfflineNotice';
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
@@ -41,26 +42,28 @@ import { COLORS } from './src/theme/theme';
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <CartProvider>
-              <RecentlyViewedProvider>
-                <WishlistProvider>
-                  <NotificationProvider>
-                    <ChatProvider>
-                      <StatusBar style="light" backgroundColor={COLORS.accent} />
-                      <OfflineNotice />
+      <KeyboardProvider>
+        <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+          <SafeAreaProvider>
+            <AuthProvider>
+              <CartProvider>
+                <RecentlyViewedProvider>
+                  <WishlistProvider>
+                    <NotificationProvider>
+                      <ChatProvider>
+                        <StatusBar style="light" backgroundColor={COLORS.accent} />
+                        <OfflineNotice />
 
-                      <AppNavigator linking={linking} />
-                    </ChatProvider>
-                  </NotificationProvider>
-                </WishlistProvider>
-              </RecentlyViewedProvider>
-            </CartProvider>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </ClerkProvider>
+                        <AppNavigator linking={linking} />
+                      </ChatProvider>
+                    </NotificationProvider>
+                  </WishlistProvider>
+                </RecentlyViewedProvider>
+              </CartProvider>
+            </AuthProvider>
+          </SafeAreaProvider>
+        </ClerkProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
