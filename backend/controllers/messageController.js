@@ -146,9 +146,49 @@ const getChatUsers = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Delete a message
+// @route   DELETE /api/messages/:id
+// @access  Private
+const deleteMessage = asyncHandler(async (req, res) => {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+        res.status(404);
+        throw new Error('Message not found');
+    }
+
+    // Only sender can delete their message
+    if (message.sender.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error('User not authorized to delete this message');
+    }
+
+    await message.deleteOne();
+    res.json({ message: 'Message removed' });
+});
+
+// @desc    Delete all messages between current user and specified user
+// @route   DELETE /api/messages/conversation/:userId
+// @access  Private
+const deleteConversation = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    await Message.deleteMany({
+        $or: [
+            { sender: currentUserId, recipient: userId },
+            { sender: userId, recipient: currentUserId }
+        ]
+    });
+
+    res.json({ message: 'Conversation cleared' });
+});
+
 module.exports = {
     getMessages,
     sendMessage,
     markMessagesRead,
     getChatUsers,
+    deleteMessage,
+    deleteConversation
 };

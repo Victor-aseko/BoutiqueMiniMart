@@ -5,12 +5,16 @@ const {
     sendMessage,
     markMessagesRead,
     getChatUsers,
+    deleteMessage,
+    deleteConversation
 } = require('../controllers/messageController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/').post(protect, sendMessage);
 router.route('/users').get(protect, admin, getChatUsers);
+router.route('/conversation/:userId').delete(protect, deleteConversation);
 router.route('/:userId').get(protect, getMessages);
 router.route('/:userId/read').put(protect, markMessagesRead);
+router.route('/:id').delete(protect, deleteMessage);
 
 module.exports = router;

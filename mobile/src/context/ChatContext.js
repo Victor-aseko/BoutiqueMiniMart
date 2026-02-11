@@ -19,6 +19,34 @@ export const ChatProvider = ({ children }) => {
     const [onlineUsers, setOnlineUsers] = useState(new Set());
     const [conversations, setConversations] = useState([]);
 
+    const parseMessage = (msg) => {
+        let cleanText = msg.text || '';
+        let replyData = null;
+
+        if (cleanText.startsWith('|REPLY|')) {
+            const parts = cleanText.split('|');
+            replyData = {
+                name: parts[2],
+                repliedToText: parts[3],
+                actualText: parts[4]
+            };
+            cleanText = parts[4] || '';
+        }
+
+        return {
+            _id: msg._id,
+            text: cleanText,
+            replyData,
+            image: msg.image,
+            createdAt: msg.createdAt,
+            user: {
+                _id: msg.senderId || msg.sender,
+                name: msg.sender === user?._id ? user.name : (msg.senderName || 'Boutique Stylist'),
+                avatar: msg.sender === user?._id ? null : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Stylist'
+            }
+        };
+    };
+
     const connectSocket = useCallback(() => {
         if (!user || !user._id) return;
 
@@ -34,8 +62,9 @@ export const ChatProvider = ({ children }) => {
 
         newSocket.on('receiveMessage', (message) => {
             // Update messages if the message is for the current active chat
-            if (activeChat === message.sender || activeChat === message.recipient) {
-                setMessages((prev) => [...prev, message]);
+            if (activeChat === message.senderId || activeChat === message.recipientId || activeChat === message.sender || activeChat === message.recipient) {
+                const parsed = parseMessage(message);
+                setMessages((prev) => [parsed, ...prev]);
             }
             // Always refresh conversations list for admins to show new message alerts
             if (user.isAdmin) {
@@ -89,17 +118,7 @@ export const ChatProvider = ({ children }) => {
         setActiveChat(recipientId);
         try {
             const response = await api.get(`/messages/${recipientId}`);
-            const formattedMessages = response.data.map(msg => ({
-                _id: msg._id,
-                text: msg.text,
-                createdAt: msg.createdAt,
-                user: {
-                    _id: msg.sender,
-                    name: msg.sender === user._id ? user.name : (msg.senderName || 'Boutique Stylist'),
-                    avatar: msg.sender === user._id ? null : 'https://api.dicebear.com/7.x/avataaars/svg?seed=Stylist'
-                },
-                image: msg.image
-            })).reverse();
+            const formattedMessages = response.data.map(msg => parseMessage(msg)).reverse();
             setMessages(formattedMessages);
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -119,16 +138,11 @@ export const ChatProvider = ({ children }) => {
                 image
             });
 
-            const newMessage = {
-                _id: response.data._id,
-                text,
-                image,
-                createdAt: response.data.createdAt,
-                user: {
-                    _id: user._id,
-                    name: user.name,
-                }
-            };
+            const parsedMessage = parseMessage({
+                ...response.data,
+                sender: user._id,
+                senderName: user.name
+            });
 
             // 2. Emit via Socket for real-time
             if (socket) {
@@ -139,7 +153,7 @@ export const ChatProvider = ({ children }) => {
             }
 
             // 3. Update local state
-            setMessages(prev => [newMessage, ...prev]);
+            setMessages(prev => [parsedMessage, ...prev]);
 
         } catch (error) {
             console.error('Error sending message:', error);

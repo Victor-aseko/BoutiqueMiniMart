@@ -1,18 +1,33 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Platform, Animated, KeyboardAvoidingView, Keyboard, Dimensions, FlatList } from 'react-native';
-import { GiftedChat, Bubble, Send, InputToolbar, Composer, Message, MessageText } from 'react-native-gifted-chat';
+import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Platform, Animated, KeyboardAvoidingView, Keyboard, Dimensions, FlatList, Alert } from 'react-native';
+import { GiftedChat, Bubble, Send, InputToolbar, Composer, Message, MessageText, Time } from 'react-native-gifted-chat';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { COLORS } from '../../theme/theme';
-import { Image as ImageIcon, Send as SendIcon, X, CornerUpLeft, ChevronLeft, User as UserIcon } from 'lucide-react-native';
+import { Image as ImageIcon, Send as SendIcon, X, CornerUpLeft, ChevronLeft, User as UserIcon, Trash2 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../services/api';
 import dayjs from 'dayjs';
 import { Swipeable } from 'react-native-gesture-handler';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const formatDate = (dateValue) => {
+    if (!dateValue) return '';
+    const date = dayjs(dateValue);
+    const now = dayjs();
+
+    if (date.isSame(now, 'day')) {
+        return date.format('h:mm A');
+    } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
+        return 'Yesterday';
+    } else if (date.isSame(now, 'year')) {
+        return date.format('MMM D');
+    }
+    return date.format('MM/DD/YYYY');
+};
 
 const ChatScreen = ({ navigation }) => {
     const { user } = useAuth();
@@ -34,6 +49,7 @@ const ChatScreen = ({ navigation }) => {
     const [replyingTo, setReplyingTo] = useState(null);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [inputText, setInputText] = useState('');
 
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
@@ -101,6 +117,57 @@ const ChatScreen = ({ navigation }) => {
         sendMessage(recipientId, finalText, message.image);
     }, [primaryAdmin, selectedCustomer, sendMessage, replyingTo, user?.isAdmin]);
 
+    const handleDeleteConversation = (userId, name) => {
+        Alert.alert(
+            "Delete Chat",
+            `Are you sure you want to delete all messages with ${name}? This cannot be undone.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/messages/conversation/${userId}`);
+                            if (selectedCustomer?._id === userId) {
+                                setSelectedCustomer(null);
+                            }
+                            fetchConversations();
+                        } catch (error) {
+                            console.error('Error deleting conversation:', error);
+                            Alert.alert("Error", "Could not delete conversation");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleDeleteMessage = (messageId) => {
+        Alert.alert(
+            "Delete Message",
+            "Are you sure you want to delete this message?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/messages/${messageId}`);
+                            // Refresh messages
+                            const currentRecipient = user?.isAdmin ? selectedCustomer?._id : primaryAdmin?._id;
+                            if (currentRecipient) fetchMessages(currentRecipient);
+                        } catch (error) {
+                            console.error('Error deleting message:', error);
+                            Alert.alert("Error", "Could not delete message");
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const handlePickMedia = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') return;
@@ -137,8 +204,8 @@ const ChatScreen = ({ navigation }) => {
 
     const renderCustomView = (props) => {
         const { currentMessage } = props;
-        if (currentMessage.text && typeof currentMessage.text === 'string' && currentMessage.text.startsWith('|REPLY|')) {
-            const parts = currentMessage.text.split('|');
+        if (currentMessage.replyData) {
+            const { name, repliedToText } = currentMessage.replyData;
             return (
                 <View style={[styles.bubbleReplyBox, {
                     backgroundColor: currentMessage.user._id === user._id ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)'
@@ -146,10 +213,10 @@ const ChatScreen = ({ navigation }) => {
                     <View style={styles.bubbleReplyLine} />
                     <View style={styles.bubbleReplyTextColumn}>
                         <Text style={[styles.bubbleReplyNameText, { color: currentMessage.user._id === user._id ? '#FFF' : COLORS.accent }]}>
-                            {parts[2]}
+                            {name}
                         </Text>
                         <Text style={[styles.bubbleReplyContentText, { color: currentMessage.user._id === user._id ? '#EEE' : COLORS.textLight }]} numberOfLines={1}>
-                            {parts[3]}
+                            {repliedToText}
                         </Text>
                     </View>
                 </View>
@@ -158,47 +225,75 @@ const ChatScreen = ({ navigation }) => {
         return null;
     };
 
-    const renderMessageText = (props) => {
-        let textStr = props.currentMessage.text;
-        if (textStr && typeof textStr === 'string' && textStr.startsWith('|REPLY|')) {
-            textStr = textStr.split('|')[4] || '';
-        }
-        return <MessageText {...props} text={textStr} />;
-    };
-
     const renderBubble = (props) => (
         <Bubble
             {...props}
             renderCustomView={renderCustomView}
-            renderMessageText={renderMessageText}
             wrapperStyle={{
-                right: { backgroundColor: COLORS.accent, borderRadius: 15, marginBottom: 5, padding: 2 },
-                left: { backgroundColor: '#F0F0F0', borderRadius: 15, marginBottom: 5, padding: 2 }
+                right: {
+                    backgroundColor: COLORS.accent,
+                    borderRadius: 20,
+                    marginBottom: 8,
+                    padding: 6,
+                    maxWidth: SCREEN_WIDTH * 0.82
+                },
+                left: {
+                    backgroundColor: '#F1F3F5',
+                    borderRadius: 20,
+                    marginBottom: 8,
+                    padding: 6,
+                    maxWidth: SCREEN_WIDTH * 0.82
+                }
             }}
             textStyle={{
-                right: { color: COLORS.white, fontSize: 14, lineHeight: 20 },
-                left: { color: COLORS.primary, fontSize: 14, lineHeight: 20 }
+                right: { color: COLORS.white, fontSize: 15, lineHeight: 22 },
+                left: { color: COLORS.primary, fontSize: 15, lineHeight: 22 }
             }}
         />
     );
 
-    const renderSend = (props) => (
-        <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
-            <View style={styles.sendIconPill}>
-                <SendIcon size={18} color={COLORS.white} />
-            </View>
-        </Send>
-    );
+    const renderSend = (props) => {
+        const isTyped = inputText.trim().length > 0;
+        return (
+            <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
+                <View style={[
+                    styles.sendIconPill,
+                    { backgroundColor: isTyped ? COLORS.accent : '#F1F3F5', borderWidth: isTyped ? 0 : 1, borderColor: '#E9ECEF' }
+                ]}>
+                    <SendIcon size={18} color={isTyped ? COLORS.white : '#A0AEC0'} />
+                </View>
+            </Send>
+        );
+    };
 
     const renderComposer = (props) => (
         <Composer {...props} textInputStyle={styles.composerStyle} placeholder="Type your message..." multiline />
+    );
+
+    const renderTime = (props) => (
+        <Time
+            {...props}
+            timeTextStyle={{
+                right: { color: 'rgba(255, 255, 255, 0.7)', fontSize: 10 },
+                left: { color: COLORS.textLight, fontSize: 10 },
+            }}
+        />
     );
 
     const renderDay = (props) => {
         if (!props.currentMessage) return null;
         const date = dayjs(props.currentMessage.createdAt);
         const now = dayjs();
-        let dateText = date.isSame(now, 'day') ? 'Today' : (date.isSame(now.subtract(1, 'day'), 'day') ? 'Yesterday' : date.format('MMMM D, YYYY'));
+
+        let dateText = '';
+        if (date.isSame(now, 'day')) {
+            dateText = 'Today';
+        } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
+            dateText = 'Yesterday';
+        } else {
+            dateText = date.format('MMMM D, YYYY');
+        }
+
         if (props.previousMessage && dayjs(props.previousMessage.createdAt).isSame(date, 'day')) return null;
         return (
             <View style={styles.daySeparatorWrap}>
@@ -228,8 +323,7 @@ const ChatScreen = ({ navigation }) => {
 
     const renderAccessory = () => {
         if (!replyingTo) return null;
-        const textStr = replyingTo.text || '';
-        const displayName = textStr && typeof textStr === 'string' && textStr.startsWith('|REPLY|') ? textStr.split('|')[4] : (textStr || (replyingTo.image ? '📷 Media message' : 'Message'));
+        const displayName = replyingTo.replyData ? replyingTo.replyData.actualText : (replyingTo.text || (replyingTo.image ? '📷 Media message' : 'Message'));
         return (
             <View style={styles.replyPreviewHeader}>
                 <View style={styles.replyPreviewLine} />
@@ -257,7 +351,10 @@ const ChatScreen = ({ navigation }) => {
                     {isOnline && <View style={styles.onlineDot} />}
                 </View>
                 <View style={styles.convoInfo}>
-                    <Text style={styles.convoName}>{item.name}</Text>
+                    <View style={styles.convoHeaderRow}>
+                        <Text style={styles.convoName}>{item.name}</Text>
+                        <Text style={styles.convoDate}>{formatDate(item.createdAt)}</Text>
+                    </View>
                     <Text style={styles.convoLastMsg} numberOfLines={1}>{item.lastMessage || 'Click to respond...'}</Text>
                 </View>
                 {item.unreadCount > 0 && (
@@ -265,6 +362,12 @@ const ChatScreen = ({ navigation }) => {
                         <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
                     </View>
                 )}
+                <TouchableOpacity
+                    style={styles.convoDeleteBtn}
+                    onPress={() => handleDeleteConversation(item._id, item.name)}
+                >
+                    <Trash2 size={18} color={COLORS.error} />
+                </TouchableOpacity>
             </TouchableOpacity>
         );
     };
@@ -330,10 +433,16 @@ const ChatScreen = ({ navigation }) => {
                     <Text style={styles.avatarChar}>{headerTitle.charAt(0)}</Text>
                     <View style={[styles.onlineIndicator, { backgroundColor: activeHeaderOnline ? '#4CAF50' : '#BBB' }]} />
                 </View>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Text style={styles.stylistTitle}>{headerTitle}</Text>
                     <Text style={styles.stylistStatus}>{activeHeaderOnline ? 'Online Now' : 'Currently Offline'}</Text>
                 </View>
+                <TouchableOpacity
+                    onPress={() => handleDeleteConversation(user.isAdmin ? selectedCustomer?._id : primaryAdmin?._id, headerTitle)}
+                    style={{ padding: 5 }}
+                >
+                    <Trash2 size={20} color={COLORS.textLight} />
+                </TouchableOpacity>
             </View>
 
             <KeyboardAvoidingView
@@ -346,12 +455,19 @@ const ChatScreen = ({ navigation }) => {
                         messages={messages}
                         onSend={messages => onSend(messages)}
                         user={{ _id: user._id, name: user.name }}
+                        onInputTextChanged={text => setInputText(text)}
                         renderBubble={renderBubble}
                         renderSend={renderSend}
                         renderDay={renderDay}
                         renderComposer={renderComposer}
+                        renderTime={renderTime}
                         renderAccessory={renderAccessory}
                         renderMessage={renderMessage}
+                        onLongPress={(context, message) => {
+                            if (message.user._id === user._id) {
+                                handleDeleteMessage(message._id);
+                            }
+                        }}
                         alwaysShowSend={true}
                         scrollToBottom
                         infiniteScroll
@@ -359,11 +475,12 @@ const ChatScreen = ({ navigation }) => {
                         renderLoading={() => <ActivityIndicator size="small" color={COLORS.accent} />}
                         isKeyboardInternallyHandled={false}
                         bottomOffset={0}
+                        minInputToolbarHeight={60}
                         renderInputToolbar={(props) => (
                             <InputToolbar
                                 {...props}
                                 containerStyle={styles.toolbarStyle}
-                                primaryStyle={{ alignItems: 'center' }}
+                                primaryStyle={{ alignItems: 'center', paddingRight: 8 }}
                             />
                         )}
                         renderActions={() => (
@@ -446,12 +563,15 @@ const styles = StyleSheet.create({
     convoAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.accent, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
     onlineDot: { position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#4CAF50', borderWidth: 2, borderColor: COLORS.white },
     convoInfo: { flex: 1 },
+    convoHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     convoName: { fontSize: 16, fontWeight: 'bold', color: COLORS.primary },
-    convoLastMsg: { fontSize: 13, color: COLORS.textLight, marginTop: 2 },
-    unreadBadge: { backgroundColor: COLORS.error, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+    convoDate: { fontSize: 11, color: COLORS.textLight },
+    convoLastMsg: { fontSize: 13, color: COLORS.textLight, marginTop: 2, marginRight: 20 },
+    unreadBadge: { backgroundColor: COLORS.error, width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginLeft: 5 },
     unreadBadgeText: { color: COLORS.white, fontSize: 10, fontWeight: 'bold' },
     emptyState: { alignItems: 'center', marginTop: 100 },
     emptyText: { color: COLORS.textLight, marginTop: 20, fontSize: 14 },
+    convoDeleteBtn: { padding: 8, marginLeft: 10 },
 });
 
 export default ChatScreen;
