@@ -547,8 +547,8 @@ const ChatScreen = ({ navigation }) => {
     // For customers, the "Stylist" is online if ANY admin is online (checking primary one for now as a reliable proxy)
     const isStylistOnline = allAdmins.some(admin => onlineUsers.has(admin?._id));
 
-    const headerTitle = user.isAdmin ? selectedCustomer?.name : 'Boutique Stylist';
-    const activeHeaderOnline = user.isAdmin ? isCustomerOnline : isStylistOnline;
+    const headerTitle = user.isAdmin ? (selectedCustomer?.name || 'Customer') : 'Boutique Stylist';
+    const activeHeaderOnline = user.isAdmin ? (!!isCustomerOnline) : (!!isStylistOnline);
 
     const chatUser = useMemo(() => ({
         _id: user._id,
@@ -572,7 +572,7 @@ const ChatScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 )}
                 <View style={[styles.avatarWrap, { backgroundColor: user.isAdmin ? COLORS.primary : COLORS.accent }]}>
-                    <Text style={styles.avatarChar}>{headerTitle.charAt(0)}</Text>
+                    <Text style={styles.avatarChar}>{(headerTitle || '?').charAt(0).toUpperCase()}</Text>
                     <View style={[styles.onlineIndicator, { backgroundColor: activeHeaderOnline ? '#4CAF50' : '#BBB' }]} />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -587,38 +587,34 @@ const ChatScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : headerHeight + 5}
-            >
-                <View style={{ flex: 1 }}>
-                    <GiftedChat
-                        key={`chat-${typingResetKey}`}
-                        messages={messages}
-                        onSend={handleSend}
-                        user={chatUser}
-                        initialText={inputText}
-                        renderBubble={renderBubble}
-                        renderSend={renderSend}
-                        renderDay={renderDay}
-                        renderComposer={renderComposer}
-                        renderTime={renderTime}
-                        renderAccessory={renderAccessory}
-                        renderMessage={renderMessage}
-                        onLongPress={handleLongPress}
-                        alwaysShowSend={true}
-                        scrollToBottom
-                        infiniteScroll
-                        loadEarlier={isLoading}
-                        renderLoading={renderLoading}
-                        bottomOffset={0}
-                        minInputToolbarHeight={60}
-                        renderInputToolbar={renderInputToolbar}
-                        renderActions={renderActions}
-                    />
-                </View>
-            </KeyboardAvoidingView>
+            {/* GiftedChat v2 with KeyboardProvider at root handles its own layout. 
+                Wrapping it in another KeyboardAvoidingView causes double offset/crashes on some devices */}
+            <View style={{ flex: 1 }}>
+                <GiftedChat
+                    key={`chat-${typingResetKey}-${selectedCustomer?._id || 'main'}`}
+                    messages={messages}
+                    onSend={handleSend}
+                    user={chatUser}
+                    initialText={inputText}
+                    renderBubble={renderBubble}
+                    renderSend={renderSend}
+                    renderDay={renderDay}
+                    renderComposer={renderComposer}
+                    renderTime={renderTime}
+                    renderAccessory={renderAccessory}
+                    renderMessage={renderMessage}
+                    onLongPress={handleLongPress}
+                    alwaysShowSend={true}
+                    scrollToBottom
+                    infiniteScroll
+                    loadEarlier={isLoading}
+                    renderLoading={renderLoading}
+                    bottomOffset={0}
+                    minInputToolbarHeight={60}
+                    renderInputToolbar={renderInputToolbar}
+                    renderActions={renderActions}
+                />
+            </View>
             {!keyboardHeight && <View style={{ height: Platform.OS === 'ios' ? insets.bottom : 10 }} />}
         </View>
     );
