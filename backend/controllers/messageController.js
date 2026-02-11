@@ -146,6 +146,30 @@ const getChatUsers = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Update a message
+// @route   PUT /api/messages/:id
+// @access  Private
+const updateMessage = asyncHandler(async (req, res) => {
+    const { text } = req.body;
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+        res.status(404);
+        throw new Error('Message not found');
+    }
+
+    // Only sender can edit their message
+    if (message.sender.toString() !== req.user._id.toString()) {
+        res.status(401);
+        throw new Error('User not authorized to edit this message');
+    }
+
+    message.text = text || message.text;
+    const updatedMessage = await message.save();
+
+    res.json(updatedMessage);
+});
+
 // @desc    Delete a message
 // @route   DELETE /api/messages/:id
 // @access  Private
@@ -157,8 +181,8 @@ const deleteMessage = asyncHandler(async (req, res) => {
         throw new Error('Message not found');
     }
 
-    // Only sender can delete their message
-    if (message.sender.toString() !== req.user._id.toString()) {
+    // Only sender can delete their message (or Admin)
+    if (message.sender.toString() !== req.user._id.toString() && !req.user.isAdmin) {
         res.status(401);
         throw new Error('User not authorized to delete this message');
     }

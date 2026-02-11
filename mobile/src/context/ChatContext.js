@@ -163,6 +163,7 @@ export const ChatProvider = ({ children }) => {
     return (
         <ChatContext.Provider value={{
             messages,
+            setMessages,
             socket,
             isLoading,
             activeChat,

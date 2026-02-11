@@ -33,6 +33,7 @@ const ChatScreen = ({ navigation }) => {
     const { user } = useAuth();
     const {
         messages,
+        setMessages,
         sendMessage,
         fetchMessages,
         isLoading,
@@ -50,6 +51,7 @@ const ChatScreen = ({ navigation }) => {
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [inputText, setInputText] = useState('');
+    const [editingMessageId, setEditingMessageId] = useState(null);
 
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
@@ -97,15 +99,30 @@ const ChatScreen = ({ navigation }) => {
         };
     }, [user]);
 
-    const onSend = useCallback((newMessages = []) => {
-        // If I am an admin, I send to the customer. If I am a customer, I send to the primary stylist.
+    const onSend = useCallback(async (newMessages = []) => {
+        const message = newMessages[0];
         const recipientId = user?.isAdmin ? selectedCustomer?._id : primaryAdmin?._id;
+
         if (!recipientId) {
             console.log('No recipient found for message');
             return;
         }
 
-        const message = newMessages[0];
+        // IF EDITING: Update existing message instead of sending new one
+        if (editingMessageId) {
+            try {
+                await api.put(`/messages/${editingMessageId}`, { text: message.text });
+                setMessages(prev => prev.map(m => m._id === editingMessageId ? { ...m, text: message.text } : m));
+                setEditingMessageId(null);
+                setInputText('');
+                return;
+            } catch (error) {
+                console.error('Error updating message:', error);
+                Alert.alert("Error", "Could not update message");
+                return;
+            }
+        }
+
         let finalText = message.text || (message.image ? '📷 Sent an image' : '');
 
         if (replyingTo) {
@@ -129,6 +146,9 @@ const ChatScreen = ({ navigation }) => {
                     onPress: async () => {
                         try {
                             await api.delete(`/messages/conversation/${userId}`);
+                            // OPTIMISTIC UPDATE: Clear messages instantly
+                            setMessages([]);
+
                             if (selectedCustomer?._id === userId) {
                                 setSelectedCustomer(null);
                             }
@@ -143,29 +163,65 @@ const ChatScreen = ({ navigation }) => {
         );
     };
 
-    const handleDeleteMessage = (messageId) => {
-        Alert.alert(
-            "Delete Message",
-            "Are you sure you want to delete this message?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await api.delete(`/messages/${messageId}`);
-                            // Refresh messages
-                            const currentRecipient = user?.isAdmin ? selectedCustomer?._id : primaryAdmin?._id;
-                            if (currentRecipient) fetchMessages(currentRecipient);
-                        } catch (error) {
-                            console.error('Error deleting message:', error);
-                            Alert.alert("Error", "Could not delete message");
-                        }
-                    }
+    const handleMessageOptions = (message) => {
+        if (!message || !user) return;
+        const isMine = message.user?._id?.toString() === user?._id?.toString();
+        const isAdmin = user?.isAdmin;
+        const canDelete = isMine || isAdmin;
+
+        const options = [
+            { text: "Cancel", style: "cancel" }
+        ];
+
+        if (isMine && message.text) {
+            options.push({
+                text: "Edit Message ✏️",
+                onPress: () => {
+                    setEditingMessageId(message._id);
+                    setInputText(message.text);
                 }
-            ]
-        );
+            });
+        }
+
+        if (canDelete) {
+            options.push({
+                text: "Delete",
+                style: "destructive",
+                onPress: () => {
+                    Alert.alert(
+                        "Delete Message",
+                        "Are you sure? This will remove it for everyone.",
+                        [
+                            { text: "No", style: "cancel" },
+                            {
+                                text: "Yes, Delete",
+                                style: "destructive",
+                                onPress: () => performDelete(message._id)
+                            }
+                        ]
+                    );
+                }
+            });
+        }
+
+        if (options.length > 1) {
+            Alert.alert("Message Options", "Choose an action", options);
+        }
+    };
+
+    const performDelete = async (messageId) => {
+        try {
+            await api.delete(`/messages/${messageId}`);
+            // Optimistic update
+            setMessages(prev => prev.filter(m => m._id !== messageId));
+
+            // Sync with server
+            const currentRecipient = user?.isAdmin ? selectedCustomer?._id : primaryAdmin?._id;
+            if (currentRecipient) fetchMessages(currentRecipient);
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            Alert.alert("Error", "Could not delete message. Please try again.");
+        }
     };
 
     const handlePickMedia = async () => {
@@ -225,32 +281,40 @@ const ChatScreen = ({ navigation }) => {
         return null;
     };
 
-    const renderBubble = (props) => (
-        <Bubble
-            {...props}
-            renderCustomView={renderCustomView}
-            wrapperStyle={{
-                right: {
-                    backgroundColor: COLORS.accent,
-                    borderRadius: 20,
-                    marginBottom: 8,
-                    padding: 6,
-                    maxWidth: SCREEN_WIDTH * 0.82
-                },
-                left: {
-                    backgroundColor: '#F1F3F5',
-                    borderRadius: 20,
-                    marginBottom: 8,
-                    padding: 6,
-                    maxWidth: SCREEN_WIDTH * 0.82
-                }
-            }}
-            textStyle={{
-                right: { color: COLORS.white, fontSize: 15, lineHeight: 22 },
-                left: { color: COLORS.primary, fontSize: 15, lineHeight: 22 }
-            }}
-        />
-    );
+    const renderBubble = (props) => {
+        const { currentMessage } = props;
+        return (
+            <Bubble
+                {...props}
+                renderCustomView={renderCustomView}
+                onLongPress={() => handleMessageOptions(currentMessage)}
+                touchableProps={{
+                    onLongPress: () => handleMessageOptions(currentMessage),
+                    activeOpacity: 0.6,
+                }}
+                wrapperStyle={{
+                    right: {
+                        backgroundColor: COLORS.accent,
+                        borderRadius: 20,
+                        marginBottom: 8,
+                        padding: 6,
+                        maxWidth: SCREEN_WIDTH * 0.82
+                    },
+                    left: {
+                        backgroundColor: '#F1F3F5',
+                        borderRadius: 20,
+                        marginBottom: 8,
+                        padding: 6,
+                        maxWidth: SCREEN_WIDTH * 0.82
+                    }
+                }}
+                textStyle={{
+                    right: { color: COLORS.white, fontSize: 15, lineHeight: 22 },
+                    left: { color: COLORS.primary, fontSize: 15, lineHeight: 22 }
+                }}
+            />
+        );
+    };
 
     const renderSend = (props) => {
         const isTyped = inputText.trim().length > 0;
@@ -258,16 +322,26 @@ const ChatScreen = ({ navigation }) => {
             <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
                 <View style={[
                     styles.sendIconPill,
-                    { backgroundColor: isTyped ? COLORS.accent : '#F1F3F5', borderWidth: isTyped ? 0 : 1, borderColor: '#E9ECEF' }
+                    {
+                        backgroundColor: isTyped ? COLORS.accent : '#2D3436', // Gunmetal Black when empty
+                        borderWidth: 0,
+                    }
                 ]}>
-                    <SendIcon size={18} color={isTyped ? COLORS.white : '#A0AEC0'} />
+                    <SendIcon size={18} color={COLORS.white} />
                 </View>
             </Send>
         );
     };
 
     const renderComposer = (props) => (
-        <Composer {...props} textInputStyle={styles.composerStyle} placeholder="Type your message..." multiline />
+        <Composer
+            {...props}
+            textInputStyle={styles.composerStyle}
+            placeholder="Type your message..."
+            multiline
+            text={inputText}
+            onTextChanged={text => setInputText(text)}
+        />
     );
 
     const renderTime = (props) => (
@@ -290,11 +364,18 @@ const ChatScreen = ({ navigation }) => {
             dateText = 'Today';
         } else if (date.isSame(now.subtract(1, 'day'), 'day')) {
             dateText = 'Yesterday';
+        } else if (date.isAfter(now.subtract(7, 'days'), 'day')) {
+            dateText = date.format('dddd'); // e.g., "Monday"
+        } else if (date.isSame(now, 'year')) {
+            dateText = date.format('MMMM D');
         } else {
             dateText = date.format('MMMM D, YYYY');
         }
 
-        if (props.previousMessage && dayjs(props.previousMessage.createdAt).isSame(date, 'day')) return null;
+        // Only show if this is the first message or the previous message was on a different day
+        const isSameDay = props.previousMessage && dayjs(props.previousMessage.createdAt).isSame(date, 'day');
+        if (isSameDay) return null;
+
         return (
             <View style={styles.daySeparatorWrap}>
                 <View style={styles.daySeparatorPill}>
@@ -322,7 +403,23 @@ const ChatScreen = ({ navigation }) => {
     };
 
     const renderAccessory = () => {
-        if (!replyingTo) return null;
+        if (!replyingTo && !editingMessageId) return null;
+
+        if (editingMessageId) {
+            return (
+                <View style={styles.replyPreviewHeader}>
+                    <View style={[styles.replyPreviewLine, { backgroundColor: COLORS.warning || '#FF9F43' }]} />
+                    <View style={styles.replyPreviewInfo}>
+                        <Text style={[styles.replyPreviewName, { color: COLORS.warning || '#FF9F43' }]}>Editing Message</Text>
+                        <Text style={styles.replyPreviewMsg} numberOfLines={1}>{inputText}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => { setEditingMessageId(null); setInputText(''); }} style={styles.replyPreviewClose}>
+                        <X size={16} color={COLORS.textLight} />
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
         const displayName = replyingTo.replyData ? replyingTo.replyData.actualText : (replyingTo.text || (replyingTo.image ? '📷 Media message' : 'Message'));
         return (
             <View style={styles.replyPreviewHeader}>
@@ -453,7 +550,10 @@ const ChatScreen = ({ navigation }) => {
                 <View style={{ flex: 1 }}>
                     <GiftedChat
                         messages={messages}
-                        onSend={messages => onSend(messages)}
+                        onSend={messages => {
+                            onSend(messages);
+                            setInputText('');
+                        }}
                         user={{ _id: user._id, name: user.name }}
                         onInputTextChanged={text => setInputText(text)}
                         renderBubble={renderBubble}
@@ -463,11 +563,7 @@ const ChatScreen = ({ navigation }) => {
                         renderTime={renderTime}
                         renderAccessory={renderAccessory}
                         renderMessage={renderMessage}
-                        onLongPress={(context, message) => {
-                            if (message.user._id === user._id) {
-                                handleDeleteMessage(message._id);
-                            }
-                        }}
+                        onLongPress={(context, message) => handleMessageOptions(message)}
                         alwaysShowSend={true}
                         scrollToBottom
                         infiniteScroll
@@ -480,7 +576,7 @@ const ChatScreen = ({ navigation }) => {
                             <InputToolbar
                                 {...props}
                                 containerStyle={styles.toolbarStyle}
-                                primaryStyle={{ alignItems: 'center', paddingRight: 8 }}
+                                primaryStyle={{ alignItems: 'center', paddingRight: 8, justifyContent: 'center' }}
                             />
                         )}
                         renderActions={() => (
@@ -538,9 +634,9 @@ const styles = StyleSheet.create({
         marginRight: 2,
     },
     sendIconPill: { backgroundColor: COLORS.accent, width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-    daySeparatorWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 18 },
-    daySeparatorPill: { backgroundColor: '#E9ECEF', paddingHorizontal: 14, paddingVertical: 4, borderRadius: 12 },
-    daySeparatorText: { fontSize: 11, color: COLORS.textLight, fontWeight: '600' },
+    daySeparatorWrap: { alignItems: 'center', justifyContent: 'center', marginVertical: 24 },
+    daySeparatorPill: { backgroundColor: '#E2E8F0', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 15, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 1 },
+    daySeparatorText: { fontSize: 11, color: COLORS.primary, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
     swipeHintWrap: { justifyContent: 'center', paddingLeft: 22, width: 60 },
     replyPreviewHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderTopWidth: 1, borderTopColor: '#EEE' },
     replyPreviewLine: { width: 4, backgroundColor: COLORS.accent, borderRadius: 2, marginRight: 10, height: '90%' },
