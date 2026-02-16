@@ -42,7 +42,7 @@ const AboutUsScreen = ({ navigation }) => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Section 1: Header & Intro */}
                 <View style={styles.headerSection}>
@@ -203,7 +203,9 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     headerSection: {
-        padding: 25,
+        paddingHorizontal: 25,
+        paddingBottom: 25,
+        paddingTop: 0,
         backgroundColor: COLORS.primary,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
