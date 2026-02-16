@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -18,7 +18,7 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
     const { userEmail, userName, userPicture, redirectTo, isNewUser } = route.params || {};
     const { loginWithGoogle } = useAuth();
 
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(!isNewUser);
 
     const handleContinue = async () => {
         setIsLoading(true);
@@ -76,6 +76,12 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
         }
     };
 
+    useEffect(() => {
+        if (!isNewUser) {
+            handleContinue();
+        }
+    }, [isNewUser]);
+
     const handleCancel = () => {
         if (navigation.canGoBack()) {
             navigation.goBack();
@@ -86,13 +92,22 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
         }
     };
 
+    if (!isNewUser && isLoading) {
+        return (
+            <SafeAreaView style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color={COLORS.accent} />
+                <Text style={{ marginTop: 20, color: COLORS.textLight }}>Signing you in...</Text>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={handleCancel} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{isNewUser ? 'Create Account' : 'Google Sign-In'}</Text>
+                <Text style={styles.headerTitle}>{isNewUser ? 'Complete Profile' : 'Google Sign-In'}</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -108,10 +123,10 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                 </View>
 
                 <Text style={styles.welcomeText}>
-                    {isNewUser ? "Welcome to MiniBoutique!" : "You're signing in as"}
+                    {isNewUser ? "Google Login Successful!" : "You're signing in as"}
                 </Text>
-                <Text style={styles.brandText}>
-                    {isNewUser ? "Create account as " + (userName || 'User') : (userName || 'Google User')}
+                <Text style={[styles.brandText, { fontSize: 22 }]}>
+                    {isNewUser ? "Confirm details to finish setup" : (userName || 'Google User')}
                 </Text>
 
                 <View style={styles.emailBadge}>
@@ -281,6 +296,10 @@ const styles = StyleSheet.create({
         color: COLORS.textLight,
         fontSize: 16,
         fontWeight: '600',
+    },
+    centered: {
+        justifyContent: 'center',
+        alignItems: 'center',
     }
 });
 

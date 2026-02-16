@@ -5,22 +5,46 @@ const User = require('../models/User');
 // @desc    Get all messages for a specific conversation
 // @route   GET /api/messages/:userId
 // @access  Private
+// @desc    Get all messages for a specific conversation
+// @route   GET /api/messages/:userId
+// @access  Private
 const getMessages = asyncHandler(async (req, res) => {
     const { userId } = req.params;
     const currentUserId = req.user._id;
 
-    // Prevention: If userId is 'users', don't run the find query to avoid CastError
     if (userId === 'users') {
         return res.status(400).json({ message: 'Invalid User ID' });
     }
 
-    const messages = await Message.find({
-        $or: [
-            { sender: currentUserId, recipient: userId },
-            { sender: userId, recipient: currentUserId },
-        ],
-    }).sort({ createdAt: 1 });
+    // Get all admin IDs to treat them as a single "Support" entity
+    const admins = await User.find({ isAdmin: true }).select('_id');
+    const adminIds = admins.map(a => a._id.toString());
 
+    const isCurrentUserAdmin = adminIds.includes(currentUserId.toString());
+
+    let query;
+
+    if (isCurrentUserAdmin) {
+        // I am admin, viewing chat with Customer `userId`
+        // Show messages between Customer and ANY Admin
+        query = {
+            $or: [
+                { sender: userId, recipient: { $in: adminIds } },
+                { sender: { $in: adminIds }, recipient: userId },
+            ]
+        };
+    } else {
+        // I am customer, viewing chat with Admin
+        // Show messages between Me (Customer) and ANY Admin
+        query = {
+            $or: [
+                { sender: currentUserId, recipient: { $in: adminIds } },
+                { sender: { $in: adminIds }, recipient: currentUserId },
+            ]
+        };
+    }
+
+    const messages = await Message.find(query).sort({ createdAt: 1 });
     res.json(messages);
 });
 
@@ -82,7 +106,7 @@ const markMessagesRead = asyncHandler(async (req, res) => {
     res.json({ message: 'Messages marked as read' });
 });
 
-// @desc    Get list of users who have chatted with the admin
+// @desc    Get list of users who have chatted with ANY admin
 // @route   GET /api/messages/users
 // @access  Private
 const getChatUsers = asyncHandler(async (req, res) => {
@@ -92,34 +116,50 @@ const getChatUsers = asyncHandler(async (req, res) => {
             throw new Error('User context missing');
         }
 
-        const adminId = req.user._id;
+        // Get all admin IDs to create a shared inbox view
+        const admins = await User.find({ isAdmin: true }).select('_id');
+        const adminIds = admins.map(a => a._id.toString());
+        const adminIdSet = new Set(adminIds);
 
-        // Find all messages involving the admin
+        // Find all messages involving ANY admin
         const messages = await Message.find({
-            $or: [{ sender: adminId }, { recipient: adminId }]
-        }).sort({ createdAt: -1 }).limit(500);
+            $or: [
+                { sender: { $in: adminIds } },
+                { recipient: { $in: adminIds } }
+            ]
+        }).sort({ createdAt: -1 }).limit(1000);
 
         const userMap = new Map();
 
         messages.forEach(msg => {
             if (!msg.sender || !msg.recipient) return;
 
-            const otherUserId = msg.sender.toString() === adminId.toString()
-                ? msg.recipient.toString()
-                : msg.sender.toString();
+            const senderId = msg.sender.toString();
+            const recipientId = msg.recipient.toString();
 
-            if (otherUserId === adminId.toString()) return;
+            // Determine who the "Customer" is in this interaction
+            let customerId = null;
+            if (!adminIdSet.has(senderId)) customerId = senderId;
+            else if (!adminIdSet.has(recipientId)) customerId = recipientId;
 
-            if (!userMap.has(otherUserId)) {
-                userMap.set(otherUserId, {
-                    _id: otherUserId,
+            // If it's an internal admin chat (rare), skip or handle differently
+            if (!customerId) return;
+
+            if (!userMap.has(customerId)) {
+                // Check if message is unread AND directed at an Admin
+                // (We count unread if Recipient is ANY Admin and !isRead)
+                const isUnread = adminIdSet.has(recipientId) && !msg.isRead;
+
+                userMap.set(customerId, {
+                    _id: customerId,
                     lastMessage: msg.text || '📷 Media message',
                     createdAt: msg.createdAt,
-                    unreadCount: (msg.recipient.toString() === adminId.toString() && !msg.isRead) ? 1 : 0
+                    unreadCount: isUnread ? 1 : 0
                 });
             } else {
-                if (msg.recipient.toString() === adminId.toString() && !msg.isRead) {
-                    userMap.get(otherUserId).unreadCount += 1;
+                const isUnread = adminIdSet.has(recipientId) && !msg.isRead;
+                if (isUnread) {
+                    userMap.get(customerId).unreadCount += 1;
                 }
             }
         });

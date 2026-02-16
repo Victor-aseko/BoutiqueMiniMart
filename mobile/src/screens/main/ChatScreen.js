@@ -358,17 +358,26 @@ const ChatScreen = ({ navigation }) => {
     const renderSend = useCallback((props) => {
         const isTyped = props.text && props.text.trim().length > 0;
         return (
-            <Send {...props} alwaysShowSend={true} containerStyle={styles.sendContainer}>
+            <TouchableOpacity
+                style={styles.sendContainer}
+                onPress={() => {
+                    if (isTyped && props.onSend) {
+                        props.onSend({ text: props.text.trim() }, true);
+                    }
+                }}
+                disabled={!isTyped}
+                activeOpacity={0.7}
+            >
                 <View style={[
                     styles.sendIconPill,
                     {
-                        backgroundColor: isTyped ? COLORS.accent : '#2D3436', // Gunmetal Black when empty
+                        backgroundColor: isTyped ? COLORS.accent : '#BDC3C7',
                         borderWidth: 0,
                     }
                 ]}>
                     <SendIcon size={18} color={COLORS.white} />
                 </View>
-            </Send>
+            </TouchableOpacity>
         );
     }, [COLORS.accent]);
 
@@ -611,10 +620,11 @@ const ChatScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* GiftedChat v2 with KeyboardProvider at root handles its own layout. 
-                Wrapping it in another KeyboardAvoidingView causes double offset/crashes on some devices */}
-            {/* Removed KeyboardAvoidingView to let KeyboardProvider/GiftedChat handle it natively */}
-            <View style={{ flex: 1 }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+            >
                 <GiftedChat
                     key={`chat-${typingResetKey}-${selectedCustomer?._id || 'main'}`}
                     messages={messages}
@@ -634,13 +644,13 @@ const ChatScreen = ({ navigation }) => {
                     infiniteScroll
                     loadEarlier={isLoading}
                     renderLoading={renderLoading}
-                    bottomOffset={insets.bottom}
+                    bottomOffset={0}
                     minInputToolbarHeight={60}
                     renderInputToolbar={renderInputToolbar}
                     renderActions={renderActions}
                     keyboardShouldPersistTaps="never"
                 />
-            </View>
+            </KeyboardAvoidingView>
             {!keyboardHeight && <View style={{ height: Platform.OS === 'ios' ? insets.bottom : (insets.bottom > 0 ? insets.bottom / 2 : 0) }} />}
         </View>
     );
