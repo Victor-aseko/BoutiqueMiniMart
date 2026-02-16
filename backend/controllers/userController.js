@@ -123,9 +123,9 @@ const savePushToken = asyncHandler(async (req, res) => {
 // @route   GET /api/users/admin
 // @access  Private
 const getBoutiqueAdmin = asyncHandler(async (req, res) => {
-    const admin = await User.findOne({ isAdmin: true }).select('_id name email');
-    if (admin) {
-        res.json(admin);
+    const admins = await User.find({ isAdmin: true }).select('_id name email');
+    if (admins && admins.length > 0) {
+        res.json(admins);
     } else {
         res.status(404);
         throw new Error('Boutique admin not found');

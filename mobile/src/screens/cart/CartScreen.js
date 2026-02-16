@@ -148,8 +148,8 @@ const CartScreen = ({ navigation }) => {
                     <Text style={styles.totalValue}>Kshs {finalTotal.toFixed(2)}</Text>
                 </View>
 
-                <MyButton
-                    title="Checkout"
+                <TouchableOpacity
+                    style={[styles.checkoutBtn, { backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center' }]}
                     onPress={() => {
                         if (!user) {
                             setAuthModalVisible(true);
@@ -157,8 +157,9 @@ const CartScreen = ({ navigation }) => {
                             handleProceedToConfirm();
                         }
                     }}
-                    style={styles.checkoutBtn}
-                />
+                >
+                    <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 16 }}>Checkout</Text>
+                </TouchableOpacity>
             </View>
 
             <AuthModal

@@ -310,9 +310,12 @@ const SupportScreen = ({ navigation }) => {
 
     const handleAction = (action) => {
         if (action.type === 'NAVIGATE_SHOP') {
-            navigation.navigate('ShopTab', {
-                screen: 'ShopScreen',
-                params: action.params
+            navigation.navigate('MainTabs', {
+                screen: 'ShopTab',
+                params: {
+                    screen: 'ShopScreen',
+                    params: action.params
+                }
             });
         }
     };
@@ -538,18 +541,22 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         marginTop: 10,
-        backgroundColor: '#fff',
+        backgroundColor: COLORS.accent,
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 20,
         alignSelf: 'flex-start',
         borderWidth: 1,
-        borderColor: '#eee',
-        elevation: 1
+        borderColor: COLORS.accent,
+        elevation: 2,
+        shadowColor: COLORS.accent,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
     },
     actionButtonText: {
-        color: COLORS.primary,
-        fontWeight: '600',
+        color: '#fff',
+        fontWeight: 'bold',
         fontSize: 13
     },
     inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F2F5', borderRadius: 25, marginHorizontal: 10, paddingHorizontal: 15, paddingVertical: 4 },

@@ -35,40 +35,31 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                     if (redirectTo) {
                         const { tab, screen, params } = redirectTo;
 
-                        // Use reset for a cleaner transition across stacks
+                        // Use params based navigation which is safer than deep state manipulation
                         navigation.getParent()?.reset({
                             index: 0,
                             routes: [{
                                 name: 'Main',
-                                state: {
-                                    routes: [{
-                                        name: tab || 'MainTabs',
-                                        state: {
-                                            routes: [{
-                                                name: screen || 'HomeTab',
-                                                params: params
-                                            }]
-                                        }
-                                    }]
+                                params: {
+                                    screen: tab || 'MainTabs',
+                                    params: {
+                                        screen: screen || 'HomeTab',
+                                        params: params
+                                    }
                                 }
                             }]
                         });
                     } else {
-                        // Default redirection to Profile or Home as requested
-                        // Navigating to Main -> Profile stack -> ProfileScreen
+                        // Default redirection to Profile
                         navigation.getParent()?.reset({
                             index: 0,
                             routes: [{
                                 name: 'Main',
-                                state: {
-                                    routes: [{
-                                        name: 'Profile',
-                                        state: {
-                                            routes: [{
-                                                name: 'ProfileScreen'
-                                            }]
-                                        }
-                                    }]
+                                params: {
+                                    screen: 'Profile',
+                                    params: {
+                                        screen: 'ProfileScreen'
+                                    }
                                 }
                             }]
                         });
@@ -124,7 +115,7 @@ const GoogleConfirmScreen = ({ navigation, route }) => {
                 </Text>
 
                 <View style={styles.emailBadge}>
-                    <Text style={styles.emailText}>{userEmail}</Text>
+                    <Text style={styles.emailText} dataDetectorTypes="none" selectable={false}>{userEmail}</Text>
                 </View>
 
                 <View style={styles.infoCard}>

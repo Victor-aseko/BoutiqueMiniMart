@@ -8,14 +8,15 @@ import {
     ActivityIndicator,
     RefreshControl,
     TouchableOpacity,
-    ScrollView
+    ScrollView,
+    Image,
+    Alert
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { COLORS, SIZES } from '../../theme/theme';
 import { Package, ChevronRight, X, Check, Bell, Phone } from 'lucide-react-native';
-import { Image, Alert } from 'react-native';
 
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';

@@ -66,8 +66,8 @@ const ShopScreen = ({ navigation, route }) => {
             setSelectedSort('inStock'); // Default to showing in-stock items
         }
 
-        if (route.params?.params?.search) {
-            setSearchQuery(route.params.params.search);
+        if (route.params?.params?.search || route.params?.search) {
+            setSearchQuery(route.params.params?.search || route.params.search);
         }
     }, [route.params]);
 

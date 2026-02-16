@@ -5,10 +5,12 @@ import {
     DrawerItemList,
     DrawerItem
 } from '@react-navigation/drawer';
-import { Home, ShoppingBag, Info, Phone, Package, ShoppingCart, User, LogOut } from 'lucide-react-native';
+import { Home, Heart, ShoppingBag, Info, Phone, Package, ShoppingCart, User, LogOut, Bell } from 'lucide-react-native';
 import MainNavigator, { HeaderRight, HeaderLeft } from './MainNavigator';
 import { useCart } from '../context/CartContext';
-import ContactScreen from '../screens/profile/ContactScreen';
+import { useWishlist } from '../context/WishlistContext';
+import { useNotifications } from '../context/NotificationContext';
+import ContactStack from './ContactStack';
 import OrdersScreen from '../screens/main/OrdersScreen';
 import CartScreen from '../screens/cart/CartScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -17,7 +19,7 @@ import NotificationsScreen from '../screens/main/NotificationsScreen';
 import SupportScreen from '../screens/main/SupportScreen';
 import { useAuth } from '../context/AuthContext';
 import { COLORS } from '../theme/theme';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Bot } from 'lucide-react-native';
 import BrandLogo from '../components/BrandLogo';
@@ -72,6 +74,64 @@ const CustomDrawerContent = (props) => {
     );
 };
 
+const OrdersHeaderRight = ({ navigation }) => {
+    const { cartCount } = useCart();
+    const { wishlist } = useWishlist();
+    const { unreadCount } = useNotifications();
+
+    return (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+            <TouchableOpacity
+                onPress={() => navigation.navigate('Profile', { screen: 'Notifications' })}
+                style={{ marginRight: 12, padding: 5 }}
+            >
+                <View>
+                    <Bell size={22} color="white" />
+                    {unreadCount > 0 && (
+                        <View style={drawerStyles.badge}>
+                            <Text style={drawerStyles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                onPress={() => {
+                    try {
+                        navigation.navigate('Profile', { screen: 'Wishlist' });
+                    } catch (e) {
+                        navigation.navigate('Wishlist');
+                    }
+                }}
+                style={{ marginRight: 12, padding: 5 }}
+            >
+                <View>
+                    <Heart size={22} color="white" />
+                    {wishlist.length > 0 && (
+                        <View style={drawerStyles.badge}>
+                            <Text style={drawerStyles.badgeText}>{wishlist.length}</Text>
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                onPress={() => navigation.navigate('Cart')}
+                style={{ padding: 5, marginRight: 5 }}
+            >
+                <View>
+                    <ShoppingCart size={22} color="white" />
+                    {cartCount > 0 && (
+                        <View style={drawerStyles.badge}>
+                            <Text style={drawerStyles.badgeText}>{cartCount}</Text>
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+        </View>
+    );
+};
+
 // Stack for Orders with header
 const OrdersStack = ({ navigation }) => (
     <Stack.Navigator
@@ -88,7 +148,7 @@ const OrdersStack = ({ navigation }) => (
                 fontSize: 18,
             },
             headerLeft: (props) => <HeaderLeft {...props} navigation={navigation} title="Orders" />,
-            headerRight: () => <HeaderRight navigation={navigation} />,
+            headerRight: () => <OrdersHeaderRight navigation={navigation} />,
             headerTitle: () => <BrandLogo light />,
             headerTitleAlign: 'center',
         }}
@@ -284,10 +344,18 @@ const DrawerNavigator = () => {
             />
             <Drawer.Screen
                 name="Contact"
-                component={ContactScreen}
+                component={ContactStack}
                 options={{
                     title: 'Contact Us',
                     drawerIcon: ({ color, size }) => <Phone color={color} size={size} />
+                }}
+            />
+            <Drawer.Screen
+                name="NotificationsDrawer"
+                component={NotificationsScreen}
+                options={{
+                    title: 'Notifications',
+                    drawerIcon: ({ color, size }) => <Bell color={color} size={size} />
                 }}
             />
         </Drawer.Navigator>

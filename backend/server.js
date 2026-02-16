@@ -33,6 +33,10 @@ io.on('connection', (socket) => {
     socket.on('join', (userId) => {
         socket.join(userId);
         onlineUsers.set(userId, socket.id);
+
+        // Send current online users list to the user who just joined
+        socket.emit('initialOnlineUsers', Array.from(onlineUsers.keys()));
+
         io.emit('userStatus', { userId, status: 'online' });
         console.log(`User ${userId} joined their private room`);
     });

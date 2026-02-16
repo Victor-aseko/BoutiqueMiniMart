@@ -1,12 +1,12 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { Home, ShoppingBag, Info, Menu, ShoppingCart, MessageSquare } from 'lucide-react-native';
+import { Home, ShoppingBag, Heart, Bell, ShoppingCart, MessageSquare, Info, Menu } from 'lucide-react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { Heart } from 'lucide-react-native';
 import { COLORS } from '../theme/theme';
+import { useNotifications } from '../context/NotificationContext';
 
 // Screens
 import HomeScreen from '../screens/main/HomeScreen';
@@ -51,6 +51,7 @@ export const HeaderRight = ({ navigation }) => {
 
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
+
             <TouchableOpacity
                 onPress={() => {
                     // Try to navigate to Wishlist in Profile stack or just open it
@@ -238,7 +239,7 @@ const SupportStack = ({ navigation }) => (
         <Stack.Screen
             name="ChatScreen"
             component={ChatScreen}
-            options={{ title: 'Boutique Messages' }}
+            options={{ headerShown: false }}
         />
     </Stack.Navigator>
 );

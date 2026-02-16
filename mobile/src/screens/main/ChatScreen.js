@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { COLORS } from '../../theme/theme';
-import { Image as ImageIcon, Send as SendIcon, X, CornerUpLeft, ChevronLeft, User as UserIcon, Trash2 } from 'lucide-react-native';
+import { Image as ImageIcon, Send as SendIcon, X, CornerUpLeft, ChevronLeft, User as UserIcon, Trash2, Menu } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../../services/api';
 import dayjs from 'dayjs';
@@ -39,6 +39,7 @@ const ChatScreen = ({ navigation }) => {
         isLoading,
         onlineUsers,
         conversations,
+        setConversations,
         fetchConversations,
         setActiveChat,
         activeChat
@@ -57,21 +58,43 @@ const ChatScreen = ({ navigation }) => {
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
 
+    // Move hooks to top to avoid conditional hook call errors
+    const isCustomerOnline = selectedCustomer && onlineUsers.has(selectedCustomer._id);
+    const isStylistOnline = allAdmins.some(admin => onlineUsers.has(admin?._id));
+
+    const headerTitle = user?.isAdmin ? (selectedCustomer?.name || 'Customer') : 'Boutique Stylist';
+    const activeHeaderOnline = user?.isAdmin ? (!!isCustomerOnline) : (!!isStylistOnline);
+
+    const chatUser = useMemo(() => ({
+        _id: user?._id,
+        name: user?.name
+    }), [user?._id, user?.name]);
+
+    const renderLoading = useCallback(() => (
+        <ActivityIndicator size="small" color={COLORS.accent} />
+    ), []);
+
+    const handleLongPress = useCallback((context, message) => {
+        handleMessageOptions(message);
+    }, [handleMessageOptions]);
+
     useEffect(() => {
         const getAdmins = async () => {
             try {
-                // Get the main admin for customer reference
+                // Get the admin(s) for customer reference
                 const response = await api.get('/users/admin');
-                setPrimaryAdmin(response.data);
+                const data = Array.isArray(response.data) ? response.data : [response.data];
+
+                // Set primary admin (first one) for legacy support
+                setPrimaryAdmin(data[0]);
 
                 // If the user isn't an admin, they chat with the primary stylist
-                if (!user?.isAdmin) {
-                    fetchMessages(response.data._id);
+                if (!user?.isAdmin && data.length > 0) {
+                    fetchMessages(data[0]._id);
                 }
 
-                // Try to get all admins to verify "Online" status for the Boutique
-                // If there's no bulk endpoint, we at least have the primary one
-                setAllAdmins([response.data]);
+                // Store all admins for online status check
+                setAllAdmins(data);
             } catch (error) {
                 console.error('Error fetching admins:', error);
             } finally {
@@ -470,9 +493,23 @@ const ChatScreen = ({ navigation }) => {
         return (
             <TouchableOpacity
                 style={styles.convoItem}
-                onPress={() => {
+                onPress={async () => {
                     setSelectedCustomer(item);
                     fetchMessages(item._id);
+
+                    // Mark as read immediately on open
+                    if (item.unreadCount > 0) {
+                        try {
+                            // Update server
+                            await api.put(`/messages/${item._id}/read`);
+                            // Update local state to remove badge instantly
+                            setConversations(prev => prev.map(c =>
+                                c._id === item._id ? { ...c, unreadCount: 0 } : c
+                            ));
+                        } catch (e) {
+                            console.error('Error marking read', e);
+                        }
+                    }
                 }}
             >
                 <View style={styles.convoAvatar}>
@@ -501,6 +538,7 @@ const ChatScreen = ({ navigation }) => {
         );
     }, [onlineUsers, setSelectedCustomer, fetchMessages, COLORS.white, COLORS.error, formatDate, handleDeleteConversation]);
 
+    // --- EARLY RETURNS (Moved to bottom to satisfy Rules of Hooks) ---
     if (!user) {
         return (
             <View style={styles.simpleCenter}>
@@ -520,8 +558,11 @@ const ChatScreen = ({ navigation }) => {
     if (user.isAdmin && !selectedCustomer) {
         return (
             <View style={styles.mainContainer}>
-                <View style={styles.chatHeader}>
-                    <Text style={[styles.stylistTitle, { fontSize: 18 }]}>Boutique Dashboard (Stylist)</Text>
+                <View style={[styles.chatHeader, { paddingTop: insets.top + 20 }]}>
+                    <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginRight: 15 }}>
+                        <Menu size={24} color={COLORS.white} />
+                    </TouchableOpacity>
+                    <Text style={[styles.stylistTitle, { fontSize: 18, color: COLORS.white }]}>Boutique Dashboard (Stylist)</Text>
                     <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Active Admin</Text></View>
                 </View>
                 <FlatList
@@ -542,53 +583,37 @@ const ChatScreen = ({ navigation }) => {
         );
     }
 
-    const isCustomerOnline = selectedCustomer && onlineUsers.has(selectedCustomer._id);
-
-    // For customers, the "Stylist" is online if ANY admin is online (checking primary one for now as a reliable proxy)
-    const isStylistOnline = allAdmins.some(admin => onlineUsers.has(admin?._id));
-
-    const headerTitle = user.isAdmin ? (selectedCustomer?.name || 'Customer') : 'Boutique Stylist';
-    const activeHeaderOnline = user.isAdmin ? (!!isCustomerOnline) : (!!isStylistOnline);
-
-    const chatUser = useMemo(() => ({
-        _id: user._id,
-        name: user.name
-    }), [user._id, user.name]);
-
-    const handleLongPress = useCallback((context, message) => {
-        handleMessageOptions(message);
-    }, [handleMessageOptions]);
-
-    const renderLoading = useCallback(() => (
-        <ActivityIndicator size="small" color={COLORS.accent} />
-    ), []);
-
     return (
         <View style={styles.mainContainer}>
-            <View style={styles.chatHeader}>
-                {user.isAdmin && (
+            <View style={[styles.chatHeader, { paddingTop: insets.top + 20 }]}>
+                {user.isAdmin ? (
                     <TouchableOpacity onPress={() => setSelectedCustomer(null)} style={{ marginRight: 15 }}>
-                        <ChevronLeft size={28} color={COLORS.primary} />
+                        <ChevronLeft size={28} color={COLORS.white} />
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginRight: 15 }}>
+                        <Menu size={24} color={COLORS.white} />
                     </TouchableOpacity>
                 )}
-                <View style={[styles.avatarWrap, { backgroundColor: user.isAdmin ? COLORS.primary : COLORS.accent }]}>
-                    <Text style={styles.avatarChar}>{(headerTitle || '?').charAt(0).toUpperCase()}</Text>
+                <View style={[styles.avatarWrap, { backgroundColor: COLORS.white }]}>
+                    <Text style={[styles.avatarChar, { color: COLORS.accent }]}>{(headerTitle || '?').charAt(0).toUpperCase()}</Text>
                     <View style={[styles.onlineIndicator, { backgroundColor: activeHeaderOnline ? '#4CAF50' : '#BBB' }]} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.stylistTitle}>{headerTitle}</Text>
-                    <Text style={styles.stylistStatus}>{activeHeaderOnline ? 'Online Now' : 'Currently Offline'}</Text>
+                    <Text style={[styles.stylistTitle, { color: COLORS.white }]}>{headerTitle}</Text>
+                    <Text style={[styles.stylistStatus, { color: activeHeaderOnline ? '#A5D6A7' : '#E0E0E0' }]}>{activeHeaderOnline ? 'Online Now' : 'Currently Offline'}</Text>
                 </View>
                 <TouchableOpacity
                     onPress={() => handleDeleteConversation(user.isAdmin ? selectedCustomer?._id : primaryAdmin?._id, headerTitle)}
                     style={{ padding: 5 }}
                 >
-                    <Trash2 size={20} color={COLORS.textLight} />
+                    <Trash2 size={20} color={COLORS.white} />
                 </TouchableOpacity>
             </View>
 
             {/* GiftedChat v2 with KeyboardProvider at root handles its own layout. 
                 Wrapping it in another KeyboardAvoidingView causes double offset/crashes on some devices */}
+            {/* Removed KeyboardAvoidingView to let KeyboardProvider/GiftedChat handle it natively */}
             <View style={{ flex: 1 }}>
                 <GiftedChat
                     key={`chat-${typingResetKey}-${selectedCustomer?._id || 'main'}`}
@@ -609,20 +634,21 @@ const ChatScreen = ({ navigation }) => {
                     infiniteScroll
                     loadEarlier={isLoading}
                     renderLoading={renderLoading}
-                    bottomOffset={0}
+                    bottomOffset={insets.bottom}
                     minInputToolbarHeight={60}
                     renderInputToolbar={renderInputToolbar}
                     renderActions={renderActions}
+                    keyboardShouldPersistTaps="never"
                 />
             </View>
-            {!keyboardHeight && <View style={{ height: Platform.OS === 'ios' ? insets.bottom : 10 }} />}
+            {!keyboardHeight && <View style={{ height: Platform.OS === 'ios' ? insets.bottom : (insets.bottom > 0 ? insets.bottom / 2 : 0) }} />}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     mainContainer: { flex: 1, backgroundColor: '#F8F9FA' },
-    chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: '#EEE' },
+    chatHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, backgroundColor: COLORS.accent, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' },
     avatarWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
     avatarChar: { color: COLORS.white, fontWeight: 'bold' },
     onlineIndicator: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: COLORS.white },

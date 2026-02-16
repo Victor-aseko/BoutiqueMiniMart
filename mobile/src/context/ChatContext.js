@@ -1,12 +1,12 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
-import api from '../services/api';
+import api, { BASE_URL } from '../services/api';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
 
 const ChatContext = createContext();
 
-const SOCKET_URL = 'http://172.21.64.1:5000'; // Update with your server IP if needed
+const SOCKET_URL = BASE_URL;
 
 export const ChatProvider = ({ children }) => {
     const { user } = useAuth();
@@ -79,6 +79,10 @@ export const ChatProvider = ({ children }) => {
                 else newSet.delete(userId);
                 return newSet;
             });
+        });
+
+        newSocket.on('initialOnlineUsers', (userIds) => {
+            setOnlineUsers(new Set(userIds));
         });
 
         setSocket(newSocket);
@@ -173,6 +177,7 @@ export const ChatProvider = ({ children }) => {
             isTyping,
             onlineUsers,
             conversations,
+            setConversations,
             fetchConversations
         }}>
             {children}
