@@ -314,7 +314,7 @@ const MainNavigator = ({ navigation }) => {
                 options={{
                     tabBarLabel: 'Messages',
                     tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
-                    tabBarBadge: unreadCount > 0 ? unreadCount : null,
+                    tabBarBadge: unreadCount > 0 ? String(unreadCount) : null,
                     tabBarBadgeStyle: {
                         backgroundColor: COLORS.error,
                         color: COLORS.white,

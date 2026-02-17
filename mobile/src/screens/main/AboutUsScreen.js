@@ -205,7 +205,8 @@ const styles = StyleSheet.create({
     headerSection: {
         paddingHorizontal: 25,
         paddingBottom: 25,
-        paddingTop: 0,
+        paddingTop: 10,
+        marginTop: 5, // Pull closer to header
         backgroundColor: COLORS.primary,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,

@@ -43,7 +43,9 @@ const ChatScreen = ({ navigation }) => {
         setConversations,
         fetchConversations,
         setActiveChat,
-        activeChat
+        activeChat,
+        clearUnread,
+        fetchUnreadCount
     } = useChat();
 
     const [primaryAdmin, setPrimaryAdmin] = useState(null);
@@ -89,11 +91,6 @@ const ChatScreen = ({ navigation }) => {
                 // Set primary admin (first one) for legacy support
                 setPrimaryAdmin(data[0]);
 
-                // If the user isn't an admin, they chat with the primary stylist
-                if (!user?.isAdmin && data.length > 0) {
-                    fetchMessages(data[0]._id);
-                }
-
                 // Store all admins for online status check
                 setAllAdmins(data);
             } catch (error) {
@@ -131,7 +128,11 @@ const ChatScreen = ({ navigation }) => {
             } else if (user && primaryAdmin) {
                 fetchMessages(primaryAdmin._id);
             }
-        }, [user, primaryAdmin, fetchConversations, fetchMessages])
+
+            return () => {
+                setActiveChat(null);
+            };
+        }, [user, primaryAdmin, fetchConversations, fetchMessages, setActiveChat])
     );
 
     const onSend = useCallback(async (newMessages = []) => {
@@ -519,16 +520,12 @@ const ChatScreen = ({ navigation }) => {
 
                     // Mark as read immediately on open
                     if (item.unreadCount > 0) {
-                        try {
-                            // Update server
-                            await api.put(`/messages/${item._id}/read`);
-                            // Update local state to remove badge instantly
-                            setConversations(prev => prev.map(c =>
-                                c._id === item._id ? { ...c, unreadCount: 0 } : c
-                            ));
-                        } catch (e) {
-                            console.error('Error marking read', e);
-                        }
+                        clearUnread(item._id); // Handles API and global unread count
+
+                        // OPTIMISTIC UPDATE: Clear badge in the local list instantly
+                        setConversations(prev => prev.map(c =>
+                            c._id === item._id ? { ...c, unreadCount: 0 } : c
+                        ));
                     }
                 }}
             >

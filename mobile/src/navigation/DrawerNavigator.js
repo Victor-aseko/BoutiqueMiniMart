@@ -355,7 +355,7 @@ const DrawerNavigator = () => {
                 component={NotificationsScreen}
                 options={{
                     title: 'Notifications',
-                    drawerIcon: ({ color, size }) => <Bell color={color} size={size} />
+                    drawerIcon: ({ color, size }) => <NotificationDrawerIcon color={color} size={size} />
                 }}
             />
         </Drawer.Navigator>
@@ -370,6 +370,20 @@ const CartDrawerIcon = ({ color, size }) => {
             {cartCount > 0 && (
                 <View style={drawerStyles.badge}>
                     <Text style={drawerStyles.badgeText}>{cartCount}</Text>
+                </View>
+            )}
+        </View>
+    );
+};
+
+const NotificationDrawerIcon = ({ color, size }) => {
+    const { unreadCount } = useNotifications();
+    return (
+        <View>
+            <Bell color={color} size={size} />
+            {unreadCount > 0 && (
+                <View style={drawerStyles.badge}>
+                    <Text style={drawerStyles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                 </View>
             )}
         </View>

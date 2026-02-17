@@ -85,9 +85,23 @@ export const ChatProvider = ({ children }) => {
     const clearUnread = useCallback(async (otherUserId) => {
         const currentUser = userRef.current;
         if (!currentUser || !otherUserId) return;
+
+        // OPTIMISTIC UPDATE: Update local state instantly before API call
+        if (currentUser.isAdmin) {
+            setConversations(prev => {
+                const convo = prev.find(c => String(c._id) === String(otherUserId));
+                if (convo && convo.unreadCount > 0) {
+                    setUnreadCount(total => Math.max(0, total - convo.unreadCount));
+                }
+                return prev.map(c => String(c._id) === String(otherUserId) ? { ...c, unreadCount: 0 } : c);
+            });
+        } else {
+            setUnreadCount(0);
+        }
+
         try {
             await api.put(`/messages/${otherUserId}/read`);
-            // Refresh counts locally
+            // Refresh from server to ensure perfect sync
             if (currentUser.isAdmin) fetchConversations();
             fetchUnreadCount();
         } catch (error) {
@@ -96,19 +110,23 @@ export const ChatProvider = ({ children }) => {
     }, [fetchConversations, fetchUnreadCount]);
 
     const fetchMessages = useCallback(async (recipientId) => {
-        if (!userRef.current) return;
+        const currentUser = userRef.current;
+        if (!currentUser) return;
         setIsLoading(true);
         setActiveChat(recipientId);
         try {
             const response = await api.get(`/messages/${recipientId}`);
             const formattedMessages = response.data.map(msg => parseMessage(msg)).reverse();
             setMessages(formattedMessages);
+
+            // AUTOMATICALLY CLEAR UNREAD when viewing messages
+            clearUnread(recipientId);
         } catch (error) {
             console.error('Error fetching messages:', error);
         } finally {
             setIsLoading(false);
         }
-    }, [parseMessage]);
+    }, [parseMessage, clearUnread]);
 
     const sendMessage = useCallback(async (recipientId, text, image = null) => {
         const currentUser = userRef.current;
@@ -218,7 +236,6 @@ export const ChatProvider = ({ children }) => {
         });
 
         newSocket.on('receiveMessage', (message) => {
-            console.log('[SOCKET] Message Received:', message.text || '[Media]');
             const currentActiveChat = activeChatRef.current;
             const currentAppUser = userRef.current;
 
@@ -234,7 +251,8 @@ export const ChatProvider = ({ children }) => {
             if (currentAppUser.isAdmin) {
                 isRelatedToActiveChat = activeId && (msgSender === activeId || msgRecipient === activeId);
             } else {
-                isRelatedToActiveChat = (msgRecipient === myId) && (msgSender !== myId);
+                // For CUSTOMER: only clear instantly if they are actively LOOKING at the chat screen
+                isRelatedToActiveChat = activeId && (msgRecipient === myId) && (msgSender !== myId);
             }
 
             if (isRelatedToActiveChat) {
@@ -245,7 +263,11 @@ export const ChatProvider = ({ children }) => {
                 });
                 clearUnread(msgSender);
             } else {
-                setUnreadCount(prev => prev + 1);
+                // Only increment badge if message is addressed to this user
+                if (msgRecipient === myId) {
+                    console.log('[CHAT] Incrementing unread badge for message from:', msgSender);
+                    setUnreadCount(prev => prev + 1);
+                }
             }
 
             if (currentAppUser.isAdmin) {
@@ -272,12 +294,27 @@ export const ChatProvider = ({ children }) => {
     }, [fetchConversations, parseMessage, clearUnread, fetchUnreadCount, fetchMessages]);
 
     useEffect(() => {
+        if (user?._id) {
+            fetchUnreadCount();
+            if (user.isAdmin) fetchConversations();
+
+            // Periodic sync every 60 seconds while logged in
+            const interval = setInterval(() => {
+                fetchUnreadCount();
+            }, 60000);
+
+            return () => clearInterval(interval);
+        }
+    }, [user?._id, fetchUnreadCount, fetchConversations]);
+
+    useEffect(() => {
         let currentSocket = null;
         if (user?._id) {
             currentSocket = connectSocket(user);
         } else {
             setMessages([]);
             setConversations([]);
+            setUnreadCount(0); // Clear on logout
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
