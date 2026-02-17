@@ -45,7 +45,8 @@ const ChatScreen = ({ navigation }) => {
         setActiveChat,
         activeChat,
         clearUnread,
-        fetchUnreadCount
+        fetchUnreadCount,
+        unreadCount
     } = useChat();
 
     const [primaryAdmin, setPrimaryAdmin] = useState(null);
@@ -60,6 +61,15 @@ const ChatScreen = ({ navigation }) => {
 
     const headerHeight = useHeaderHeight();
     const insets = useSafeAreaInsets();
+
+    // Sync active chat globally for socket unread logic
+    useEffect(() => {
+        if (selectedCustomer) {
+            setActiveChat(selectedCustomer._id);
+        } else {
+            setActiveChat(null);
+        }
+    }, [selectedCustomer, setActiveChat]);
 
     // Move hooks to top to avoid conditional hook call errors
     const isCustomerOnline = selectedCustomer && onlineUsers.has(selectedCustomer._id);
@@ -125,14 +135,12 @@ const ChatScreen = ({ navigation }) => {
         useCallback(() => {
             if (user?.isAdmin) {
                 fetchConversations();
-            } else if (user && primaryAdmin) {
-                fetchMessages(primaryAdmin._id);
             }
 
             return () => {
                 setActiveChat(null);
             };
-        }, [user, primaryAdmin, fetchConversations, fetchMessages, setActiveChat])
+        }, [user, fetchConversations, setActiveChat])
     );
 
     const onSend = useCallback(async (newMessages = []) => {
@@ -518,11 +526,11 @@ const ChatScreen = ({ navigation }) => {
                     setSelectedCustomer(item);
                     fetchMessages(item._id);
 
-                    // Mark as read immediately on open
-                    if (item.unreadCount > 0) {
-                        clearUnread(item._id); // Handles API and global unread count
+                    // Always request to clear unread for this ID when opened
+                    clearUnread(item._id);
 
-                        // OPTIMISTIC UPDATE: Clear badge in the local list instantly
+                    // OPTIMISTIC UPDATE: Clear badge in the local list instantly
+                    if (item.unreadCount > 0) {
                         setConversations(prev => prev.map(c =>
                             c._id === item._id ? { ...c, unreadCount: 0 } : c
                         ));
@@ -567,32 +575,47 @@ const ChatScreen = ({ navigation }) => {
         );
     }
 
-    if (isLocalLoading) {
-        return <View style={styles.simpleCenter}><ActivityIndicator size="large" color={COLORS.accent} /></View>;
-    }
+    // SELECTION SCREEN: Admins see all customers, Regular users see the Stylist
+    if (!selectedCustomer) {
+        const listData = user.isAdmin ? conversations : (primaryAdmin ? [{
+            _id: primaryAdmin._id,
+            name: 'Boutique Stylist',
+            lastMessage: 'Tap to chat with us...',
+            unreadCount: unreadCount,
+            createdAt: new Date(),
+            isStylist: true
+        }] : []);
 
-    // SHARED ADMIN WORKSPACE: All admins see this list
-    if (user.isAdmin && !selectedCustomer) {
         return (
             <View style={styles.mainContainer}>
-                <View style={[styles.chatHeader, { paddingTop: insets.top + 20 }]}>
+                <View style={[styles.chatHeader, { paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20) }]}>
                     <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginRight: 15 }}>
                         <Menu size={24} color={COLORS.white} />
                     </TouchableOpacity>
-                    <Text style={[styles.stylistTitle, { fontSize: 18, color: COLORS.white }]}>Boutique Dashboard (Stylist)</Text>
-                    <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Active Admin</Text></View>
+                    <Text style={[styles.stylistTitle, { fontSize: 18, color: COLORS.white, flex: 1 }]}>
+                        {user.isAdmin ? 'Boutique Dashboard' : 'Messages'}
+                    </Text>
+                    {user.isAdmin && <View style={styles.adminBadge}><Text style={styles.adminBadgeText}>Active Admin</Text></View>}
                 </View>
                 <FlatList
-                    data={conversations}
+                    data={listData}
                     keyExtractor={item => item._id}
                     renderItem={renderConversationItem}
                     contentContainerStyle={{ padding: 15 }}
                     refreshing={isLoading}
-                    onRefresh={fetchConversations}
+                    onRefresh={user.isAdmin ? fetchConversations : undefined}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <UserIcon size={50} color={COLORS.border} />
-                            <Text style={styles.emptyText}>No customer conversations yet.</Text>
+                            {isLoading ? (
+                                <ActivityIndicator size="large" color={COLORS.accent} />
+                            ) : (
+                                <>
+                                    <UserIcon size={50} color={COLORS.border} />
+                                    <Text style={styles.emptyText}>
+                                        {user.isAdmin ? 'No customer conversations yet.' : 'Stylist unavailable at the moment.'}
+                                    </Text>
+                                </>
+                            )}
                         </View>
                     }
                 />
@@ -602,16 +625,10 @@ const ChatScreen = ({ navigation }) => {
 
     return (
         <View style={styles.mainContainer}>
-            <View style={[styles.chatHeader, { paddingTop: insets.top + 20 }]}>
-                {user.isAdmin ? (
-                    <TouchableOpacity onPress={() => setSelectedCustomer(null)} style={{ marginRight: 15 }}>
-                        <ChevronLeft size={28} color={COLORS.white} />
-                    </TouchableOpacity>
-                ) : (
-                    <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginRight: 15 }}>
-                        <Menu size={24} color={COLORS.white} />
-                    </TouchableOpacity>
-                )}
+            <View style={[styles.chatHeader, { paddingTop: insets.top + (Platform.OS === 'ios' ? 10 : 20) }]}>
+                <TouchableOpacity onPress={() => setSelectedCustomer(null)} style={{ marginRight: 15 }}>
+                    <ChevronLeft size={28} color={COLORS.white} />
+                </TouchableOpacity>
                 <View style={[styles.avatarWrap, { backgroundColor: COLORS.white }]}>
                     <Text style={[styles.avatarChar, { color: COLORS.accent }]}>{(headerTitle || '?').charAt(0).toUpperCase()}</Text>
                     <View style={[styles.onlineIndicator, { backgroundColor: activeHeaderOnline ? '#4CAF50' : '#BBB' }]} />

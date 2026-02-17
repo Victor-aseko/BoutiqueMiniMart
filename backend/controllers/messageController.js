@@ -98,10 +98,27 @@ const markMessagesRead = asyncHandler(async (req, res) => {
 
     if (userId === 'users') return res.status(400).send();
 
-    await Message.updateMany(
-        { sender: userId, recipient: currentUserId, isRead: false },
-        { $set: { isRead: true } }
-    );
+    // Determine if the current user is an admin
+    const requester = await User.findById(currentUserId);
+    const isRequesterAdmin = requester && requester.isAdmin;
+
+    if (!isRequesterAdmin) {
+        // I am a customer clearing my "Stylist" messages
+        // Get all admin IDs to clear messages from ANY admin
+        const admins = await User.find({ isAdmin: true }).select('_id');
+        const adminIds = admins.map(a => a._id);
+
+        await Message.updateMany(
+            { sender: { $in: adminIds }, recipient: currentUserId, isRead: false },
+            { $set: { isRead: true } }
+        );
+    } else {
+        // I am an admin clearing messages from a specific customer
+        await Message.updateMany(
+            { sender: userId, recipient: currentUserId, isRead: false },
+            { $set: { isRead: true } }
+        );
+    }
 
     res.json({ message: 'Messages marked as read' });
 });
