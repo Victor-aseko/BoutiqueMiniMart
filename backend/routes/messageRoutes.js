@@ -7,11 +7,13 @@ const {
     getChatUsers,
     deleteMessage,
     deleteConversation,
-    updateMessage
+    updateMessage,
+    getUnreadCount
 } = require('../controllers/messageController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/').post(protect, sendMessage);
+router.route('/unread/count').get(protect, getUnreadCount);
 router.route('/users').get(protect, admin, getChatUsers);
 router.route('/conversation/:userId').delete(protect, deleteConversation);
 router.route('/:userId').get(protect, getMessages);

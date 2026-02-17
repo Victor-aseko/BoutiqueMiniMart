@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Platform, Animated, KeyboardAvoidingView, Keyboard, Dimensions, FlatList, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { GiftedChat, Bubble, Send, InputToolbar, Composer, Message, MessageText, Time } from 'react-native-gifted-chat';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -122,6 +123,16 @@ const ChatScreen = ({ navigation }) => {
             hideSubscription.remove();
         };
     }, [user]);
+
+    useFocusEffect(
+        useCallback(() => {
+            if (user?.isAdmin) {
+                fetchConversations();
+            } else if (user && primaryAdmin) {
+                fetchMessages(primaryAdmin._id);
+            }
+        }, [user, primaryAdmin, fetchConversations, fetchMessages])
+    );
 
     const onSend = useCallback(async (newMessages = []) => {
         const message = newMessages[0];

@@ -5,6 +5,7 @@ import { Home, ShoppingBag, Heart, Bell, ShoppingCart, MessageSquare, Info, Menu
 import { createStackNavigator } from '@react-navigation/stack';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { useChat } from '../context/ChatContext';
 import { COLORS } from '../theme/theme';
 import { useNotifications } from '../context/NotificationContext';
 
@@ -245,6 +246,8 @@ const SupportStack = ({ navigation }) => (
 );
 
 const MainNavigator = ({ navigation }) => {
+    const { unreadCount } = useChat();
+
     return (
         <Tab.Navigator
             screenOptions={{
@@ -311,6 +314,13 @@ const MainNavigator = ({ navigation }) => {
                 options={{
                     tabBarLabel: 'Messages',
                     tabBarIcon: ({ color, size }) => <MessageSquare color={color} size={size} />,
+                    tabBarBadge: unreadCount > 0 ? unreadCount : null,
+                    tabBarBadgeStyle: {
+                        backgroundColor: COLORS.error,
+                        color: COLORS.white,
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                    },
                     tabBarKeyboardHidesTabBar: true,
                 }}
             />

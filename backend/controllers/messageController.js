@@ -248,6 +248,18 @@ const deleteConversation = asyncHandler(async (req, res) => {
     res.json({ message: 'Conversation cleared' });
 });
 
+// @desc    Get total unread message count for current user
+// @route   GET /api/messages/unread/count
+// @access  Private
+const getUnreadCount = asyncHandler(async (req, res) => {
+    const currentUserId = req.user._id;
+    const count = await Message.countDocuments({
+        recipient: currentUserId,
+        isRead: false
+    });
+    res.json({ count });
+});
+
 module.exports = {
     getMessages,
     sendMessage,
@@ -255,5 +267,6 @@ module.exports = {
     getChatUsers,
     deleteMessage,
     deleteConversation,
-    updateMessage
+    updateMessage,
+    getUnreadCount
 };
