@@ -64,7 +64,8 @@ const CartScreen = ({ navigation }) => {
                     color: item.color,
                     size: item.size,
                     _id: item._id
-                }))
+                })),
+                isFromCart: true
             }
         });
     }, [navigation, cartItems]);
@@ -180,7 +181,8 @@ const CartScreen = ({ navigation }) => {
                             color: item.color,
                             size: item.size,
                             _id: item._id
-                        }))
+                        })),
+                        isFromCart: true
                     }
                 }}
             />

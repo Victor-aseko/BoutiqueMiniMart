@@ -435,11 +435,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setOrderModalVisible(false);
+                                                const currentTab = navigation.getParent()?.getState()?.routes[navigation.getParent()?.getState()?.index]?.name || 'HomeTab';
                                                 navigation.navigate('Profile', {
                                                     screen: 'AddressScreen',
                                                     params: {
                                                         returnScreen: 'ProductDetails',
-                                                        isOffer: route.params?.isOffer || false
+                                                        returnTab: currentTab,
+                                                        isOffer: route.params?.isOffer || false,
+                                                        product: product
                                                     }
                                                 });
                                             }}

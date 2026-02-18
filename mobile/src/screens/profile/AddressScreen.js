@@ -126,16 +126,29 @@ const AddressScreen = ({ navigation, route }) => {
                                 if (returnScreen === 'OrdersScreen') {
                                     navigation.navigate('Orders', {
                                         screen: 'OrdersScreen',
-                                        params: { selectedAddress: address }
+                                        params: {
+                                            selectedAddress: address,
+                                            // Pass through all received order params to protect against state loss
+                                            product: route.params?.product,
+                                            qty: route.params?.qty,
+                                            color: route.params?.color,
+                                            size: route.params?.size,
+                                            price: route.params?.price,
+                                            location: route.params?.location,
+                                            shippingAddress: route.params?.shippingAddress,
+                                            cartItems: route.params?.cartItems,
+                                            isFromCart: route.params?.isFromCart
+                                        }
                                     });
                                 } else if (returnScreen === 'ProductDetails') {
                                     navigation.navigate('MainTabs', {
-                                        screen: 'HomeTab',
+                                        screen: route.params?.returnTab || 'HomeTab',
                                         params: {
                                             screen: 'ProductDetails',
                                             params: {
                                                 selectedAddress: address,
-                                                isOffer: route.params?.isOffer || false
+                                                isOffer: route.params?.isOffer || false,
+                                                product: route.params?.product
                                             }
                                         }
                                     });

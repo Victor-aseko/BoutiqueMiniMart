@@ -80,7 +80,18 @@ const OrdersScreen = ({ navigation, route }) => {
     const handleAddressSelection = () => {
         navigation.navigate('Profile', {
             screen: 'AddressScreen',
-            params: { returnScreen: 'OrdersScreen' }
+            params: {
+                returnScreen: 'OrdersScreen',
+                // Pass current order data so it's not lost if the screen unmounts in background
+                product: route.params?.product || pendingOrder?.items[0]?.product,
+                qty: route.params?.qty || pendingOrder?.items[0]?.qty,
+                color: route.params?.color || pendingOrder?.items[0]?.color,
+                size: route.params?.size || pendingOrder?.items[0]?.size,
+                price: route.params?.price || pendingOrder?.items[0]?.price,
+                location: route.params?.location || pendingOrder?.location,
+                cartItems: route.params?.cartItems,
+                isFromCart: route.params?.isFromCart || isFromCart
+            }
         });
     };
 
@@ -93,6 +104,11 @@ const OrdersScreen = ({ navigation, route }) => {
     );
 
     useEffect(() => {
+        // Recover isFromCart state from params if provided (for recovery after unmount)
+        if (route.params?.isFromCart !== undefined && route.params?.isFromCart !== null) {
+            setIsFromCart(route.params.isFromCart);
+        }
+
         // 1. Handle incoming address selection (from AddressScreen)
         if (route.params?.selectedAddress && pendingOrder) {
             console.log('Applying selected address to pending order');
@@ -103,15 +119,14 @@ const OrdersScreen = ({ navigation, route }) => {
             }));
             // IMPORTANT: Clear the selectedAddress param so we don't re-trigger this logic
             navigation.setParams({ selectedAddress: null });
-            return;
         }
 
         // 2. Handle initial order creation from ProductDetails
         if (route.params?.product) {
             // Only initialize if we don't have a pending order yet, OR if it's a DIFFERENT product
+            // Explicitly check for route.params.product existence before accessing properties
             const isDifferentProduct = !pendingOrder ||
-                (pendingOrder.items[0]?.product?._id !== route.params.product._id &&
-                    pendingOrder.items[0]?.product !== route.params.product._id);
+                (route.params.product?._id && pendingOrder.items[0]?.product?._id !== route.params.product._id);
 
             if (isDifferentProduct) {
                 console.log('Initializing pending order from product param');
@@ -129,11 +144,10 @@ const OrdersScreen = ({ navigation, route }) => {
                     location: route.params.location || 'Nairobi',
                     shippingAddress: route.params.shippingAddress || null
                 });
+                setIsFromCart(false);
             }
             // Clear the product param once consumed to prevent re-initialization loops
-            setIsFromCart(false);
             navigation.setParams({ product: null });
-            return;
         }
 
         // 3. Handle initial order creation from Cart
@@ -155,9 +169,9 @@ const OrdersScreen = ({ navigation, route }) => {
             });
             // Clear the cartItems param
             setIsFromCart(true);
-            navigation.setParams({ cartItems: null });
+            navigation.setParams({ cartItems: null, isFromCart: null });
         }
-    }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems]);
+    }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems, route.params?.isFromCart]);
 
     const { clearCart } = useCart();
 
@@ -362,8 +376,10 @@ const OrdersScreen = ({ navigation, route }) => {
                         {pendingOrder.items.map((item, idx) => (
                             <View key={idx} style={[styles.pendingCard, idx > 0 && { borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 15 }]}>
                                 {(() => {
+                                    // Robust image selection: variant image -> specific image -> main product image
                                     const variant = item.colors?.find(c => c.name === item.color);
-                                    return <Image source={{ uri: variant?.image || item.image }} style={styles.pendingImage} />;
+                                    const imgUri = variant?.image || item.image || item.product?.image;
+                                    return <Image source={{ uri: imgUri }} style={styles.pendingImage} key={imgUri} />;
                                 })()}
                                 <View style={styles.pendingInfo}>
                                     <Text style={styles.pendingName} numberOfLines={2}>{item.name}</Text>
