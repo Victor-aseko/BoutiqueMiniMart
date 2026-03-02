@@ -270,11 +270,24 @@ const deleteConversation = asyncHandler(async (req, res) => {
 // @access  Private
 const getUnreadCount = asyncHandler(async (req, res) => {
     const currentUserId = req.user._id;
-    const count = await Message.countDocuments({
-        recipient: currentUserId,
-        isRead: false
-    });
-    res.json({ count });
+
+    if (req.user.isAdmin) {
+        // Shared Inbox for admins: count all messages unread sent to ANY admin
+        const admins = await User.find({ isAdmin: true }).select('_id');
+        const adminIds = admins.map(a => a._id);
+
+        const count = await Message.countDocuments({
+            recipient: { $in: adminIds },
+            isRead: false
+        });
+        res.json({ count });
+    } else {
+        const count = await Message.countDocuments({
+            recipient: currentUserId,
+            isRead: false
+        });
+        res.json({ count });
+    }
 });
 
 module.exports = {

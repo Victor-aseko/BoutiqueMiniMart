@@ -213,7 +213,10 @@ export const ChatProvider = ({ children }) => {
 
         newSocket.on('connect', () => {
             console.log('[SOCKET] Connected Successfully. ID:', newSocket.id);
-            newSocket.emit('join', userToConnect._id);
+            newSocket.emit('join', {
+                userId: userToConnect._id,
+                isAdmin: userToConnect.isAdmin || false
+            });
             fetchUnreadCount();
             if (userToConnect.isAdmin) fetchConversations();
 
@@ -272,6 +275,7 @@ export const ChatProvider = ({ children }) => {
 
             if (currentAppUser.isAdmin) {
                 fetchConversations();
+                fetchUnreadCount(); // Refresh badge count for shared inbox
             }
         });
 

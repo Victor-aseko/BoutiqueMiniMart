@@ -26,23 +26,35 @@ app.use(cors());
 
 // Socket.IO Logic
 const onlineUsers = new Map();
+const onlineAdmins = new Set(); // Keep track of which online users are admins
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    socket.on('join', (userId) => {
+    socket.on('join', (data) => {
+        // Handle both string userId (legacy) and object with isAdmin
+        const userId = typeof data === 'object' ? data.userId : data;
+        const isAdmin = typeof data === 'object' ? !!data.isAdmin : false;
+
         socket.join(userId);
         onlineUsers.set(userId, socket.id);
+
+        if (isAdmin) {
+            onlineAdmins.add(userId);
+            socket.join('admins'); // Join shared admin room
+        }
 
         // Send current online users list to the user who just joined
         socket.emit('initialOnlineUsers', Array.from(onlineUsers.keys()));
 
         io.emit('userStatus', { userId, status: 'online' });
-        console.log(`User ${userId} joined their private room`);
+        console.log(`User ${userId} joined room. Admin: ${isAdmin}`);
     });
 
     socket.on('sendMessage', (data) => {
         const { recipientId, senderId, text, image, createdAt, _id } = data;
+
+        // 1. Send to the specific recipient
         io.to(recipientId).emit('receiveMessage', {
             _id,
             text,
@@ -51,6 +63,21 @@ io.on('connection', (socket) => {
             recipientId,
             createdAt
         });
+
+        // 2. SOCIAL FEATURE: If the message involves an admin, notify ALL admins
+        // This ensures the badge AND conversation list updates for the whole team in real-time
+        if (onlineAdmins.has(recipientId) || onlineAdmins.has(senderId)) {
+            // Join specific room if not already inside to avoid double emission 
+            // but socket.io already handles this or emits to all in room.
+            socket.to('admins').emit('receiveMessage', {
+                _id,
+                text,
+                image,
+                senderId,
+                recipientId,
+                createdAt
+            });
+        }
     });
 
     socket.on('disconnect', () => {
@@ -63,6 +90,7 @@ io.on('connection', (socket) => {
         }
         if (disconnectedUserId) {
             onlineUsers.delete(disconnectedUserId);
+            onlineAdmins.delete(disconnectedUserId);
             io.emit('userStatus', { userId: disconnectedUserId, status: 'offline' });
         }
         console.log('User disconnected');

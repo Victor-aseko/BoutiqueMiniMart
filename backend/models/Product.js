@@ -37,6 +37,7 @@ const productSchema = mongoose.Schema(
             {
                 name: { type: String, required: true },
                 image: { type: String, required: true },
+                colorCode: { type: String } // Hex code for color dot
             }
         ],
         sizes: [

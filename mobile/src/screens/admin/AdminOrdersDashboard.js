@@ -81,14 +81,14 @@ const AdminOrdersDashboard = ({ navigation }) => {
                     <Clock size={14} color={COLORS.textLight} />
                     <View>
                         <Text style={styles.infoText}>Created: {new Date(item.createdAt).toLocaleString()}</Text>
-                        {item.isPaid && item.paidAt && (
-                            <Text style={[styles.infoText, { fontSize: 11, color: COLORS.success, fontWeight: 'bold', marginTop: 2 }]}>
-                                Payment Made: {new Date(item.paidAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                        {item.status === 'Delivered' && item.statusUpdatedAt && (
+                            <Text style={[styles.infoText, { fontSize: 11, color: COLORS.accent, fontWeight: 'bold', marginTop: 2 }]}>
+                                Delivered On: {new Date(item.statusUpdatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                         )}
-                        {!item.isPaid && item.statusUpdatedAt && (
-                            <Text style={[styles.infoText, { fontSize: 11, color: COLORS.accent, fontWeight: '500', marginTop: 2 }]}>
-                                Last Update: {new Date(item.statusUpdatedAt).toLocaleString()}
+                        {item.isPaid && item.paidAt && (
+                            <Text style={[styles.infoText, { fontSize: 11, color: COLORS.success, fontWeight: 'bold', marginTop: 2 }]}>
+                                Paid On: {new Date(item.paidAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                         )}
                     </View>

@@ -13,7 +13,7 @@ import { Minus, Plus, X } from 'lucide-react-native';
 import { COLORS, SIZES } from '../theme/theme';
 import MyButton from './MyButton';
 
-const AddToCartModal = ({ visible, onClose, product, onAddToCart }) => {
+const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }) => {
     const [qty, setQty] = useState(1);
     const [selectedColor, setSelectedColor] = useState(null);
     const [selectedSize, setSelectedSize] = useState('');
@@ -22,8 +22,10 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart }) => {
     useEffect(() => {
         if (visible && product) {
             setQty(1);
-            // Default select first options if available to save user clicks
-            if (product.colors && product.colors.length > 0) {
+            // Default select first options or initialColor if available
+            if (initialColor) {
+                setSelectedColor(initialColor);
+            } else if (product.colors && product.colors.length > 0) {
                 setSelectedColor(product.colors[0]);
             } else {
                 setSelectedColor(null);
@@ -34,7 +36,7 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart }) => {
                 setSelectedSize('');
             }
         }
-    }, [visible, product]);
+    }, [visible, product, initialColor]);
 
     if (!product) return null;
 

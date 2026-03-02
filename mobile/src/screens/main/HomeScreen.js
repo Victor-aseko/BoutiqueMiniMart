@@ -149,15 +149,17 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [selectedColorForCart, setSelectedColorForCart] = useState(null);
     const [cartModalVisible, setCartModalVisible] = useState(false);
 
-    const handleAddToCart = useCallback((product) => {
+    const handleAddToCart = useCallback((product, color) => {
         setSelectedProductForCart(product);
+        setSelectedColorForCart(color);
         setCartModalVisible(true);
     }, []);
 
-    const navigateToDetails = useCallback((product, isOffer = false) => {
-        navigation.navigate('ProductDetails', { product, isOffer });
+    const navigateToDetails = useCallback((product, color, isOffer = false) => {
+        navigation.navigate('ProductDetails', { product, selectedColor: color, isOffer });
     }, [navigation]);
 
     const executeAddToCart = async (product, qty = 1, color, size) => {
@@ -293,31 +295,26 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const renderNewArrivals = () => {
-        // Show all products except maybe strictly offers? Or just all latest
-        // For 'New Arrivals', usually we show the latest items. 
-        // Let's stick to slicing the main sorted list, but we can prioritize non-offers if needed.
+        // Show all products except strictly offers? Or just latest items. 
         const displayProducts = inStockProducts.slice(0, 4);
         return (
             <View style={styles.newArrivalsContainer}>
-                <FlatList
-                    data={displayProducts}
+                <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    scrollEnabled={true}
-                    keyExtractor={(item) => item._id}
-                    initialNumToRender={2}
-                    maxToRenderPerBatch={2}
-                    renderItem={({ item }) => (
-                        <View style={{ width: CARD_WIDTH, marginRight: 10 }}>
+                    contentContainerStyle={{ paddingHorizontal: 20 }}
+                >
+                    {displayProducts.map((item) => (
+                        <View key={item._id} style={{ width: CARD_WIDTH, marginRight: 10 }}>
                             <ProductCard
                                 product={item}
-                                onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: false })}
+                                onPress={(p, color) => navigateToDetails(p, color)}
                                 onAddToCart={handleAddToCart}
                                 isOffer={false}
                             />
                         </View>
-                    )}
-                />
+                    ))}
+                </ScrollView>
             </View>
         );
     };
@@ -353,7 +350,7 @@ const HomeScreen = ({ navigation }) => {
                                     product={item}
                                     onPress={() => {
                                         setShowAllArrivals(false);
-                                        navigateToDetails(item);
+                                        navigateToDetails(item, null);
                                     }}
                                     onAddToCart={handleAddToCart}
                                 />
@@ -396,9 +393,9 @@ const HomeScreen = ({ navigation }) => {
                             <View style={{ width: '48%', marginBottom: 15 }}>
                                 <ProductCard
                                     product={item}
-                                    onPress={() => {
+                                    onPress={(p, color) => {
                                         setShowAllOffers(false);
-                                        navigateToDetails(item, true);
+                                        navigateToDetails(p, color, true);
                                     }}
                                     onAddToCart={handleAddToCart}
                                     isOffer={true}
@@ -433,7 +430,7 @@ const HomeScreen = ({ navigation }) => {
                             <View key={item._id} style={{ width: '48%', position: 'relative' }}>
                                 <ProductCard
                                     product={item}
-                                    onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: true })}
+                                    onPress={(p, color) => navigation.navigate('ProductDetails', { product: p, selectedColor: color, isOffer: true })}
                                     onAddToCart={handleAddToCart}
                                     isOffer={true}
                                 />
@@ -607,8 +604,12 @@ const HomeScreen = ({ navigation }) => {
             {renderAllOffersModal()}
             <AddToCartModal
                 visible={cartModalVisible}
-                onClose={() => setCartModalVisible(false)}
+                onClose={() => {
+                    setCartModalVisible(false);
+                    setSelectedColorForCart(null);
+                }}
                 product={selectedProductForCart}
+                initialColor={selectedColorForCart}
                 onAddToCart={executeAddToCart}
             />
         </SafeAreaView>

@@ -133,15 +133,17 @@ const ShopScreen = ({ navigation, route }) => {
     };
 
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [selectedColorForCart, setSelectedColorForCart] = useState(null);
     const [cartModalVisible, setCartModalVisible] = useState(false);
 
-    const handleAddToCart = React.useCallback((product) => {
+    const handleAddToCart = React.useCallback((product, color) => {
         setSelectedProductForCart(product);
+        setSelectedColorForCart(color);
         setCartModalVisible(true);
     }, []);
 
-    const navigateToDetails = React.useCallback((product) => {
-        navigation.navigate('ProductDetails', { product });
+    const navigateToDetails = React.useCallback((product, color) => {
+        navigation.navigate('ProductDetails', { product, selectedColor: color });
     }, [navigation]);
 
     const executeAddToCart = async (product, qty, color, size) => {
@@ -216,7 +218,7 @@ const ShopScreen = ({ navigation, route }) => {
         <View style={styles.productWrapper}>
             <ProductCard
                 product={item}
-                onPress={() => navigateToDetails(item)}
+                onPress={(p, color) => navigateToDetails(p, color)}
                 onAddToCart={handleAddToCart}
             />
         </View>
@@ -390,8 +392,12 @@ const ShopScreen = ({ navigation, route }) => {
             />
             <AddToCartModal
                 visible={cartModalVisible}
-                onClose={() => setCartModalVisible(false)}
+                onClose={() => {
+                    setCartModalVisible(false);
+                    setSelectedColorForCart(null);
+                }}
                 product={selectedProductForCart}
+                initialColor={selectedColorForCart}
                 onAddToCart={executeAddToCart}
             />
         </SafeAreaView>

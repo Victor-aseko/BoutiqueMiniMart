@@ -225,6 +225,7 @@ import WishlistScreen from '../screens/profile/WishlistScreen';
 import AdminOrdersDashboard from '../screens/admin/AdminOrdersDashboard';
 import OrderDetailsScreen from '../screens/admin/OrderDetailsScreen';
 import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
+import AddReviewScreen from '../screens/product/AddReviewScreen';
 
 const ProfileStack = ({ navigation }) => (
     <Stack.Navigator
@@ -284,6 +285,11 @@ const ProfileStack = ({ navigation }) => (
         <Stack.Screen
             name="Notifications"
             component={NotificationsScreen}
+            options={{ headerShown: false }}
+        />
+        <Stack.Screen
+            name="AddReview"
+            component={AddReviewScreen}
             options={{ headerShown: false }}
         />
     </Stack.Navigator>

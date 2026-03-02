@@ -306,9 +306,9 @@ const OrdersScreen = ({ navigation, route }) => {
                             Paid: {new Date(item.paidAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                         </Text>
                     )}
-                    {item.statusUpdatedAt && !item.isPaid && (
+                    {item.status !== 'Pending' && item.statusUpdatedAt && (
                         <Text style={styles.updateTime}>
-                            Updated: {new Date(item.statusUpdatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                            Status Updated: {new Date(item.statusUpdatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                         </Text>
                     )}
                 </View>

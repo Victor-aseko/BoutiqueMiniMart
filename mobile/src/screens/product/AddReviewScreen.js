@@ -96,10 +96,24 @@ const AddReviewScreen = ({ route, navigation }) => {
         }
     }, [route?.params, user]);
 
+    const handleBack = () => {
+        if (navigation.canGoBack()) {
+            navigation.goBack();
+        } else {
+            // Fallback: If we can't go back (e.g. deep linked from orders), 
+            // go to Home or the ProductDetails if we have it
+            try {
+                navigation.navigate('HomeTab');
+            } catch (e) {
+                navigation.navigate('MainTabs');
+            }
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
                     <ChevronLeft color={COLORS.primary} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Add Review</Text>

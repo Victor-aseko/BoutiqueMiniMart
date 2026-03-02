@@ -82,16 +82,10 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                             // If order has multiple items, it might be better to go to a list,
                             // but for now let's go to the first item's review page
                             if (order.orderItems?.length > 0) {
-                                navigation.navigate('MainTabs', {
-                                    screen: 'HomeTab',
-                                    params: {
-                                        screen: 'AddReview',
-                                        params: {
-                                            product: {
-                                                ...order.orderItems[0],
-                                                _id: order.orderItems[0].product || order.orderItems[0]._id
-                                            }
-                                        }
+                                navigation.navigate('AddReview', {
+                                    product: {
+                                        ...order.orderItems[0],
+                                        _id: order.orderItems[0].product || order.orderItems[0]._id
                                     }
                                 });
                             }
@@ -218,16 +212,10 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                                 style={[styles.miniBtn, { backgroundColor: COLORS.accent }]}
                                 onPress={() => {
                                     if (order.orderItems?.length > 0) {
-                                        navigation.navigate('MainTabs', {
-                                            screen: 'HomeTab',
-                                            params: {
-                                                screen: 'AddReview',
-                                                params: {
-                                                    product: {
-                                                        ...order.orderItems[0],
-                                                        _id: order.orderItems[0].product || order.orderItems[0]._id
-                                                    }
-                                                }
+                                        navigation.navigate('AddReview', {
+                                            product: {
+                                                ...order.orderItems[0],
+                                                _id: order.orderItems[0].product || order.orderItems[0]._id
                                             }
                                         });
                                     }
@@ -258,7 +246,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <Text style={styles.label}>Date Created:</Text>
                         <Text style={styles.value}>{new Date(order.createdAt).toLocaleString()}</Text>
                     </View>
-                    {order.statusUpdatedAt && (
+                    {((!isFromAdmin && order.status !== 'Pending') || (isFromAdmin && order.status === 'Delivered')) && order.statusUpdatedAt && (
                         <View style={styles.row}>
                             <Text style={styles.label}>Status Last Updated:</Text>
                             <Text style={[styles.value, { color: COLORS.accent }]}>

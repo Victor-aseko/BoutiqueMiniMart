@@ -43,9 +43,22 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     const { addToWishlist, wishlist } = useWishlist();
     const { addRecentlyViewed } = useRecentlyViewed();
 
-    const handleAddToCart = async () => {
+    // Handle initial selection from route params (passed from ProductCard)
+    useEffect(() => {
+        if (route.params?.selectedColor) {
+            setSelectedColor(route.params.selectedColor);
+        } else if (product.colors && product.colors.length > 0) {
+            setSelectedColor(product.colors[0]);
+        }
 
+        if (product.sizes && product.sizes.length > 0) {
+            setSelectedSize(product.sizes[0]);
+        }
+    }, [route.params?.selectedColor, product._id]);
+
+    const handleAddToCart = async () => {
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
+        const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         const finalPrice = route.params?.isOffer
@@ -54,6 +67,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
         const productToAdd = {
             ...product,
+            image: finalColorImage,
             price: finalPrice
         };
 
@@ -124,11 +138,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             ? Math.floor(Number(product.price) * 0.95)
             : Number(product.price);
 
+        const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
+
         setOrderModalVisible(false);
         navigation.navigate('Orders', {
             screen: 'OrdersScreen',
             params: {
-                product: { ...product, price: finalPrice },
+                product: { ...product, image: finalColorImage, price: finalPrice },
                 qty: orderQty,
                 shippingAddress: {
                     ...selectedAddress,
@@ -143,7 +159,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
         // Clear local state
         setSelectedAddress(null);
-        setSelectedColor('');
+        setSelectedColor(null);
         setSelectedSize('');
         setPhoneNumber('');
         setOrderQty(1);
@@ -506,7 +522,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     tab: 'Orders',
                     screen: 'OrdersScreen',
                     params: {
-                        product: { ...product, price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price },
+                        product: {
+                            ...product,
+                            image: selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image),
+                            price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price
+                        },
                         qty: qty,
                         color: selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default',
                         size: selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default',
