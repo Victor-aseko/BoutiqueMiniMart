@@ -255,9 +255,17 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <Text style={styles.value}>#{order._id}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text style={styles.label}>Date:</Text>
+                        <Text style={styles.label}>Date Created:</Text>
                         <Text style={styles.value}>{new Date(order.createdAt).toLocaleString()}</Text>
                     </View>
+                    {order.statusUpdatedAt && (
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Status Last Updated:</Text>
+                            <Text style={[styles.value, { color: COLORS.accent }]}>
+                                {new Date(order.statusUpdatedAt).toLocaleString()}
+                            </Text>
+                        </View>
+                    )}
                     {isFromAdmin && (
                         <View style={styles.row}>
                             <Text style={styles.label}>Customer:</Text>
@@ -313,7 +321,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         </Text>
                         {order.paidAt && (
                             <Text style={[styles.iconText, { fontSize: 12, color: COLORS.textLight }]}>
-                                {new Date(order.paidAt).toLocaleDateString()}
+                                Paid on: {new Date(order.paidAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                         )}
                     </View>

@@ -299,7 +299,19 @@ const OrdersScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.orderBody}>
-                <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                <View>
+                    <Text style={styles.date}>Ordered: {new Date(item.createdAt).toLocaleDateString()}</Text>
+                    {item.isPaid && item.paidAt && (
+                        <Text style={[styles.updateTime, { color: COLORS.success }]}>
+                            Paid: {new Date(item.paidAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </Text>
+                    )}
+                    {item.statusUpdatedAt && !item.isPaid && (
+                        <Text style={styles.updateTime}>
+                            Updated: {new Date(item.statusUpdatedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </Text>
+                    )}
+                </View>
                 <Text style={styles.total}>Kshs {Number(item.totalPrice || 0).toFixed(2)}</Text>
             </View>
 
@@ -567,6 +579,13 @@ const styles = StyleSheet.create({
     },
     date: {
         color: COLORS.textLight,
+        fontSize: 12,
+    },
+    updateTime: {
+        fontSize: 11,
+        color: COLORS.accent,
+        marginTop: 2,
+        fontWeight: '500',
     },
     total: {
         fontSize: 18,

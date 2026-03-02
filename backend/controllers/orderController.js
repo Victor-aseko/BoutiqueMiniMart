@@ -150,6 +150,7 @@ const updateOrderToDelivered = asyncHandler(async (req, res) => {
         order.isDelivered = true;
         order.deliveredAt = Date.now();
         order.status = 'Delivered';
+        order.statusUpdatedAt = Date.now();
 
         const updatedOrder = await order.save();
 
@@ -194,7 +195,10 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
-        order.status = req.body.status || order.status;
+        if (req.body.status && req.body.status !== order.status) {
+            order.status = req.body.status;
+            order.statusUpdatedAt = Date.now();
+        }
 
         // Handle manual payment status toggle by admin
         if (req.body.isPaid !== undefined) {
@@ -207,6 +211,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         if (req.body.status === 'Delivered') {
             order.isDelivered = true;
             order.deliveredAt = Date.now();
+            order.statusUpdatedAt = Date.now();
         }
 
         if (req.body.status === 'Cancelled') {
