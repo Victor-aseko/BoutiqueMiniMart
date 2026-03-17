@@ -33,10 +33,15 @@ const createInquiry = asyncHandler(async (req, res) => {
             const to = process.env.CONTACT_EMAIL || 'miniboutique043@gmail.com';
             const subjectLine = `New Inquiry: ${subject || 'No subject'}`;
             const body = `You have received a new inquiry from ${name} <${email}>\n\nSubject: ${subject}\n\nMessage:\n${message}`;
+            
+            console.log(`[DEBUG] Attempting to send inquiry notification to: ${to}`);
+            console.log(`[DEBUG] CONTACT_EMAIL env: ${process.env.CONTACT_EMAIL}`);
+            
             await sendEmail({ email: to, subject: subjectLine, message: body });
+            console.log(`[DEBUG] Inquiry notification sent to owner successfully.`);
         } catch (err) {
             // Log but don't fail the request — saving to DB succeeded
-            console.error('Failed to send inquiry notification to owner:', err.message || err);
+            console.error('[DEBUG] Failed to send inquiry notification to owner:', err.message || err);
         }
 
         // Notify Admins in-app (Background Process)
