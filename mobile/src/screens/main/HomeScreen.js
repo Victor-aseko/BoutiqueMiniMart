@@ -348,9 +348,9 @@ const HomeScreen = ({ navigation }) => {
                             <View style={{ width: '48%', marginBottom: 15 }}>
                                 <ProductCard
                                     product={item}
-                                    onPress={() => {
+                                    onPress={(p, color) => {
                                         setShowAllArrivals(false);
-                                        navigateToDetails(item, null);
+                                        navigateToDetails(p, color);
                                     }}
                                     onAddToCart={handleAddToCart}
                                 />

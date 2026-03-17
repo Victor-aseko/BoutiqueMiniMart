@@ -4,12 +4,13 @@ import { COLORS, SIZES } from '../theme/theme';
 import { ShoppingCart, Trash2, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Rating from './Rating';
 
-const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer = false }) => {
+const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer = false, hideVariants = false }) => {
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(-1); // -1 means base product
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
     const colors = product.colors || [];
-    const hasVariants = colors.length > 0;
+    // Only show variant navigation if there are multiple colors to cycle between
+    const hasVariants = colors.length > 1;
 
     useEffect(() => {
         if (hasVariants) {
@@ -43,18 +44,31 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
     const discountedPrice = Math.floor(originalPrice * 0.95); // 5% off
 
     const selectedVariant = selectedVariantIndex >= 0 ? colors[selectedVariantIndex] : null;
-    const currentImage = selectedVariant?.image || product.image;
+    const currentImage = selectedVariant?.image || product.selectedColorForWishlist?.image || product.image;
 
     const handleNextVariant = (e) => {
         e.stopPropagation();
         if (!hasVariants) return;
-        setSelectedVariantIndex(prev => (prev + 1 >= colors.length) ? -1 : prev + 1);
+        setSelectedVariantIndex(prev => {
+            // Index 0 represents the first variant color, which is already the default image.
+            // When moving NEXT from default (-1), skip 0 and go to 1.
+            const nextIdx = prev === -1 ? 1 : prev + 1;
+            // When reaching the end of the colors list, wrap back around to the baseline image (-1) rather than 0.
+            return nextIdx >= colors.length ? -1 : nextIdx;
+        });
     };
 
     const handlePrevVariant = (e) => {
         e.stopPropagation();
         if (!hasVariants) return;
-        setSelectedVariantIndex(prev => (prev - 1 < -1) ? colors.length - 1 : prev - 1);
+        setSelectedVariantIndex(prev => {
+            // When moving PREVIOUS from default (-1), jump to the very last color.
+            if (prev === -1) return colors.length - 1;
+            
+            const prevIdx = prev - 1;
+            // If we fall below index 1 (meaning we hit 0), skip it and go back to baseline (-1).
+            return prevIdx <= 0 ? -1 : prevIdx;
+        });
     };
 
     return (
@@ -63,7 +77,7 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                 <Image source={{ uri: currentImage }} style={styles.image} resizeMode="cover" />
 
                 {/* Variant Navigation Arrows - Pulse animation to grab attention */}
-                {hasVariants && (
+                {(hasVariants && !hideVariants) && (
                     <Animated.View style={{
                         transform: [{ scale: pulseAnim }],
                         position: 'absolute',
@@ -107,6 +121,15 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
             <View style={styles.info}>
                 <Text style={styles.category}>{product.category}</Text>
                 <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
+
+                {/* Show saved color and size if they exist */}
+                {(product.selectedColorForWishlist || product.selectedSizeForWishlist) && (
+                    <Text style={{ fontSize: 11, color: COLORS.textLight, marginBottom: 4 }} numberOfLines={1}>
+                        {product.selectedColorForWishlist?.name ? `Color: ${product.selectedColorForWishlist.name}` : ''}
+                        {product.selectedColorForWishlist?.name && product.selectedSizeForWishlist ? ' | ' : ''}
+                        {product.selectedSizeForWishlist ? `Size: ${product.selectedSizeForWishlist}` : ''}
+                    </Text>
+                )}
 
                 <View style={styles.row}>
                     {isOffer ? (

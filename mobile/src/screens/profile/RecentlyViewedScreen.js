@@ -23,10 +23,12 @@ const RecentlyViewedScreen = ({ navigation }) => {
     };
 
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [selectedColorForCart, setSelectedColorForCart] = useState(null);
     const [cartModalVisible, setCartModalVisible] = useState(false);
 
-    const handleAddToCart = (product) => {
+    const handleAddToCart = (product, color) => {
         setSelectedProductForCart(product);
+        setSelectedColorForCart(color);
         setCartModalVisible(true);
     };
 
@@ -58,14 +60,18 @@ const RecentlyViewedScreen = ({ navigation }) => {
                 <FlatList
                     data={recentlyViewed}
                     keyExtractor={item => item._id}
-                    renderItem={({ item }) => <ProductCard product={item} onAddToCart={handleAddToCart} />}
+                    renderItem={({ item }) => <ProductCard product={item} onPress={(p, color) => navigation.navigate('ProductDetails', { product: p, selectedColor: color })} onAddToCart={handleAddToCart} hideVariants={true} />}
                     contentContainerStyle={styles.list}
                 />
             )}
             <AddToCartModal
                 visible={cartModalVisible}
-                onClose={() => setCartModalVisible(false)}
+                onClose={() => {
+                    setCartModalVisible(false);
+                    setSelectedColorForCart(null);
+                }}
                 product={selectedProductForCart}
+                initialColor={selectedColorForCart}
                 onAddToCart={executeAddToCart}
             />
         </SafeAreaView>

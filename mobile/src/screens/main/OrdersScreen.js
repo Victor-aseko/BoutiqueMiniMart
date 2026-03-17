@@ -10,13 +10,15 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
-    Alert
+    Alert,
+    Modal,
+    BackHandler
 } from 'react-native';
 import { ChevronLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { COLORS, SIZES } from '../../theme/theme';
-import { Package, ChevronRight, X, Check, Bell, Phone } from 'lucide-react-native';
+import { Package, ChevronRight, X, Check, Bell, Phone, Truck, Zap, RotateCcw } from 'lucide-react-native';
 
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -32,6 +34,7 @@ const OrdersScreen = ({ navigation, route }) => {
     const [paymentMethod, setPaymentMethod] = useState('Cash (Pay on Delivery)');
     const [shippingPrice, setShippingPrice] = useState(0);
     const [isFromCart, setIsFromCart] = useState(false);
+    const [exitModalVisible, setExitModalVisible] = useState(false);
     const { unreadCount } = useNotifications();
 
     const getShippingFee = (city, itemsPrice) => {
@@ -101,6 +104,22 @@ const OrdersScreen = ({ navigation, route }) => {
         useCallback(() => {
             fetchOrders();
         }, [user])
+    );
+
+    useFocusEffect(
+        useCallback(() => {
+            const onBackPress = () => {
+                if (pendingOrder) {
+                    setExitModalVisible(true);
+                    return true; // prevent default behavior
+                }
+                return false;
+            };
+
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+            return () => backHandler.remove();
+        }, [pendingOrder])
     );
 
     useEffect(() => {
@@ -344,7 +363,7 @@ const OrdersScreen = ({ navigation, route }) => {
             <View style={styles.headerRow}>
                 <TouchableOpacity onPress={() => {
                     if (pendingOrder) {
-                        cancelPendingOrder();
+                        setExitModalVisible(true);
                     } else {
                         navigation.goBack();
                     }
@@ -486,6 +505,62 @@ const OrdersScreen = ({ navigation, route }) => {
                     }
                 />
             )}
+
+            <Modal
+                visible={exitModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setExitModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Leaving Checkout now!</Text>
+                        <Text style={styles.modalSubtitle}>Don't miss out on the <Text style={{ color: 'red', fontWeight: 'bold' }}>Affordable Prices & Fast Delivery</Text></Text>
+
+                        <View style={styles.benefitsContainer}>
+                            <View style={styles.benefitItem}>
+                                <Truck size={24} color={COLORS.accent} />
+                                <Text style={styles.benefitText}>Vehicle Shipping</Text>
+                            </View>
+                            <View style={styles.benefitItem}>
+                                <Zap size={24} color={COLORS.accent} />
+                                <Text style={styles.benefitText}>Fast Delivery</Text>
+                            </View>
+                            <View style={styles.benefitItem}>
+                                <RotateCcw size={24} color={COLORS.accent} />
+                                <Text style={styles.benefitText}>Free Returns</Text>
+                            </View>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.modalBtn, { backgroundColor: COLORS.accent, marginBottom: 12 }]}
+                            onPress={() => setExitModalVisible(false)}
+                        >
+                            <Text style={[styles.modalBtnText, { color: COLORS.white }]}>Continue to Checkout</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.modalBtn, { backgroundColor: 'rgba(174, 172, 172, 0.40)', borderWidth: 1, borderColor: COLORS.border }]}
+                            onPress={() => {
+                                setExitModalVisible(false);
+                                cancelPendingOrder();
+                            }}
+                        >
+                            <Text style={[styles.modalBtnText, { color: COLORS.textLight }]}>Leave Anyway</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{ marginTop: 20 }}
+                            onPress={() => {
+                                setExitModalVisible(false);
+                                navigation.navigate('Contact');
+                            }}
+                        >
+                            <Text>Any Questions or Issues? <Text style={styles.contactLink}>Contact us</Text></Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -825,6 +900,69 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: 'rgba(255,255,255,0.80)',
+        borderRadius: 20,
+        padding: 20,
+        width: '85%',
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        marginBottom: 24,
+        paddingHorizontal: 10,
+    },
+    benefitsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 30,
+        paddingHorizontal: 10,
+    },
+    benefitItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    benefitText: {
+        fontSize: 12,
+        color: COLORS.accent,
+        marginTop: 8,
+        fontWeight: '500',
+        textAlign: 'center',
+    },
+    modalBtn: {
+        width: '100%',
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalBtnText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    contactLink: {
+        color: COLORS.accent,
+        fontSize: 14,
+        fontWeight: '600',
+        textDecorationLine: 'underline',
     },
 });
 

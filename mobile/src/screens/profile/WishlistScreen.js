@@ -12,10 +12,12 @@ const WishlistScreen = ({ navigation }) => {
     const { addToCart } = useCart();
 
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [selectedColorForCart, setSelectedColorForCart] = useState(null);
     const [cartModalVisible, setCartModalVisible] = useState(false);
 
-    const handleAddToCart = (product) => {
+    const handleAddToCart = (product, color) => {
         setSelectedProductForCart(product);
+        setSelectedColorForCart(color);
         setCartModalVisible(true);
     };
 
@@ -43,8 +45,10 @@ const WishlistScreen = ({ navigation }) => {
                     renderItem={({ item }) => (
                         <ProductCard
                             product={item}
+                            onPress={(p, color) => navigation.navigate('ProductDetails', { product: p, selectedColor: color })}
                             onRemove={removeFromWishlist}
                             onAddToCart={handleAddToCart}
+                            hideVariants={true}
                         />
                     )}
                     contentContainerStyle={styles.list}
@@ -52,8 +56,12 @@ const WishlistScreen = ({ navigation }) => {
             )}
             <AddToCartModal
                 visible={cartModalVisible}
-                onClose={() => setCartModalVisible(false)}
+                onClose={() => {
+                    setCartModalVisible(false);
+                    setSelectedColorForCart(null);
+                }}
                 product={selectedProductForCart}
+                initialColor={selectedColorForCart}
                 onAddToCart={executeAddToCart}
             />
         </SafeAreaView>

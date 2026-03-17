@@ -47,11 +47,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     useEffect(() => {
         if (route.params?.selectedColor) {
             setSelectedColor(route.params.selectedColor);
+        } else if (product.selectedColorForWishlist) {
+            setSelectedColor(product.selectedColorForWishlist);
         } else if (product.colors && product.colors.length > 0) {
             setSelectedColor(product.colors[0]);
         }
 
-        if (product.sizes && product.sizes.length > 0) {
+        if (product.selectedSizeForWishlist) {
+            setSelectedSize(product.selectedSizeForWishlist);
+        } else if (product.sizes && product.sizes.length > 0) {
             setSelectedSize(product.sizes[0]);
         }
     }, [route.params?.selectedColor, product._id]);
@@ -105,7 +109,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             Alert.alert('Already in Wishlist');
             return;
         }
-        addToWishlist(product);
+        
+        const productForWishlist = {
+            ...product,
+            selectedColorForWishlist: selectedColor,
+            selectedSizeForWishlist: selectedSize
+        };
+        
+        addToWishlist(productForWishlist);
         setIsFavorite(true);
         Alert.alert('Added to Wishlist!');
     };

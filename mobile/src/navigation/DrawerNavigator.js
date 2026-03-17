@@ -226,6 +226,7 @@ import AdminOrdersDashboard from '../screens/admin/AdminOrdersDashboard';
 import OrderDetailsScreen from '../screens/admin/OrderDetailsScreen';
 import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
+import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 
 const ProfileStack = ({ navigation }) => (
     <Stack.Navigator
@@ -291,6 +292,11 @@ const ProfileStack = ({ navigation }) => (
             name="AddReview"
             component={AddReviewScreen}
             options={{ headerShown: false }}
+        />
+        <Stack.Screen
+            name="ProductDetails"
+            component={ProductDetailsScreen}
+            options={{ title: 'Product Details' }}
         />
     </Stack.Navigator>
 );

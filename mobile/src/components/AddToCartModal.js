@@ -25,12 +25,16 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
             // Default select first options or initialColor if available
             if (initialColor) {
                 setSelectedColor(initialColor);
+            } else if (product.selectedColorForWishlist) {
+                setSelectedColor(product.selectedColorForWishlist);
             } else if (product.colors && product.colors.length > 0) {
                 setSelectedColor(product.colors[0]);
             } else {
                 setSelectedColor(null);
             }
-            if (product.sizes && product.sizes.length > 0) {
+            if (product.selectedSizeForWishlist) {
+                setSelectedSize(product.selectedSizeForWishlist);
+            } else if (product.sizes && product.sizes.length > 0) {
                 setSelectedSize(product.sizes[0]);
             } else {
                 setSelectedSize('');
@@ -42,6 +46,7 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
 
     const handleConfirm = () => {
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
+        const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         // Apply discount if it's an offer to ensure cart gets correct price
@@ -51,7 +56,8 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
 
         const productToAdd = {
             ...product,
-            price: finalPrice
+            price: finalPrice,
+            image: finalColorImage
         };
 
         onAddToCart(productToAdd, qty, finalColor, finalSize);

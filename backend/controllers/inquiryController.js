@@ -30,7 +30,7 @@ const createInquiry = asyncHandler(async (req, res) => {
 
         // attempt to email the inquiry to the site owner
         try {
-            const to = process.env.CONTACT_EMAIL || 'victoraseko2004@gmail.com';
+            const to = process.env.CONTACT_EMAIL || 'miniboutique043@gmail.com';
             const subjectLine = `New Inquiry: ${subject || 'No subject'}`;
             const body = `You have received a new inquiry from ${name} <${email}>\n\nSubject: ${subject}\n\nMessage:\n${message}`;
             await sendEmail({ email: to, subject: subjectLine, message: body });

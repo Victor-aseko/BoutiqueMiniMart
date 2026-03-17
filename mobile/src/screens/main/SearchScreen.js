@@ -65,10 +65,12 @@ const SearchScreen = ({ navigation }) => {
     };
 
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
+    const [selectedColorForCart, setSelectedColorForCart] = useState(null);
     const [cartModalVisible, setCartModalVisible] = useState(false);
 
-    const handleAddToCart = (product) => {
+    const handleAddToCart = (product, color) => {
         setSelectedProductForCart(product);
+        setSelectedColorForCart(color);
         setCartModalVisible(true);
     };
 
@@ -93,7 +95,7 @@ const SearchScreen = ({ navigation }) => {
         <View style={styles.productWrapper}>
             <ProductCard
                 product={item}
-                onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: item.isOffer })}
+                onPress={(p, color) => navigation.navigate('ProductDetails', { product: p, selectedColor: color, isOffer: p.isOffer })}
                 onAddToCart={handleAddToCart}
                 isOffer={item.isOffer}
             />
@@ -150,8 +152,12 @@ const SearchScreen = ({ navigation }) => {
             )}
             <AddToCartModal
                 visible={cartModalVisible}
-                onClose={() => setCartModalVisible(false)}
+                onClose={() => {
+                    setCartModalVisible(false);
+                    setSelectedColorForCart(null);
+                }}
                 product={selectedProductForCart}
+                initialColor={selectedColorForCart}
                 onAddToCart={executeAddToCart}
             />
         </SafeAreaView>
