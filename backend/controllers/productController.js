@@ -101,6 +101,9 @@ const createProduct = asyncHandler(async (req, res) => {
         colors,
         sizes,
         isOffer,
+        originalPrice,
+        offerPercentage,
+        offerEndDate,
     } = req.body;
 
     const product = new Product({
@@ -115,6 +118,9 @@ const createProduct = asyncHandler(async (req, res) => {
         sizes: sizes || [],
         description,
         isOffer: isOffer || false,
+        originalPrice: originalPrice || 0,
+        offerPercentage: offerPercentage || 0,
+        offerEndDate: offerEndDate || null,
     });
 
     const createdProduct = await product.save();
@@ -130,7 +136,8 @@ const createProduct = asyncHandler(async (req, res) => {
             console.log(`Notification System: Found ${users.length} users to notify`);
 
             const title = createdProduct.isOffer ? 'Special Offer! 🏷️' : 'New Arrival! 👗';
-            const message = `${createdProduct.name} is now available in our ${createdProduct.category} collection.`;
+            const offerDetail = createdProduct.isOffer ? ` (${createdProduct.offerPercentage}% OFF!)` : '';
+            const message = `${createdProduct.name}${offerDetail} is now available in our ${createdProduct.category} collection.`;
 
             // In-app notifications
             const notifications = users.map(u => ({
@@ -176,6 +183,9 @@ const updateProduct = asyncHandler(async (req, res) => {
         colors,
         sizes,
         isOffer,
+        originalPrice,
+        offerPercentage,
+        offerEndDate,
     } = req.body;
 
     const product = await Product.findById(req.params.id);
@@ -194,6 +204,9 @@ const updateProduct = asyncHandler(async (req, res) => {
         product.colors = colors || [];
         product.sizes = sizes || [];
         product.isOffer = isOffer;
+        product.originalPrice = originalPrice || 0;
+        product.offerPercentage = offerPercentage || 0;
+        product.offerEndDate = offerEndDate || null;
 
         const updatedProduct = await product.save();
 

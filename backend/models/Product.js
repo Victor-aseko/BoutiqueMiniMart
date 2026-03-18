@@ -72,6 +72,15 @@ const productSchema = mongoose.Schema(
             required: true,
             default: false,
         },
+        originalPrice: {
+            type: Number,
+        },
+        offerPercentage: {
+            type: Number,
+        },
+        offerEndDate: {
+            type: Date,
+        },
     },
     {
         timestamps: true,

@@ -30,6 +30,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import ProductCard from '../../components/ProductCard';
 import { COLORS } from '../../theme/theme';
 import AddToCartModal from '../../components/AddToCartModal';
+import SpecialOfferSlider from '../../components/SpecialOfferSlider';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
@@ -401,7 +402,7 @@ const HomeScreen = ({ navigation }) => {
                                     isOffer={true}
                                 />
                                 <View style={styles.offerBadge}>
-                                    <Text style={styles.offerBadgeText}>-5% OFF</Text>
+                                    <Text style={styles.offerBadgeText}>-{item.offerPercentage || 5}% OFF</Text>
                                 </View>
                             </View>
                         )}
@@ -435,7 +436,7 @@ const HomeScreen = ({ navigation }) => {
                                     isOffer={true}
                                 />
                                 <View style={styles.offerBadge}>
-                                    <Text style={styles.offerBadgeText}>-5% OFF</Text>
+                                    <Text style={styles.offerBadgeText}>-{item.offerPercentage || 5}% OFF</Text>
                                 </View>
                             </View>
                         ))}
@@ -510,6 +511,8 @@ const HomeScreen = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: -10 }}
             >
+
+
                 {/* Hero Section */}
                 <TouchableOpacity
                     activeOpacity={0.9}
@@ -521,7 +524,17 @@ const HomeScreen = ({ navigation }) => {
                         resizeMode="cover"
                     >
                         <View style={styles.heroOverlay}>
+                            {specialOffers.length > 0 && (
+                                <View style={styles.heroOfferOverlay}>
+                                    <SpecialOfferSlider
+                                        offers={specialOffers}
+                                        onOfferPress={(offer) => navigateToDetails(offer, null, true)}
+                                    />
+                                </View>
+                            )}
+
                             <Text style={[styles.heroTitle, { color: heroColor, textShadowColor: heroColor }]}>{heroText}</Text>
+
                             <TouchableOpacity
                                 style={styles.heroBtn}
                                 onPress={() => navigation.navigate('ShopTab')}
@@ -538,6 +551,8 @@ const HomeScreen = ({ navigation }) => {
                     {renderNewArrivals()}
                 </View>
 
+
+
                 {/* Special Offers Section */}
                 <View style={styles.offersSection}>
                     {renderSectionHeader('Special Offers', () => setShowAllOffers(true), 'View Offers')}
@@ -553,7 +568,7 @@ const HomeScreen = ({ navigation }) => {
                                         isOffer={true}
                                     />
                                     <View style={styles.offerBadge}>
-                                        <Text style={styles.offerBadgeText}>-5% OFF</Text>
+                                        <Text style={styles.offerBadgeText}>-{item.offerPercentage || 5}% OFF</Text>
                                     </View>
                                 </View>
                             ))}
@@ -836,7 +851,7 @@ const styles = StyleSheet.create({
     },
 
     heroContainer: {
-        height: 520, // Increased height
+        height: 480, // Reduced slightly to accommodate overlay without being too massive
         width: '100%',
         marginHorizontal: 0,
         marginBottom: 20,
@@ -845,20 +860,26 @@ const styles = StyleSheet.create({
     heroOverlay: {
         width: '100%',
         height: '100%',
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        paddingBottom: 30, // Moved down from 60
-        backgroundColor: 'rgba(0,0,0,0.45)', // Darker overlay for better visibility
+        paddingTop: 0,
+        paddingBottom: 25,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    heroOfferOverlay: {
+        width: '100%',
+        marginVertical: 0,
     },
     heroTitle: {
-        fontSize: 34,
+        fontSize: 32,
         fontWeight: '900',
+        marginTop: 30, // Push title down from slider
         marginBottom: 20,
         textAlign: 'center',
-        letterSpacing: 3,
+        letterSpacing: 2,
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 15,
-        textShadowColor: 'rgba(255, 255, 255, 0.8)', // Adjusting based on color state
+        textShadowColor: 'rgba(255, 255, 255, 0.8)',
     },
     heroBtn: {
         backgroundColor: COLORS.white,

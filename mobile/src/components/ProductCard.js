@@ -40,8 +40,10 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
         }
     }, [hasVariants]);
 
-    const originalPrice = Math.floor(Number(product.price));
-    const discountedPrice = Math.floor(originalPrice * 0.95); // 5% off
+    const onSale = product.isOffer || isOffer;
+    const itemPrice = Math.floor(product.price);
+    const oldPrice = product.originalPrice ? Math.floor(product.originalPrice) : Math.floor(itemPrice / 0.95);
+    const discount = product.offerPercentage || 5;
 
     const selectedVariant = selectedVariantIndex >= 0 ? colors[selectedVariantIndex] : null;
     const currentImage = selectedVariant?.image || product.selectedColorForWishlist?.image || product.image;
@@ -132,13 +134,13 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                 )}
 
                 <View style={styles.row}>
-                    {isOffer ? (
+                    {onSale ? (
                         <View style={styles.priceColumn}>
-                            <Text style={styles.offerOldPrice}>Kshs {originalPrice}</Text>
-                            <Text style={styles.price}>Kshs {discountedPrice}</Text>
+                            <Text style={styles.offerOldPrice}>Kshs {oldPrice.toLocaleString()}</Text>
+                            <Text style={styles.price}>Kshs {itemPrice.toLocaleString()}</Text>
                         </View>
                     ) : (
-                        <Text style={styles.price}>Kshs {originalPrice}</Text>
+                        <Text style={styles.price}>Kshs {itemPrice.toLocaleString()}</Text>
                     )}
                     <Rating rating={product.rating} size={10} />
                 </View>
