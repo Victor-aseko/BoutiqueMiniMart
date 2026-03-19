@@ -70,22 +70,38 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
         return () => clearInterval(interval);
     }, [currentIndex, isGoingForward, validOffers.length]);
 
-    const calculateTimeLeft = (endDate) => {
+    const calculateTimeLeft = (endDate, startDate) => {
         if (!endDate) return null;
-        const diff = new Date(endDate) - new Date();
-        if (diff <= 0) return 'Offer Ended';
+        const now = new Date();
+        const end = new Date(endDate);
+        const diff = end - now;
+        
+        if (diff <= 0) return { text: 'Offer Ended', progress: 1 };
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((diff / (1000 * 60) % 60));
         const seconds = Math.floor((diff / 1000 % 60));
         
-        if (days > 0) return `${days}d ${hours}h ${minutes}m LEFT`;
-        return `${hours}h ${minutes}m ${seconds}s LEFT`;
+        let progress = 0;
+        if (startDate) {
+            const start = new Date(startDate);
+            const total = end - start;
+            const elapsed = now - start;
+            progress = Math.min(Math.max(elapsed / total, 0), 1);
+        }
+
+        let timeText = '';
+        if (days > 0) timeText = `${days}d ${hours}h ${minutes}m LEFT`;
+        else timeText = `${hours}h ${minutes}m ${seconds}s LEFT`;
+
+        return { text: timeText, progress };
     };
 
     const renderOfferItem = (offer, index) => {
-        const timeLeft = calculateTimeLeft(offer.offerEndDate);
+        const timeInfo = calculateTimeLeft(offer.offerEndDate, offer.offerStartDate);
+        const timeLeft = timeInfo?.text;
+        const progress = timeInfo?.progress || 0;
         const hasOriginalPrice = offer.originalPrice && offer.originalPrice > offer.price;
         const percentage = offer.offerPercentage || (hasOriginalPrice ? 
             Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100) : 5);
@@ -107,9 +123,16 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                         {timeLeft && (
                             <View style={styles.timerBadge}>
                                 <Timer size={12} color="#fff" />
-                                <View style={{ marginLeft: 4 }}>
-                                    <Text style={styles.timerSubText}>ENDS IN:</Text>
-                                    <Text style={styles.timerText}>{timeLeft}</Text>
+                                <View style={{ marginLeft: 6, flex: 1 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Text style={styles.timerSubText}>OFFER ENDS IN:</Text>
+                                        <Text style={styles.timerText}>{timeLeft}</Text>
+                                    </View>
+                                    {offer.offerStartDate && (
+                                        <View style={styles.progressBarBg}>
+                                            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+                                        </View>
+                                    )}
                                 </View>
                             </View>
                         )}
@@ -118,12 +141,6 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                     <View style={styles.contentContainer}>
                         <Text style={styles.offerTitle} numberOfLines={1}>{offer.name}</Text>
                         <View style={styles.priceContainer}>
-                            {hasOriginalPrice && (
-                                <>
-                                    <Text style={styles.originalPrice}>Ksh {offer.originalPrice.toLocaleString()}</Text>
-                                    <ChevronRight size={14} color="rgba(255,255,255,0.7)" style={{ marginHorizontal: 4 }} />
-                                </>
-                            )}
                             <Text style={styles.offerPrice}>Ksh {offer.price?.toLocaleString()}</Text>
                         </View>
                         
@@ -230,9 +247,21 @@ const styles = StyleSheet.create({
     },
     timerSubText: {
         color: 'rgba(255,255,255,0.7)',
-        fontSize: 7,
+        fontSize: 8,
         fontWeight: 'bold',
         letterSpacing: 0.5,
+    },
+    progressBarBg: {
+        height: 3,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 2,
+        marginTop: 4,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: COLORS.accent,
+        borderRadius: 2,
     },
     contentContainer: {
         marginBottom: 10,

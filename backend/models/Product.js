@@ -81,6 +81,9 @@ const productSchema = mongoose.Schema(
         offerEndDate: {
             type: Date,
         },
+        offerStartDate: {
+            type: Date,
+        },
     },
     {
         timestamps: true,

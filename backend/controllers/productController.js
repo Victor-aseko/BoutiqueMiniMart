@@ -104,6 +104,7 @@ const createProduct = asyncHandler(async (req, res) => {
         originalPrice,
         offerPercentage,
         offerEndDate,
+        offerStartDate,
     } = req.body;
 
     const product = new Product({
@@ -121,6 +122,7 @@ const createProduct = asyncHandler(async (req, res) => {
         originalPrice: originalPrice || 0,
         offerPercentage: offerPercentage || 0,
         offerEndDate: offerEndDate || null,
+        offerStartDate: offerStartDate || null,
     });
 
     const createdProduct = await product.save();
@@ -186,6 +188,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         originalPrice,
         offerPercentage,
         offerEndDate,
+        offerStartDate,
     } = req.body;
 
     const product = await Product.findById(req.params.id);
@@ -207,6 +210,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         product.originalPrice = originalPrice || 0;
         product.offerPercentage = offerPercentage || 0;
         product.offerEndDate = offerEndDate || null;
+        product.offerStartDate = offerStartDate || null;
 
         const updatedProduct = await product.save();
 

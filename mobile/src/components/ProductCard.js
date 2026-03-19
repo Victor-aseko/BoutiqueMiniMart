@@ -8,6 +8,8 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(-1); // -1 means base product
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
+
+
     const colors = product.colors || [];
     // Only show variant navigation if there are multiple colors to cycle between
     const hasVariants = colors.length > 1;

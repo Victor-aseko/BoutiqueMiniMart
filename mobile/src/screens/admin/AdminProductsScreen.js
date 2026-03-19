@@ -46,6 +46,10 @@ const AdminProductsScreen = ({ navigation }) => {
     const [newColorName, setNewColorName] = useState('');
     const [newColorImage, setNewColorImage] = useState('');
     const [isOffer, setIsOffer] = useState(false);
+    const [originalPrice, setOriginalPrice] = useState('');
+    const [offerPercentage, setOfferPercentage] = useState('');
+    const [offerStartDate, setOfferStartDate] = useState('');
+    const [offerEndDate, setOfferEndDate] = useState('');
 
     useEffect(() => {
         fetchProducts();
@@ -82,6 +86,10 @@ const AdminProductsScreen = ({ navigation }) => {
         setColors([]);
         setSizes([]);
         setIsOffer(false);
+        setOriginalPrice('');
+        setOfferPercentage('');
+        setOfferStartDate('');
+        setOfferEndDate('');
         setIsModalOpen(true);
     };
 
@@ -98,6 +106,10 @@ const AdminProductsScreen = ({ navigation }) => {
 
         setSizes(product.sizes || []);
         setIsOffer(product.isOffer || false);
+        setOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
+        setOfferPercentage(product.offerPercentage ? product.offerPercentage.toString() : '');
+        setOfferStartDate(product.offerStartDate ? new Date(product.offerStartDate).toISOString().split('T')[0] : '');
+        setOfferEndDate(product.offerEndDate ? new Date(product.offerEndDate).toISOString().split('T')[0] : '');
         setIsModalOpen(true);
     };
 
@@ -143,7 +155,11 @@ const AdminProductsScreen = ({ navigation }) => {
 
             rating: 0,
             numReviews: 0,
-            isOffer
+            isOffer,
+            originalPrice: isOffer ? parseFloat(originalPrice) : 0,
+            offerPercentage: isOffer ? parseFloat(offerPercentage) : 0,
+            offerStartDate: isOffer && offerStartDate ? new Date(offerStartDate) : null,
+            offerEndDate: isOffer && offerEndDate ? new Date(offerEndDate) : null,
         };
 
         try {
@@ -370,6 +386,53 @@ const AdminProductsScreen = ({ navigation }) => {
                                 </View>
                                 <Text style={styles.offerLabel}>Mark as Special Offer</Text>
                             </TouchableOpacity>
+
+                            {isOffer && (
+                                <View style={styles.offerSection}>
+                                    <View style={styles.row}>
+                                        <View style={{ flex: 1, marginRight: 10 }}>
+                                            <MyInput
+                                                label="Original Price (Kshs)"
+                                                placeholder="0.00"
+                                                value={originalPrice}
+                                                onChangeText={setOriginalPrice}
+                                                keyboardType="numeric"
+                                                icon={DollarSign}
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <MyInput
+                                                label="Offer %"
+                                                placeholder="0"
+                                                value={offerPercentage}
+                                                onChangeText={setOfferPercentage}
+                                                keyboardType="numeric"
+                                                icon={Tag}
+                                            />
+                                        </View>
+                                    </View>
+                                    <View style={styles.row}>
+                                        <View style={{ flex: 1, marginRight: 10 }}>
+                                            <MyInput
+                                                label="Start Date (YYYY-MM-DD)"
+                                                placeholder="2024-01-01"
+                                                value={offerStartDate}
+                                                onChangeText={setOfferStartDate}
+                                                icon={Package}
+                                            />
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <MyInput
+                                                label="End Date (YYYY-MM-DD)"
+                                                placeholder="2024-01-31"
+                                                value={offerEndDate}
+                                                onChangeText={setOfferEndDate}
+                                                icon={Package}
+                                            />
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
 
                             <View style={{ marginBottom: 15 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>
@@ -735,6 +798,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: COLORS.primary,
         fontWeight: '500',
+    },
+    offerSection: {
+        backgroundColor: COLORS.background,
+        padding: 10,
+        borderRadius: 12,
+        marginBottom: 15,
+        borderWidth: 1,
+        borderColor: COLORS.accent + '33',
     }
 });
 
