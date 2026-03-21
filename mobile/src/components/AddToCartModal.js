@@ -49,10 +49,8 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
-        // Apply discount if it's an offer to ensure cart gets correct price
-        const finalPrice = product.isOffer
-            ? Math.floor(Number(product.price) * 0.95)
-            : Number(product.price);
+        // Use the product price as is, as it already includes any applicable discounts from the server/admin
+        const finalPrice = Math.floor(Number(product.price));
 
         const productToAdd = {
             ...product,
@@ -64,12 +62,15 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
         onClose();
     };
 
-    // Calculate price for display
-    const displayPrice = product.isOffer
-        ? Math.floor(Number(product.price) * 0.95)
-        : Math.floor(Number(product.price));
-
+    // Calculate price for display - product.price is already the discounted price
+    const displayPrice = Math.floor(Number(product.price));
     const total = displayPrice * qty;
+
+    // Calculate actual discount percentage for display
+    const discountPercent = product.offerPercentage || 
+        (product.originalPrice && product.originalPrice > product.price 
+            ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+            : 5);
 
     return (
         <Modal
@@ -98,7 +99,7 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                 <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
                                 <Text style={styles.price}>Kshs {displayPrice.toLocaleString()}</Text>
                                 {product.isOffer && (
-                                    <Text style={styles.offerBadge}>5% OFF Applied</Text>
+                                    <Text style={styles.offerBadge}>{discountPercent}% OFF Applied</Text>
                                 )}
                             </View>
                         </View>

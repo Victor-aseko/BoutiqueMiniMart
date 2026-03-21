@@ -195,12 +195,12 @@ const HomeScreen = ({ navigation }) => {
     );
 
     const [titleText, setTitleText] = useState('');
-    const fullTitle = "CATEGORIES BY TYPE";
+    const fullTitle = "BROWSE BY CATEGORIES";
 
     const [heroText, setHeroText] = useState('');
     const [heroColor, setHeroColor] = useState(COLORS.white);
     const fullHeroTitle = "MINIBOUTIQUE COLLECTION";
-    const neonColors = ['#FF0055', '#00FF99', '#00D4FF', '#FFCC00', '#FF00FF', '#8F00FF', '#50FF00', '#FF6600'];
+    const neonColors = ['#FF0055', '#00FF99', '#00D4FF', '#FFCC00', '#FF00FF', '#8F00FF', '#2bd514ff', '#FF6600'];
 
     useEffect(() => {
         let currentText = '';

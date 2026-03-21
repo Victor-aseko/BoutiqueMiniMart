@@ -63,10 +63,11 @@ const AdminProductsScreen = ({ navigation }) => {
     }, [isOffer, originalPrice, offerPercentage]);
 
     useEffect(() => {
-        if (isOffer && !originalPrice && price) {
+        // Auto-fill original price from current price if we're freshly marking a product as an offer
+        if (isOffer && !isEditing && !originalPrice && price) {
             setOriginalPrice(price);
         }
-    }, [isOffer]);
+    }, [isOffer, isEditing, price]);
 
     useEffect(() => {
         fetchProducts();
@@ -120,13 +121,24 @@ const AdminProductsScreen = ({ navigation }) => {
         setImage(product.image);
         setCountInStock(product.countInStock.toString());
         setColors(product.colors || []);
-
         setSizes(product.sizes || []);
-        setIsOffer(product.isOffer || false);
+
+        // Re-ordering setters and using robust formatting to ensure offer dates are retained correctly
         setOriginalPrice(product.originalPrice ? product.originalPrice.toString() : '');
         setOfferPercentage(product.offerPercentage ? product.offerPercentage.toString() : '');
-        setOfferStartDate(product.offerStartDate ? new Date(product.offerStartDate).toISOString().split('T')[0] : '');
-        setOfferEndDate(product.offerEndDate ? new Date(product.offerEndDate).toISOString().split('T')[0] : '');
+
+        // Safe string-based date extraction to prevent timezone shifting (Kenya +3)
+        const formatDateForInput = (d) => {
+            if (!d) return '';
+            // Server usually returns ISO strings. Splitting at 'T' gets YYYY-MM-DD cleanly
+            return d.toString().split('T')[0];
+        };
+
+        setOfferStartDate(formatDateForInput(product.offerStartDate));
+        setOfferEndDate(formatDateForInput(product.offerEndDate));
+        
+        // Set isOffer last to ensure all offer-related data is already in state
+        setIsOffer(product.isOffer || false);
         setIsModalOpen(true);
     };
 
@@ -175,8 +187,9 @@ const AdminProductsScreen = ({ navigation }) => {
             isOffer,
             originalPrice: isOffer ? parseFloat(originalPrice) : 0,
             offerPercentage: isOffer ? parseFloat(offerPercentage) : 0,
-            offerStartDate: isOffer && offerStartDate ? new Date(offerStartDate) : null,
-            offerEndDate: isOffer && offerEndDate ? new Date(offerEndDate) : null,
+            // Saving as raw strings to prevent timezone shifting (Kenya +3)
+            offerStartDate: (isOffer && offerStartDate && offerStartDate.trim() !== '') ? offerStartDate : null,
+            offerEndDate: (isOffer && offerEndDate && offerEndDate.trim() !== '') ? offerEndDate : null,
         };
 
         try {

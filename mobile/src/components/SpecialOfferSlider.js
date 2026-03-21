@@ -7,7 +7,8 @@ import {
     Image,
     Animated,
     TouchableOpacity,
-    Platform
+    Platform,
+    Easing
 } from 'react-native';
 import { Timer, Tag, Zap, ChevronRight } from 'lucide-react-native';
 import { COLORS } from '../theme/theme';
@@ -20,22 +21,37 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
     const [isGoingForward, setIsGoingForward] = useState(true);
     const [tick, setTick] = useState(0);
     const pulseAnim = useRef(new Animated.Value(1)).current;
+    const wiggleAnim = useRef(new Animated.Value(0)).current;
+    const glowAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        Animated.loop(
+        // Continuous pulse and glow loops
+        Animated.parallel([
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, { toValue: 1.05, duration: 800, useNativeDriver: true }),
+                    Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true })
+                ])
+            ),
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+                    Animated.timing(glowAnim, { toValue: 0.3, duration: 1500, useNativeDriver: true })
+                ])
+            )
+        ]).start();
+
+        // Periodic wiggle for the badge (now smoother)
+        const wiggleInterval = setInterval(() => {
             Animated.sequence([
-                Animated.timing(pulseAnim, {
-                    toValue: 1.05,
-                    duration: 800,
-                    useNativeDriver: true,
-                }),
-                Animated.timing(pulseAnim, {
-                    toValue: 1,
-                    duration: 800,
-                    useNativeDriver: true,
-                })
-            ])
-        ).start();
+                Animated.timing(wiggleAnim, { toValue: 1, duration: 120, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(wiggleAnim, { toValue: -1, duration: 200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(wiggleAnim, { toValue: 0.5, duration: 150, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+                Animated.timing(wiggleAnim, { toValue: 0, duration: 100, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+            ]).start();
+        }, 4500);
+
+        return () => clearInterval(wiggleInterval);
     }, []);
 
     // Force re-render every second for the countdown
@@ -83,7 +99,7 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                 duration: 600, // Reduced from 800 for faster slide speed
                 useNativeDriver: true,
             }).start();
-        }, 4000);
+        }, 3600);
 
         return () => clearInterval(interval);
     }, [currentIndex, isGoingForward, validOffers.length]);
@@ -136,21 +152,35 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                 <Image source={{ uri: offer.image }} style={styles.offerImage} />
                 <View style={styles.overlay}>
                     <View style={styles.badgeContainer}>
-                        <View style={styles.percentageBadge}>
+                        <Animated.View style={[
+                            styles.percentageBadge,
+                            {
+                                transform: [
+                                    { rotate: wiggleAnim.interpolate({ inputRange: [-1, 1], outputRange: ['-10deg', '10deg'] }) },
+                                    { scale: wiggleAnim.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.1, 1, 1.1] }) }
+                                ]
+                            }
+                        ]}>
                             <Tag size={12} color="#fff" />
                             <Text style={styles.percentageText}>{percentage}% OFF</Text>
-                        </View>
+                        </Animated.View>
                     </View>
                     <View style={styles.contentContainer}>
                         <Text style={styles.offerTitle} numberOfLines={1}>{offer.name}</Text>
                         <View style={styles.priceContainer}>
                             {offer.originalPrice > offer.price && (
-                                <Text style={styles.originalPrice}>Ksh {offer.originalPrice?.toLocaleString()}</Text>
+                                <View style={styles.priceBox}>
+                                    <Text style={styles.priceLabel}>WAS</Text>
+                                    <Text style={styles.originalPrice}>Ksh {offer.originalPrice?.toLocaleString()}</Text>
+                                </View>
                             )}
-                            <Text style={styles.offerPrice}>Ksh {offer.price?.toLocaleString()}</Text>
+                            <View style={[styles.priceBox, { marginLeft: 20 }]}>
+                                <Text style={[styles.priceLabel, { color: COLORS.accent }]}>NOW</Text>
+                                <Text style={styles.offerPrice}>Ksh {offer.price?.toLocaleString()}</Text>
+                            </View>
                         </View>
 
-                        <Animated.View style={styles.limitedTimeContainer}>
+                        <Animated.View style={[styles.limitedTimeContainer, { opacity: glowAnim }]}>
                             <Zap size={14} color={COLORS.accent} fill={COLORS.accent} />
                             <Text style={styles.limitedTimeText}>LIMITED TIME OFFER</Text>
                         </Animated.View>
@@ -159,7 +189,7 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                     {offer.offerEndDate && timeInfo && (
                         <Animated.View style={[styles.timerContainer, { transform: [{ scale: pulseAnim }] }]}>
                             <View style={styles.timerHeader}>
-                                <Timer size={10} color={COLORS.accent} />
+                                <Timer size={10} color={COLORS.error} />
                                 <Text style={styles.timerLabel}>OFFER ENDS IN:</Text>
                             </View>
                             <View style={styles.timeRow}>
@@ -206,7 +236,7 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
 
 const styles = StyleSheet.create({
     container: {
-        height: 220,
+        height: 240,
         backgroundColor: '#000',
         overflow: 'hidden',
         width: windowWidth,
@@ -267,7 +297,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     timerLabel: {
-        color: '#fff',
+        color: COLORS.error,
         fontSize: 7,
         fontWeight: 'bold',
         marginLeft: 3,
@@ -330,14 +360,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 4,
     },
-    originalPrice: {
+    priceBox: {
+        alignItems: 'flex-start',
+    },
+    priceLabel: {
         color: 'rgba(255,255,255,0.7)',
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1,
+        marginBottom: -4,
+    },
+    originalPrice: {
+        color: COLORS.error,
         fontSize: 16,
         textDecorationLine: 'line-through',
+        fontWeight: 'bold',
     },
     offerPrice: {
         color: '#fff',
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
     },
     limitedTimeContainer: {

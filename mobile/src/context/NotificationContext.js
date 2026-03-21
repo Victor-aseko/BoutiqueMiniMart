@@ -10,17 +10,17 @@ const NotificationContext = createContext();
 
 const IS_EXPO_GO = Constants.executionEnvironment === 'storeClient';
 
+// Enable notifications globally by default to handle foreground alerts
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
+});
+
 if (IS_EXPO_GO) {
-    console.log('--- NOTICE: Native Push Notifications are disabled in Expo Go (SDK 53+). Please use a Development Build for real-time alerts. ---');
-} else {
-    // Enable notifications globally by default if not in Expo Go
-    Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-            shouldShowAlert: true,
-            shouldPlaySound: true,
-            shouldSetBadge: true,
-        }),
-    });
+    console.log('--- NOTICE: Native Push Notifications are limited in Expo Go (SDK 51+). For background alerts and sound when the app is closed, a Development Build is required. ---');
 }
 
 export const NotificationProvider = ({ children }) => {
@@ -49,8 +49,7 @@ export const NotificationProvider = ({ children }) => {
 
     const registerForPushNotificationsAsync = async () => {
         if (IS_EXPO_GO) {
-            console.log('Push Notifications: Skipping setup because Expo Go does not support FCM/APNs in SDK 53+. Please use a Development Build or APK.');
-            return null;
+            console.log('Push Notifications: expo-notifications has limited support in Expo Go for background delivery. Use a Development Build for full functionality.');
         }
 
         if (!Device.isDevice) {
@@ -120,21 +119,20 @@ export const NotificationProvider = ({ children }) => {
         if (user) {
             fetchNotifications();
 
-            // Setup push and listeners ONLY if not in Expo Go
-            if (!IS_EXPO_GO) {
-                registerForPushNotificationsAsync();
+            // Setup push and listeners
+            registerForPushNotificationsAsync();
 
-                // Foreground listener
-                notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                    console.log('Notification Received in Foreground:', notification);
-                    fetchNotifications();
-                });
+            // Foreground listener: This handles what happens when a notification arrives while the app is open
+            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+                console.log('Notification Received:', notification);
+                fetchNotifications();
+            });
 
-                // Tap listener
-                responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-                    console.log('Notification Interaction:', response);
-                });
-            }
+            // Tap listener: This handles what happens when a user clicks on a notification
+            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+                console.log('Notification Interaction:', response);
+                // Potential navigation logic here
+            });
 
             const interval = setInterval(fetchNotifications, 30000);
             return () => {
