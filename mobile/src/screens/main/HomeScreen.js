@@ -533,7 +533,9 @@ const HomeScreen = ({ navigation }) => {
                                 </View>
                             )}
 
-                            <Text style={[styles.heroTitle, { color: heroColor, textShadowColor: heroColor }]}>{heroText}</Text>
+                            <View style={styles.heroTitleContainer}>
+                                <Text style={[styles.heroTitle, { color: heroColor, textShadowColor: heroColor }]}>{heroText}</Text>
+                            </View>
 
                             <TouchableOpacity
                                 style={styles.heroBtn}
@@ -870,11 +872,18 @@ const styles = StyleSheet.create({
         width: '100%',
         marginVertical: 0,
     },
+    heroTitleContainer: {
+        height: 100, // Fixed height to keep button position static
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 30,
+    },
     heroTitle: {
         fontSize: 32,
         fontWeight: '900',
-        marginTop: 30, // Push title down from slider
-        marginBottom: 20,
+        marginTop: 0,
+        marginBottom: 0,
         textAlign: 'center',
         letterSpacing: 2,
         textShadowOffset: { width: 0, height: 0 },
@@ -886,6 +895,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 25,
         paddingVertical: 10,
         borderRadius: 25,
+        marginTop: 45,
     },
     heroBtnText: {
         color: COLORS.primary,

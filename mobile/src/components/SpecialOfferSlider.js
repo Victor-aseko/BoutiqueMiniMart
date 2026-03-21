@@ -19,13 +19,31 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
     const scrollX = useRef(new Animated.Value(0)).current;
     const [isGoingForward, setIsGoingForward] = useState(true);
     const [tick, setTick] = useState(0);
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, {
+                    toValue: 1.05,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(pulseAnim, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                })
+            ])
+        ).start();
+    }, []);
 
     // Force re-render every second for the countdown
     useEffect(() => {
         const timer = setInterval(() => setTick(t => t + 1), 1000);
         return () => clearInterval(timer);
     }, []);
-    
+
     // Filter out expired offers
     const validOffers = offers.filter(offer => {
         if (!offer.offerEndDate) return true;
@@ -59,13 +77,13 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
 
             setCurrentIndex(nextIndex);
             setIsGoingForward(nextDirection);
-            
+
             Animated.timing(scrollX, {
                 toValue: nextIndex * windowWidth,
-                duration: 800, // Slightly slower for reverse move to look smoother
+                duration: 600, // Reduced from 800 for faster slide speed
                 useNativeDriver: true,
             }).start();
-        }, 5000);
+        }, 4000);
 
         return () => clearInterval(interval);
     }, [currentIndex, isGoingForward, validOffers.length]);
@@ -75,14 +93,14 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
         const now = new Date();
         const end = new Date(endDate);
         const diff = end - now;
-        
+
         if (diff <= 0) return { text: 'Offer Ended', progress: 1 };
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((diff / (1000 * 60) % 60));
         const seconds = Math.floor((diff / 1000 % 60));
-        
+
         let progress = 0;
         if (startDate) {
             const start = new Date(startDate);
@@ -91,11 +109,13 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
             progress = Math.min(Math.max(elapsed / total, 0), 1);
         }
 
-        let timeText = '';
-        if (days > 0) timeText = `${days}d ${hours}h ${minutes}m LEFT`;
-        else timeText = `${hours}h ${minutes}m ${seconds}s LEFT`;
+        const timeText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
 
-        return { text: timeText, progress };
+        return {
+            days, hours, minutes, seconds,
+            text: timeText,
+            progress
+        };
     };
 
     const renderOfferItem = (offer, index) => {
@@ -103,11 +123,11 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
         const timeLeft = timeInfo?.text;
         const progress = timeInfo?.progress || 0;
         const hasOriginalPrice = offer.originalPrice && offer.originalPrice > offer.price;
-        const percentage = offer.offerPercentage || (hasOriginalPrice ? 
-            Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100) : 5);
+        const percentage = offer.offerPercentage || (hasOriginalPrice ?
+            Math.round(((offer.originalPrice - offer.price) / offer.originalPrice) * 100) : 0);
 
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 key={offer._id}
                 activeOpacity={0.9}
                 onPress={() => onOfferPress(offer)}
@@ -120,35 +140,39 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
                             <Tag size={12} color="#fff" />
                             <Text style={styles.percentageText}>{percentage}% OFF</Text>
                         </View>
-                        {timeLeft && (
-                            <View style={styles.timerBadge}>
-                                <Timer size={12} color="#fff" />
-                                <View style={{ marginLeft: 6, flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Text style={styles.timerSubText}>OFFER ENDS IN:</Text>
-                                        <Text style={styles.timerText}>{timeLeft}</Text>
-                                    </View>
-                                    {offer.offerStartDate && (
-                                        <View style={styles.progressBarBg}>
-                                            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-                                        </View>
-                                    )}
-                                </View>
-                            </View>
-                        )}
                     </View>
-
                     <View style={styles.contentContainer}>
                         <Text style={styles.offerTitle} numberOfLines={1}>{offer.name}</Text>
                         <View style={styles.priceContainer}>
+                            {offer.originalPrice > offer.price && (
+                                <Text style={styles.originalPrice}>Ksh {offer.originalPrice?.toLocaleString()}</Text>
+                            )}
                             <Text style={styles.offerPrice}>Ksh {offer.price?.toLocaleString()}</Text>
                         </View>
-                        
+
                         <Animated.View style={styles.limitedTimeContainer}>
                             <Zap size={14} color={COLORS.accent} fill={COLORS.accent} />
                             <Text style={styles.limitedTimeText}>LIMITED TIME OFFER</Text>
                         </Animated.View>
                     </View>
+
+                    {offer.offerEndDate && timeInfo && (
+                        <Animated.View style={[styles.timerContainer, { transform: [{ scale: pulseAnim }] }]}>
+                            <View style={styles.timerHeader}>
+                                <Timer size={10} color={COLORS.accent} />
+                                <Text style={styles.timerLabel}>OFFER ENDS IN:</Text>
+                            </View>
+                            <View style={styles.timeRow}>
+                                <View style={styles.timeBox}><Text style={styles.timeBoxText}>{timeInfo.days}</Text><Text style={styles.timeLabel}>D</Text></View>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <View style={styles.timeBox}><Text style={styles.timeBoxText}>{String(timeInfo.hours).padStart(2, '0')}</Text><Text style={styles.timeLabel}>H</Text></View>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <View style={styles.timeBox}><Text style={styles.timeBoxText}>{String(timeInfo.minutes).padStart(2, '0')}</Text><Text style={styles.timeLabel}>M</Text></View>
+                                <Text style={styles.timeSeparator}>:</Text>
+                                <View style={styles.timeBox}><Text style={styles.timeBoxText}>{String(timeInfo.seconds).padStart(2, '0')}</Text><Text style={styles.timeLabel}>S</Text></View>
+                            </View>
+                        </Animated.View>
+                    )}
                 </View>
             </TouchableOpacity>
         );
@@ -162,16 +186,16 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
             ]}>
                 {validOffers.map((offer, index) => renderOfferItem(offer, index))}
             </Animated.View>
-            
+
             {validOffers.length > 1 && (
                 <View style={styles.pagination}>
                     {validOffers.map((_, i) => (
-                        <View 
-                            key={i} 
+                        <View
+                            key={i}
                             style={[
-                                styles.paginationDot, 
+                                styles.paginationDot,
                                 currentIndex === i && styles.paginationDotActive
-                            ]} 
+                            ]}
                         />
                     ))}
                 </View>
@@ -230,26 +254,53 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginLeft: 4,
     },
-    timerBadge: {
-        backgroundColor: 'rgba(0,0,0,0.6)',
+    timerContainer: {
+        position: 'absolute',
+        bottom: 15,
+        right: 15,
+        alignItems: 'flex-end',
+        zIndex: 10,
+    },
+    timerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.3)',
+        marginBottom: 2,
     },
-    timerText: {
+    timerLabel: {
         color: '#fff',
-        fontSize: 10,
+        fontSize: 7,
         fontWeight: 'bold',
-    },
-    timerSubText: {
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: 8,
-        fontWeight: 'bold',
+        marginLeft: 3,
         letterSpacing: 0.5,
+    },
+    timeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    timeBox: {
+        backgroundColor: 'transparent',
+        paddingHorizontal: 0,
+        paddingVertical: 0,
+        borderRadius: 0,
+        minWidth: 15,
+        alignItems: 'center',
+    },
+    timeBoxText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '900',
+    },
+    timeLabel: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 5,
+        fontWeight: 'bold',
+        marginTop: -2,
+    },
+    timeSeparator: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 12,
+        marginHorizontal: 2,
     },
     progressBarBg: {
         height: 3,

@@ -44,8 +44,10 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
 
     const onSale = product.isOffer || isOffer;
     const itemPrice = Math.floor(product.price);
-    const oldPrice = product.originalPrice ? Math.floor(product.originalPrice) : Math.floor(itemPrice / 0.95);
-    const discount = product.offerPercentage || 5;
+    const oldPrice = (onSale && product.originalPrice && product.originalPrice > product.price)
+        ? Math.floor(product.originalPrice)
+        : itemPrice;
+    const discount = product.offerPercentage || (oldPrice > itemPrice ? Math.round(((oldPrice - itemPrice) / oldPrice) * 100) : 0);
 
     const selectedVariant = selectedVariantIndex >= 0 ? colors[selectedVariantIndex] : null;
     const currentImage = selectedVariant?.image || product.selectedColorForWishlist?.image || product.image;
@@ -68,7 +70,7 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
         setSelectedVariantIndex(prev => {
             // When moving PREVIOUS from default (-1), jump to the very last color.
             if (prev === -1) return colors.length - 1;
-            
+
             const prevIdx = prev - 1;
             // If we fall below index 1 (meaning we hit 0), skip it and go back to baseline (-1).
             return prevIdx <= 0 ? -1 : prevIdx;

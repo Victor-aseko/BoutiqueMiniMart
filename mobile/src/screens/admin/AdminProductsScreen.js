@@ -52,6 +52,23 @@ const AdminProductsScreen = ({ navigation }) => {
     const [offerEndDate, setOfferEndDate] = useState('');
 
     useEffect(() => {
+        if (isOffer && originalPrice && offerPercentage) {
+            const op = parseFloat(originalPrice);
+            const perc = parseFloat(offerPercentage);
+            if (!isNaN(op) && !isNaN(perc)) {
+                const newPriceValue = op - (op * perc / 100);
+                setPrice(newPriceValue.toFixed(0)); // Rounded to nearest interger for currency display consistency
+            }
+        }
+    }, [isOffer, originalPrice, offerPercentage]);
+
+    useEffect(() => {
+        if (isOffer && !originalPrice && price) {
+            setOriginalPrice(price);
+        }
+    }, [isOffer]);
+
+    useEffect(() => {
         fetchProducts();
     }, []);
 
@@ -347,16 +364,18 @@ const AdminProductsScreen = ({ navigation }) => {
                                 icon={Package}
                             />
                             <View style={styles.row}>
-                                <View style={{ flex: 1, marginRight: 10 }}>
-                                    <MyInput
-                                        label="Price (Kshs)"
-                                        placeholder="0.00"
-                                        value={price}
-                                        onChangeText={setPrice}
-                                        keyboardType="numeric"
-                                        icon={DollarSign}
-                                    />
-                                </View>
+                                {!isOffer && (
+                                    <View style={{ flex: 1, marginRight: 10 }}>
+                                        <MyInput
+                                            label="Price (Kshs)"
+                                            placeholder="0.00"
+                                            value={price}
+                                            onChangeText={setPrice}
+                                            keyboardType="numeric"
+                                            icon={DollarSign}
+                                        />
+                                    </View>
+                                )}
                                 <View style={{ flex: 1 }}>
                                     <MyInput
                                         label="Stock Quantity"
@@ -410,6 +429,14 @@ const AdminProductsScreen = ({ navigation }) => {
                                                 icon={Tag}
                                             />
                                         </View>
+                                    </View>
+                                    <View style={{ marginBottom: 15 }}>
+                                        <MyInput
+                                            label="Calculated New Price (Kshs)"
+                                            value={price}
+                                            editable={false}
+                                            icon={DollarSign}
+                                        />
                                     </View>
                                     <View style={styles.row}>
                                         <View style={{ flex: 1, marginRight: 10 }}>

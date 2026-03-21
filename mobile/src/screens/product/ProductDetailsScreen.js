@@ -66,7 +66,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         const finalPrice = route.params?.isOffer
-            ? Math.floor(Number(product.price) * 0.95)
+            ? Math.floor(Number(product.price))
             : Number(product.price);
 
         const productToAdd = {
@@ -146,7 +146,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
 
         const finalPrice = route.params?.isOffer
-            ? Math.floor(Number(product.price) * 0.95)
+            ? Math.floor(Number(product.price))
             : Number(product.price);
 
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
@@ -249,10 +249,10 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </View>
 
                     <View style={styles.priceContainer}>
-                        {route.params?.isOffer ? (
+                        {product.isOffer && product.originalPrice > product.price ? (
                             <>
-                                <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.price))}</Text>
-                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price) * 0.95)} <Text style={styles.offTxt}>(5% OFF)</Text></Text>
+                                <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.originalPrice))}</Text>
+                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price))} <Text style={styles.offTxt}>({product.offerPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)</Text></Text>
                             </>
                         ) : (
                             <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
@@ -359,10 +359,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 <View style={styles.totalBox}>
                     <Text style={styles.totalLabel}>Subtotal</Text>
                     <Text style={styles.totalPrice}>Kshs {
-                        (route.params?.isOffer
-                            ? Math.floor(Number(product.price) * 0.95)
-                            : Math.floor(Number(product.price))
-                        ) * qty
+                        Math.floor(Number(product.price)) * qty
                     }</Text>
                 </View>
                 <View style={{ flexDirection: 'row', flex: 2 }}>
@@ -401,10 +398,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                 <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
                                 <Text style={styles.modalName}>{product.name}</Text>
                                 <Text style={styles.modalPrice}>Kshs {
-                                    (route.params?.isOffer
-                                        ? Math.floor(Number(product.price) * 0.95)
-                                        : Math.floor(Number(product.price))
-                                    ) * orderQty
+                                    Math.floor(Number(product.price)) * orderQty
                                 }</Text>
 
                                 {/* Color Selection */}
@@ -536,12 +530,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         product: {
                             ...product,
                             image: selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image),
-                            price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price
+                            price: route.params?.isOffer ? Math.floor(Number(product.price)) : product.price
                         },
                         qty: qty,
                         color: selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default',
                         size: selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default',
-                        price: route.params?.isOffer ? Math.floor(Number(product.price) * 0.95) : product.price
+                        price: route.params?.isOffer ? Math.floor(Number(product.price)) : product.price
                     }
                 }}
             />
