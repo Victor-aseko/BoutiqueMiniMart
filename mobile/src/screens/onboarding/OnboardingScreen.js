@@ -23,17 +23,17 @@ const CYCLE_DATA = [
     {
         title: 'Curated\nCollections',
         description: 'Exclusive designs and high-quality craftsmanship, hand-picked just for you to elevate your style.',
-        image: require('../../../assets/onboarding/collections_1.jpg'),
+        image: require('../../../assets/onboarding/New_OnboardImage.jpg'),
     },
     {
         title: 'Premium Quality',
         description: 'Discover the touch of elegance and superior craftsmanship in every piece.',
-        image: require('../../../assets/onboarding/collections_2.png'),
+        image: require('../../../assets/onboarding/luxury_boutique_interior1.png'),
     },
     {
         title: 'Elegant Style',
         description: 'Elevate your wardrobe with our sophisticated fashion picks for every occasion.',
-        image: require('../../../assets/onboarding/collections_3.png'),
+        image: require('../../../assets/onboarding/modern_boutique_mall.png'),
     }
 ];
 
