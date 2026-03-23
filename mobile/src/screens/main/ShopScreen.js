@@ -237,6 +237,20 @@ const ShopScreen = ({ navigation, route }) => {
         return list;
     }, [filtered, selectedSort]);
 
+    const suggestedProducts = useMemo(() => {
+        if (sortedProducts.length > 0) return [];
+        
+        // If no products found, find similar items within the same selected category if possible
+        if (selectedCategory !== 'All') {
+            const catLower = selectedCategory.toLowerCase();
+            const sameCat = products.filter(p => normalizeCategory(p.category).includes(catLower) && p.countInStock > 0);
+            if (sameCat.length > 0) return sameCat.slice(0, 4);
+        }
+
+        // Otherwise just show top rated or any available items as suggestions
+        return products.filter(p => p.countInStock > 0).sort((a,b) => b.rating - a.rating).slice(0, 4);
+    }, [products, sortedProducts, selectedCategory]);
+
     const renderProduct = React.useCallback(({ item }) => (
         <View style={styles.productWrapper}>
             <ProductCard
@@ -368,7 +382,23 @@ const ShopScreen = ({ navigation, route }) => {
                     removeClippedSubviews={true}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Text style={styles.emptyText}>No products found</Text>
+                            <Text style={styles.emptyText}>No products found matching your current filters.</Text>
+                            {suggestedProducts.length > 0 && (
+                                <View style={styles.suggestionSection}>
+                                    <Text style={styles.suggestionTitle}>Wait! You may also like...</Text>
+                                    <View style={styles.suggestionGrid}>
+                                        {suggestedProducts.map((item) => (
+                                            <View key={item._id} style={{ width: '48%', marginBottom: 15 }}>
+                                                <ProductCard
+                                                    product={item}
+                                                    onPress={(p, color) => navigateToDetails(p, color)}
+                                                    onAddToCart={handleAddToCart}
+                                                />
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
                         </View>
                     }
                 />
@@ -586,7 +616,25 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 16,
         color: COLORS.textLight,
+        textAlign: 'center',
+        marginBottom: 20,
     },
+    suggestionSection: {
+        width: '100%',
+        marginTop: 20,
+    },
+    suggestionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 15,
+        paddingHorizontal: 5,
+    },
+    suggestionGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    }
 });
 
 export default ShopScreen;

@@ -14,7 +14,7 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload, Check } from 'lucide-react-native';
+import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload, Check, Briefcase } from 'lucide-react-native';
 import api, { BASE_URL } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../../theme/theme';
@@ -37,6 +37,7 @@ const AdminProductsScreen = ({ navigation }) => {
     const [price, setPrice] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
+    const [brand, setBrand] = useState('');
     const [image, setImage] = useState('');
     const [countInStock, setCountInStock] = useState('');
     const [colors, setColors] = useState([]); // [{ name, image }]
@@ -100,6 +101,7 @@ const AdminProductsScreen = ({ navigation }) => {
         setPrice('');
         setDescription('');
         setCategory('');
+        setBrand('');
         setImage('');
         setCountInStock('');
 
@@ -122,6 +124,7 @@ const AdminProductsScreen = ({ navigation }) => {
         setPrice(product.price.toString());
         setDescription(product.description);
         setCategory(product.category);
+        setBrand(product.brand || '');
         setImage(product.image);
         setCountInStock(product.countInStock.toString());
         setColors(product.colors || []);
@@ -181,12 +184,12 @@ const AdminProductsScreen = ({ navigation }) => {
             name,
             price: parseFloat(price),
             description,
+            brand,
             category,
             image,
             countInStock: parseInt(countInStock),
             colors,
             sizes,
-            brand: 'MiniBoutique', // Default brand
 
             rating: 0,
             numReviews: 0,
@@ -408,12 +411,26 @@ const AdminProductsScreen = ({ navigation }) => {
                                     />
                                 </View>
                             </View>
-                            <MyInput
-                                label="Category"
-                                placeholder="e.g. Dresses, Shoes"
-                                value={category}
-                                onChangeText={setCategory}
-                                icon={Tag} />
+                            <View style={styles.row}>
+                                <View style={{ flex: 1, marginRight: 10 }}>
+                                    <MyInput
+                                        label="Category"
+                                        placeholder="e.g. Dresses, Shoes"
+                                        value={category}
+                                        onChangeText={setCategory}
+                                        icon={Tag}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <MyInput
+                                        label="Brand"
+                                        placeholder="Enter Brand"
+                                        value={brand}
+                                        onChangeText={setBrand}
+                                        icon={Briefcase}
+                                    />
+                                </View>
+                            </View>
 
 
 

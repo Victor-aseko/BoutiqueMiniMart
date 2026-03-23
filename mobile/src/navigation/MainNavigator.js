@@ -19,6 +19,7 @@ import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
 import SearchScreen from '../screens/main/SearchScreen';
 import BrandLogo from '../components/BrandLogo';
+import HotDealsTrendsScreen from '../screens/main/HotDealsTrendsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -141,6 +142,11 @@ const HomeStack = ({ navigation }) => (
         <Stack.Screen
             name="SearchScreen"
             component={SearchScreen}
+            options={{ headerShown: false }}
+        />
+        <Stack.Screen
+            name="HotDealsTrends"
+            component={HotDealsTrendsScreen}
             options={{ headerShown: false }}
         />
     </Stack.Navigator>

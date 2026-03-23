@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
@@ -198,7 +198,7 @@ const HomeScreen = ({ navigation }) => {
     );
 
     const [titleText, setTitleText] = useState('');
-    const fullTitle = "BROWSE BY CATEGORIES";
+    const fullTitle = "Browse By Categories";
 
     const [heroText, setHeroText] = useState('');
     const [heroColor, setHeroColor] = useState(COLORS.white);
@@ -253,8 +253,8 @@ const HomeScreen = ({ navigation }) => {
     const renderCategories = () => {
         return (
             <View style={styles.sectionContainer}>
-                <View style={styles.centeredSectionHeader}>
-                    <Text style={styles.centeredSectionTitle}>{titleText}</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>{titleText}</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 15 }}>
                     {categoryGroups.map((group, colIndex) => (
@@ -302,7 +302,7 @@ const HomeScreen = ({ navigation }) => {
         if (hotDealsAndTrends.length === 0) return null;
         return (
             <View style={styles.sectionContainer}>
-                {renderSectionHeader('🔥 Hot Deals & Trends ✨', () => navigation.navigate('ShopTab', { params: { isHotDeal: true, isTrending: true } }), 'Explore All')}
+                {renderSectionHeader('🔥 Hot Deals & Trends', () => navigation.navigate('HotDealsTrends'), 'Explore All')}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
                     {hotDealsAndTrends.map((item) => (
                         <View key={item._id} style={{ width: CARD_WIDTH, marginRight: 10 }}>
@@ -601,11 +601,11 @@ const HomeScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                {/* Category Section */}
-                {renderCategories()}
-
                 {/* Hot Deals & Trends Section */}
                 {renderHotDealsAndTrends()}
+
+                {/* Category Section */}
+                {renderCategories()}
 
                 {/* Footer Section */}
                 <View style={styles.mainFooter}>

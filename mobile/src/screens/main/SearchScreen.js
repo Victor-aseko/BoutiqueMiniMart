@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     View,
     Text,
@@ -58,6 +58,19 @@ const SearchScreen = ({ navigation }) => {
             setFilteredProducts(filtered);
         }
     }, [searchQuery, products]);
+
+    const suggestedProducts = useMemo(() => {
+        if (searchQuery.trim() === '' || filteredProducts.length > 0) return [];
+        const words = searchQuery.toLowerCase().split(' ').filter(w => w.length > 2);
+        if (words.length === 0) return [];
+
+        return products.filter(p =>
+            words.some(word =>
+                p.category.toLowerCase().includes(word) ||
+                p.name.toLowerCase().includes(word)
+            )
+        ).slice(0, 4); // Limit to top 4 suggestions
+    }, [searchQuery, products, filteredProducts]);
 
     const handleClear = () => {
         setSearchQuery('');
@@ -141,6 +154,22 @@ const SearchScreen = ({ navigation }) => {
                         searchQuery.trim() !== '' ? (
                             <View style={styles.emptyState}>
                                 <Text style={styles.emptyText}>No products found for "{searchQuery}"</Text>
+                                {suggestedProducts.length > 0 && (
+                                    <View style={styles.suggestionSection}>
+                                        <Text style={styles.suggestionTitle}>You may also like...</Text>
+                                        <View style={styles.suggestionGrid}>
+                                            {suggestedProducts.map((item) => (
+                                                <View key={item._id} style={{ width: '48%', marginBottom: 15 }}>
+                                                    <ProductCard
+                                                        product={item}
+                                                        onPress={(p, color) => navigation.navigate('ProductDetails', { product: p, selectedColor: color, isOffer: p.isOffer })}
+                                                        onAddToCart={handleAddToCart}
+                                                    />
+                                                </View>
+                                            ))}
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                         ) : (
                             <View style={styles.emptyState}>
@@ -216,6 +245,23 @@ const styles = StyleSheet.create({
     emptyText: {
         color: COLORS.textLight,
         fontSize: 16,
+        marginBottom: 20,
+    },
+    suggestionSection: {
+        width: '100%',
+        marginTop: 20,
+    },
+    suggestionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 15,
+        paddingHorizontal: 5,
+    },
+    suggestionGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     }
 });
 
