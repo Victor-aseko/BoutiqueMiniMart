@@ -50,6 +50,8 @@ const ShopScreen = ({ navigation, route }) => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [selectedBrandFilter, setSelectedBrandFilter] = useState('All');
     const [selectedPriceRange, setSelectedPriceRange] = useState({ label: 'All Prices', min: 0, max: 999999 });
+    const [hotDealOnly, setHotDealOnly] = useState(false);
+    const [trendingOnly, setTrendingOnly] = useState(false);
 
     // Extract unique brands from products
     const [availableBrands, setAvailableBrands] = useState(['All']);
@@ -68,6 +70,17 @@ const ShopScreen = ({ navigation, route }) => {
 
         if (route.params?.params?.search || route.params?.search) {
             setSearchQuery(route.params.params?.search || route.params.search);
+        }
+        if (route.params?.params?.isHotDeal || route.params?.isHotDeal) {
+            setHotDealOnly(true);
+        } else {
+            setHotDealOnly(false);
+        }
+
+        if (route.params?.params?.isTrending || route.params?.isTrending) {
+            setTrendingOnly(true);
+        } else {
+            setTrendingOnly(false);
         }
     }, [route.params]);
 
@@ -198,9 +211,19 @@ const ShopScreen = ({ navigation, route }) => {
             // Stock Filter
             const matchesStock = p.countInStock > 0;
 
-            return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock;
+            // Hot Deals / Trending
+            let matchesSpecial = true;
+            if (hotDealOnly && trendingOnly) {
+                matchesSpecial = p.isHotDeal || p.isTrending;
+            } else if (hotDealOnly) {
+                matchesSpecial = p.isHotDeal;
+            } else if (trendingOnly) {
+                matchesSpecial = p.isTrending;
+            }
+
+            return matchesSearch && matchesCategory && matchesBrand && matchesPrice && matchesStock && matchesSpecial;
         });
-    }, [products, searchQuery, selectedCategory, selectedBrandFilter, selectedPriceRange]);
+    }, [products, searchQuery, selectedCategory, selectedBrandFilter, selectedPriceRange, hotDealOnly, trendingOnly]);
 
     // Apply sorting
     const sortedProducts = useMemo(() => {

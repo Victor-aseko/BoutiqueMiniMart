@@ -110,6 +110,9 @@ const HomeScreen = ({ navigation }) => {
     // Derived state for filtered products - only show in-stock items
     const specialOffers = products.filter(p => p.isOffer && p.countInStock > 0);
     const newArrivals = products.filter(p => !p.isOffer && p.countInStock > 0);
+    const hotDeals = products.filter(p => p.isHotDeal && p.countInStock > 0);
+    const trendingProducts = products.filter(p => p.isTrending && p.countInStock > 0);
+    const hotDealsAndTrends = products.filter(p => (p.isHotDeal || p.isTrending) && p.countInStock > 0);
     const inStockProducts = products.filter(p => p.countInStock > 0);
 
     const { user } = useAuth();
@@ -288,6 +291,26 @@ const HomeScreen = ({ navigation }) => {
                                     </View>
                                 </View>
                             ))}
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
+
+    const renderHotDealsAndTrends = () => {
+        if (hotDealsAndTrends.length === 0) return null;
+        return (
+            <View style={styles.sectionContainer}>
+                {renderSectionHeader('🔥 Hot Deals & Trends ✨', () => navigation.navigate('ShopTab', { params: { isHotDeal: true, isTrending: true } }), 'Explore All')}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
+                    {hotDealsAndTrends.map((item) => (
+                        <View key={item._id} style={{ width: CARD_WIDTH, marginRight: 10 }}>
+                            <ProductCard
+                                product={item}
+                                onPress={(p, color) => navigateToDetails(p, color)}
+                                onAddToCart={handleAddToCart}
+                            />
                         </View>
                     ))}
                 </ScrollView>
@@ -580,6 +603,9 @@ const HomeScreen = ({ navigation }) => {
 
                 {/* Category Section */}
                 {renderCategories()}
+
+                {/* Hot Deals & Trends Section */}
+                {renderHotDealsAndTrends()}
 
                 {/* Footer Section */}
                 <View style={styles.mainFooter}>

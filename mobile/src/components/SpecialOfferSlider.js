@@ -236,7 +236,7 @@ const SpecialOfferSlider = ({ offers, onOfferPress }) => {
 
 const styles = StyleSheet.create({
     container: {
-        height: 240,
+        height: 250,
         backgroundColor: '#000',
         overflow: 'hidden',
         width: windowWidth,

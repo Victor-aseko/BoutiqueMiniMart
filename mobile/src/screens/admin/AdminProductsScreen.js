@@ -50,6 +50,8 @@ const AdminProductsScreen = ({ navigation }) => {
     const [offerPercentage, setOfferPercentage] = useState('');
     const [offerStartDate, setOfferStartDate] = useState('');
     const [offerEndDate, setOfferEndDate] = useState('');
+    const [isHotDeal, setIsHotDeal] = useState(false);
+    const [isTrending, setIsTrending] = useState(false);
 
     useEffect(() => {
         if (isOffer && originalPrice && offerPercentage) {
@@ -108,6 +110,8 @@ const AdminProductsScreen = ({ navigation }) => {
         setOfferPercentage('');
         setOfferStartDate('');
         setOfferEndDate('');
+        setIsHotDeal(false);
+        setIsTrending(false);
         setIsModalOpen(true);
     };
 
@@ -139,6 +143,8 @@ const AdminProductsScreen = ({ navigation }) => {
         
         // Set isOffer last to ensure all offer-related data is already in state
         setIsOffer(product.isOffer || false);
+        setIsHotDeal(product.isHotDeal || false);
+        setIsTrending(product.isTrending || false);
         setIsModalOpen(true);
     };
 
@@ -190,6 +196,8 @@ const AdminProductsScreen = ({ navigation }) => {
             // Saving as raw strings to prevent timezone shifting (Kenya +3)
             offerStartDate: (isOffer && offerStartDate && offerStartDate.trim() !== '') ? offerStartDate : null,
             offerEndDate: (isOffer && offerEndDate && offerEndDate.trim() !== '') ? offerEndDate : null,
+            isHotDeal,
+            isTrending,
         };
 
         try {
@@ -473,6 +481,28 @@ const AdminProductsScreen = ({ navigation }) => {
                                     </View>
                                 </View>
                             )}
+
+                            <View style={[styles.row, { marginTop: 10, marginBottom: 15 }]}>
+                                <TouchableOpacity
+                                    style={[styles.offerToggle, { flex: 1 }]}
+                                    onPress={() => setIsHotDeal(!isHotDeal)}
+                                >
+                                    <View style={[styles.checkbox, isHotDeal && styles.checkboxChecked]}>
+                                        {isHotDeal && <Check size={14} color={COLORS.white} />}
+                                    </View>
+                                    <Text style={styles.offerLabel}>Hot Deal 🔥</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.offerToggle, { flex: 1 }]}
+                                    onPress={() => setIsTrending(!isTrending)}
+                                >
+                                    <View style={[styles.checkbox, isTrending && styles.checkboxChecked]}>
+                                        {isTrending && <Check size={14} color={COLORS.white} />}
+                                    </View>
+                                    <Text style={styles.offerLabel}>Trending ✨</Text>
+                                </TouchableOpacity>
+                            </View>
 
                             <View style={{ marginBottom: 15 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 10 }}>

@@ -82,6 +82,18 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
             <View style={styles.imageContainer}>
                 <Image source={{ uri: currentImage }} style={styles.image} resizeMode="cover" />
 
+                {/* Hot/Trending Badges */}
+                {product.isHotDeal && (
+                    <View style={[styles.statusBadge, styles.hotBadge]}>
+                        <Text style={styles.statusBadgeText}>HOT DEAL</Text>
+                    </View>
+                )}
+                {product.isTrending && (
+                    <View style={[styles.statusBadge, styles.trendingBadge]}>
+                        <Text style={styles.statusBadgeText}>TRENDING</Text>
+                    </View>
+                )}
+
                 {/* Variant Navigation Arrows - Pulse animation to grab attention */}
                 {(hasVariants && !hideVariants) && (
                     <Animated.View style={{
@@ -287,7 +299,28 @@ const styles = StyleSheet.create({
     },
     bottomRightArrow: {
         right: 0,
-    }
+    },
+    statusBadge: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        zIndex: 10,
+    },
+    hotBadge: {
+        backgroundColor: '#FF3B30',
+    },
+    trendingBadge: {
+        backgroundColor: '#5856D6',
+    },
+    statusBadgeText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+    },
 });
 
 export default React.memo(ProductCard);

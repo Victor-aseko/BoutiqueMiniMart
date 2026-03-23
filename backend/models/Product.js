@@ -84,6 +84,16 @@ const productSchema = mongoose.Schema(
         offerStartDate: {
             type: Date,
         },
+        isHotDeal: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
+        isTrending: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
     },
     {
         timestamps: true,

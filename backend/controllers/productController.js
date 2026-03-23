@@ -105,6 +105,8 @@ const createProduct = asyncHandler(async (req, res) => {
         offerPercentage,
         offerEndDate,
         offerStartDate,
+        isHotDeal,
+        isTrending,
     } = req.body;
 
     const product = new Product({
@@ -123,6 +125,8 @@ const createProduct = asyncHandler(async (req, res) => {
         offerPercentage: offerPercentage || 0,
         offerEndDate: offerEndDate || null,
         offerStartDate: offerStartDate || null,
+        isHotDeal: isHotDeal || false,
+        isTrending: isTrending || false,
     });
 
     const createdProduct = await product.save();
@@ -189,6 +193,8 @@ const updateProduct = asyncHandler(async (req, res) => {
         offerPercentage,
         offerEndDate,
         offerStartDate,
+        isHotDeal,
+        isTrending,
     } = req.body;
 
     const product = await Product.findById(req.params.id);
@@ -211,6 +217,8 @@ const updateProduct = asyncHandler(async (req, res) => {
         product.offerPercentage = offerPercentage || 0;
         product.offerEndDate = offerEndDate || null;
         product.offerStartDate = offerStartDate || null;
+        product.isHotDeal = isHotDeal || false;
+        product.isTrending = isTrending || false;
 
         const updatedProduct = await product.save();
 
