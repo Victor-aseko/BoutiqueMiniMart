@@ -112,6 +112,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/test-email', require('./routes/testRoutes'));
+app.use('/api/push-tokens', require('./routes/pushTokenRoutes'));
 
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 

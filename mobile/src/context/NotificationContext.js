@@ -49,7 +49,7 @@ export const NotificationProvider = ({ children }) => {
 
     const registerForPushNotificationsAsync = async () => {
         if (IS_EXPO_GO) {
-            console.log('Push Notifications: expo-notifications has limited support in Expo Go for background delivery. Use a Development Build for full functionality.');
+            console.log('Push Notifications: expo-notifications has limited support in Expo Go. Use a Development Build for background delivery.');
         }
 
         if (!Device.isDevice) {
@@ -85,19 +85,30 @@ export const NotificationProvider = ({ children }) => {
             console.log('Push Notifications: Token Generated:', token);
             setExpoPushToken(token);
 
-            // Step 3: Send token to backend
-            if (user && token) {
+            // Step 3: Send token to central registry (Public endpoint)
+            // This works regardless of logged-in status
+            await api.post('/push-tokens', { 
+                token, 
+                platform: Platform.OS,
+                user: user?._id || null 
+            });
+            console.log('Push Notifications: Token synced with global registry');
+
+            // Legacy support: sync with user model too if logged in
+            if (user && user.token) {
                 await api.post('/users/push-token', { token });
-                console.log('Push Notifications: Token saved to backend');
             }
 
-            // Step 4: Android Channel
+            // Step 4: Android Channel Configuration (Essential for Sound/Popup)
             if (Platform.OS === 'android') {
-                Notifications.setNotificationChannelAsync('default', {
+                await Notifications.setNotificationChannelAsync('default', {
                     name: 'default',
                     importance: Notifications.AndroidImportance.MAX,
                     vibrationPattern: [0, 250, 250, 250],
                     lightColor: '#FF231F7C',
+                    enableVibrate: true,
+                    showBadge: true,
+                    sound: 'default' // Explicitly set default sound
                 });
             }
 
@@ -109,38 +120,40 @@ export const NotificationProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        // If logged out or logging out, clear and stop
-        if (!user || isLoggingOut) {
+        // 1. Setup Push Registration for EVERYONE
+        registerForPushNotificationsAsync();
+
+        // 2. Setup Foreground & Tap Listeners for EVERYONE
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            console.log('Notification Received:', notification);
+            if (user && user.token) fetchNotifications();
+        });
+
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+            console.log('Notification Interaction:', response);
+            // Example navigation: if notification has productId, we could navigate there
+            const data = response.notification.request.content.data;
+            if (data?.productId) {
+                // Navigation logic would go here if we had access to the navigation prop
+                console.log('Should navigate to product:', data.productId);
+            }
+        });
+
+        // 3. Setup polling only for LOGGED IN users
+        let interval;
+        if (user && !isLoggingOut) {
+            fetchNotifications();
+            interval = setInterval(fetchNotifications, 30000);
+        } else {
             setNotifications([]);
             setUnreadCount(0);
-            return;
         }
 
-        if (user) {
-            fetchNotifications();
-
-            // Setup push and listeners
-            registerForPushNotificationsAsync();
-
-            // Foreground listener: This handles what happens when a notification arrives while the app is open
-            notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-                console.log('Notification Received:', notification);
-                fetchNotifications();
-            });
-
-            // Tap listener: This handles what happens when a user clicks on a notification
-            responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-                console.log('Notification Interaction:', response);
-                // Potential navigation logic here
-            });
-
-            const interval = setInterval(fetchNotifications, 30000);
-            return () => {
-                clearInterval(interval);
-                if (notificationListener.current) notificationListener.current.remove();
-                if (responseListener.current) responseListener.current.remove();
-            };
-        }
+        return () => {
+            if (interval) clearInterval(interval);
+            if (notificationListener.current) notificationListener.current.remove();
+            if (responseListener.current) responseListener.current.remove();
+        };
     }, [user, isLoggingOut, fetchNotifications]);
 
     const markAsRead = async (id) => {

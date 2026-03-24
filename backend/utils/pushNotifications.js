@@ -42,10 +42,19 @@ const sendPushNotification = async (pushTokens, title, body, data = {}) => {
                 let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
                 console.log('Push tickets:', ticketChunk);
                 tickets.push(...ticketChunk);
-                // NOTE: If a ticket contains an error code in ticket.details.error, you
-                // must handle it appropriately. The error codes are listed in the Expo
-                // documentation, and mean things like the token is invalid or no longer
-                // working for this person.
+                
+                // Handle invalid tokens
+                for (let i = 0; i < ticketChunk.length; i++) {
+                    const ticket = ticketChunk[i];
+                    if (ticket.status === 'error') {
+                        if (ticket.details && ticket.details.error === 'DeviceNotRegistered') {
+                            const staleToken = chunk[i].to;
+                            const PushToken = require('../models/PushToken');
+                            await PushToken.deleteOne({ token: staleToken });
+                            console.log(`Notification System: Removed stale token ${staleToken}`);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error sending push notification chunk:', error);
             }
