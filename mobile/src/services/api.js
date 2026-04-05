@@ -7,16 +7,18 @@ import Constants from 'expo-constants';
 const expoHost = Constants.expoConfig?.hostUri?.split(':').shift();
 const host = expoHost || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
 
+// Use Render for Hosted Backend
 export const BASE_URL = 'https://boutiqueminimart.onrender.com';
 export const API_URL = `${BASE_URL}/api`;
 
-// console.log('--- API CONFIGURATION ---');
-// console.log('Host:', host);
-// ... logs disabled for performance
+// Use this for local testing if needed
+// const expoHost = Constants.expoConfig?.hostUri?.split(':').shift();
+// const host = expoHost || (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+// export const BASE_URL = host !== 'localhost' && !host.includes('10.0.2.2') ? `http://${host}:5000` : (Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000');
 
 const instance = axios.create({
     baseURL: API_URL,
-    timeout: 60000,
+    timeout: 45000, // Increased to 45s for Render's cold starts
 });
 
 export default instance;

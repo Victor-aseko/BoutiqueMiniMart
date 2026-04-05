@@ -47,7 +47,7 @@ export const NotificationProvider = ({ children }) => {
         }
     }, [user]);
 
-    const registerForPushNotificationsAsync = async () => {
+    const registerForPushNotificationsAsync = useCallback(async () => {
         if (IS_EXPO_GO) {
             console.log('Push Notifications: expo-notifications has limited support in Expo Go. Use a Development Build for background delivery.');
         }
@@ -77,6 +77,8 @@ export const NotificationProvider = ({ children }) => {
             const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
             if (!projectId) {
                 console.warn('Push Notifications: Project ID missing from app.json/Constants');
+            } else {
+                console.log('Push Notifications: Using Project ID:', projectId);
             }
 
             token = (await Notifications.getExpoPushTokenAsync({
@@ -96,7 +98,7 @@ export const NotificationProvider = ({ children }) => {
 
             // Legacy support: sync with user model too if logged in
             if (user && user.token) {
-                await api.post('/users/push-token', { token });
+                await api.post('/users/push-token', { token }).catch(() => {});
             }
 
             // Step 4: Android Channel Configuration (Essential for Sound/Popup)
@@ -108,16 +110,20 @@ export const NotificationProvider = ({ children }) => {
                     lightColor: '#FF231F7C',
                     enableVibrate: true,
                     showBadge: true,
-                    sound: 'default' // Explicitly set default sound
+                    sound: 'default' 
                 });
             }
 
             return token;
         } catch (e) {
-            console.error('Push Notifications: Setup Error:', e.message);
+            if (e.message.includes('FIS_AUTH_ERROR')) {
+                console.error('Push Notifications: Setup Error (FIS_AUTH_ERROR): This usually means the device has no internet or Google Play services are restricted. Push notifications might not work on this device.');
+            } else {
+                console.error('Push Notifications: Setup Error:', e.message);
+            }
             return null;
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         // 1. Setup Push Registration for EVERYONE
@@ -136,6 +142,7 @@ export const NotificationProvider = ({ children }) => {
             if (data?.productId) {
                 // Navigation logic would go here if we had access to the navigation prop
                 console.log('Should navigate to product:', data.productId);
+                console.log('Notification data:', data); // Added log
             }
         });
 
