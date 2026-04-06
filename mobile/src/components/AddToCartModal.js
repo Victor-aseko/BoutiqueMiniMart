@@ -125,11 +125,17 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                                 key={i}
                                                 style={[
                                                     styles.colorOption,
-                                                    selectedColor?.name === c.name && styles.selectedOption
+                                                    selectedColor?.name === c.name && styles.selectedOption,
+                                                    (c.status === 'Sold' || c.status === 'Out of Stock') && { opacity: 0.5 }
                                                 ]}
                                                 onPress={() => setSelectedColor(c)}
                                             >
                                                 <Image source={{ uri: c.image }} style={styles.colorImg} />
+                                                {(c.status === 'Sold' || c.status === 'Out of Stock') && (
+                                                    <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}>
+                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: c.status === 'Sold' ? COLORS.error : COLORS.secondary }}>{c.status === 'Sold' ? 'SOLD' : 'OUT'}</Text>
+                                                    </View>
+                                                )}
                                             </TouchableOpacity>
                                         ))}
                                     </View>
@@ -141,21 +147,28 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>Select Size: <Text style={styles.selectedVal}>{selectedSize}</Text></Text>
                                     <View style={styles.optionsRow}>
-                                        {product.sizes.map((s, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.sizeOption,
-                                                    selectedSize === s && styles.selectedOption
-                                                ]}
-                                                onPress={() => setSelectedSize(s)}
-                                            >
-                                                <Text style={[
-                                                    styles.sizeText,
-                                                    selectedSize === s && styles.selectedSizeText
-                                                ]}>{s}</Text>
-                                            </TouchableOpacity>
-                                        ))}
+                                        {product.sizes.map((s, i) => {
+                                            const sizeName = typeof s === 'string' ? s : s.name;
+                                            const isSold = typeof s === 'object' && s.status === 'Sold';
+                                            const isOut = typeof s === 'object' && s.status === 'Out of Stock';
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    style={[
+                                                        styles.sizeOption,
+                                                        selectedSize === sizeName && styles.selectedOption,
+                                                        (isSold || isOut) && { opacity: 0.5, borderColor: isSold ? COLORS.error : COLORS.secondary }
+                                                    ]}
+                                                    onPress={() => setSelectedSize(sizeName)}
+                                                >
+                                                    <Text style={[
+                                                        styles.sizeText,
+                                                        selectedSize === sizeName && styles.selectedSizeText,
+                                                        isSold && { color: COLORS.error }
+                                                    ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
                                     </View>
                                 </View>
                             )}
@@ -185,15 +198,32 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
 
                         </ScrollView>
 
-                        <MyButton
-                            title={product.status === 'Sold' ? "Product Sold" : product.status === 'Out of Stock' ? "Out of Stock" : "Add to Cart"}
-                            onPress={handleConfirm}
-                            style={[
-                                styles.addBtn,
-                                (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
-                            ]}
-                            disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
-                        />
+                        {(() => {
+                            const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                            const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
+                            const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
+                            
+                            const isColorSold = selectedColor?.status === 'Sold';
+                            const isColorOut = selectedColor?.status === 'Out of Stock';
+
+                            const isGlobalSold = product.status === 'Sold';
+                            const isGlobalOut = product.status === 'Out of Stock';
+
+                            const finalSold = isGlobalSold || isColorSold || isSizeSold;
+                            const finalOut = isGlobalOut || isColorOut || isSizeOut;
+
+                            return (
+                                <MyButton
+                                    title={finalSold ? "Product Sold" : finalOut ? "Out of Stock" : "Add to Cart"}
+                                    onPress={handleConfirm}
+                                    style={[
+                                        styles.addBtn,
+                                        (finalSold || finalOut) && styles.disabledBtn
+                                    ]}
+                                    disabled={finalSold || finalOut}
+                                />
+                            );
+                        })()}
 
                     </View>
                 </View>

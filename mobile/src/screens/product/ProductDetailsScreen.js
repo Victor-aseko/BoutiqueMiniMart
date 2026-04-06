@@ -61,8 +61,18 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }, [route.params?.selectedColor, product._id]);
 
     const handleAddToCart = async () => {
-        if (product.status === 'Sold' || product.status === 'Out of Stock') {
-            Alert.alert('Not Available', `Sorry, this item is currently ${product.status.toLowerCase()}.`);
+        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
+        const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
+        
+        const isColorSold = selectedColor?.status === 'Sold';
+        const isColorOut = selectedColor?.status === 'Out of Stock';
+
+        const finalSold = product.status === 'Sold' || isColorSold || isSizeSold;
+        const finalOut = product.status === 'Out of Stock' || isColorOut || isSizeOut;
+
+        if (finalSold || finalOut) {
+            Alert.alert('Not Available', `Sorry, this item (${selectedColor?.name || ''} ${selectedSize || ''}) is currently ${finalSold ? 'sold' : 'out of stock'}.`);
             return;
         }
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
@@ -126,8 +136,18 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     };
 
     const handleOrderNow = () => {
-        if (product.status === 'Sold' || product.status === 'Out of Stock') {
-            Alert.alert('Not Available', `Sorry, this item is currently ${product.status.toLowerCase()}.`);
+        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
+        const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
+        
+        const isColorSold = selectedColor?.status === 'Sold';
+        const isColorOut = selectedColor?.status === 'Out of Stock';
+
+        const finalSold = product.status === 'Sold' || isColorSold || isSizeSold;
+        const finalOut = product.status === 'Out of Stock' || isColorOut || isSizeOut;
+
+        if (finalSold || finalOut) {
+            Alert.alert('Not Available', `Sorry, this item (${selectedColor?.name || ''} ${selectedSize || ''}) is currently ${finalSold ? 'sold' : 'out of stock'}.`);
             return;
         }
         if (!user) {
@@ -304,15 +324,17 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                                 key={i}
                                                 style={[
                                                     styles.colorOptionBtn,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected
+                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected,
+                                                    (c.status === 'Sold' || c.status === 'Out of Stock') && { opacity: 0.6 }
                                                 ]}
                                                 onPress={() => setSelectedColor(c)}
                                             >
                                                 <Image source={{ uri: c.image }} style={styles.colorOptionImg} />
                                                 <Text style={[
                                                     styles.optionText,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected
-                                                ]}>{c.name}</Text>
+                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected,
+                                                    c.status === 'Sold' && { color: COLORS.error }
+                                                ]}>{c.name}{c.status === 'Sold' ? ' (Sold)' : ''}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
@@ -324,21 +346,28 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                 <View style={styles.variantSection}>
                                     <Text style={styles.sectionTitle}>Select Size</Text>
                                     <View style={styles.optionsRow}>
-                                        {product.sizes.map((s, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.optionBtn,
-                                                    selectedSize === s && styles.optionBtnSelected
-                                                ]}
-                                                onPress={() => setSelectedSize(s)}
-                                            >
-                                                <Text style={[
-                                                    styles.optionText,
-                                                    selectedSize === s && styles.optionTextSelected
-                                                ]}>{s}</Text>
-                                            </TouchableOpacity>
-                                        ))}
+                                        {product.sizes.map((s, i) => {
+                                            const sizeName = typeof s === 'string' ? s : s.name;
+                                            const isSold = typeof s === 'object' && s.status === 'Sold';
+                                            const isOut = typeof s === 'object' && s.status === 'Out of Stock';
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    style={[
+                                                        styles.optionBtn,
+                                                        selectedSize === sizeName && styles.optionBtnSelected,
+                                                        (isSold || isOut) && { opacity: 0.6, borderColor: isSold ? COLORS.error : COLORS.secondary }
+                                                    ]}
+                                                    onPress={() => setSelectedSize(sizeName)}
+                                                >
+                                                    <Text style={[
+                                                        styles.optionText,
+                                                        selectedSize === sizeName && styles.optionTextSelected,
+                                                        isSold && { color: COLORS.error }
+                                                    ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
                                     </View>
                                 </View>
                             )}
@@ -381,25 +410,58 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     }</Text>
                 </View>
                 <View style={{ flexDirection: 'row', flex: 2 }}>
-                    <MyButton
-                        title={product.status === 'Sold' ? "Sold" : product.status === 'Out of Stock' ? "Out of Stock" : "Add to Cart"}
-                        onPress={handleAddToCart}
-                        style={[
-                            styles.addBtn,
-                            { flex: 1.2, marginRight: 8 },
-                            (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
-                        ]}
-                        icon={product.status === 'In Stock' || !product.status ? <ShoppingBag color="#fff" size={20} /> : null}
-                        disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
-                    />
-                    {(product.status === 'In Stock' || !product.status) && (
-                        <MyButton
-                            title="Order Now"
-                            onPress={handleOrderNow}
-                            style={[styles.addBtn, { flex: 1, marginLeft: 8, backgroundColor: COLORS.accent }]}
-                            variant="secondary"
-                        />
-                    )}
+                    {(() => {
+                        const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                        const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
+                        const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
+                        
+                        const isColorSold = selectedColor?.status === 'Sold';
+                        const isColorOut = selectedColor?.status === 'Out of Stock';
+
+                        const isGlobalSold = product.status === 'Sold';
+                        const isGlobalOut = product.status === 'Out of Stock';
+
+                        const finalSold = isGlobalSold || isColorSold || isSizeSold;
+                        const finalOut = isGlobalOut || isColorOut || isSizeOut;
+
+                        return (
+                            <MyButton
+                                title={finalSold ? "Sold" : finalOut ? "Out of Stock" : "Add to Cart"}
+                                onPress={handleAddToCart}
+                                style={[
+                                    styles.addBtn,
+                                    { flex: 1.2, marginRight: 8 },
+                                    (finalSold || finalOut) && styles.disabledBtn
+                                ]}
+                                icon={(!finalSold && !finalOut) ? <ShoppingBag color="#fff" size={20} /> : null}
+                                disabled={finalSold || finalOut}
+                            />
+                        );
+                    })()}
+                    {(() => {
+                        const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                        const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
+                        const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
+                        
+                        const isColorSold = selectedColor?.status === 'Sold';
+                        const isColorOut = selectedColor?.status === 'Out of Stock';
+
+                        const isGlobalSold = product.status === 'Sold';
+                        const isGlobalOut = product.status === 'Out of Stock';
+
+                        const finalSold = isGlobalSold || isColorSold || isSizeSold;
+                        const finalOut = isGlobalOut || isColorOut || isSizeOut;
+
+                        if (!finalSold && !finalOut) return (
+                            <MyButton
+                                title="Order Now"
+                                onPress={handleOrderNow}
+                                style={[styles.addBtn, { flex: 1, marginLeft: 8, backgroundColor: COLORS.accent }]}
+                                variant="secondary"
+                            />
+                        );
+                        return null;
+                    })()}
                 </View>
             </View>
             <Modal

@@ -37,11 +37,25 @@ const productSchema = mongoose.Schema(
             {
                 name: { type: String, required: true },
                 image: { type: String, required: true },
-                colorCode: { type: String } // Hex code for color dot
+                colorCode: { type: String },
+                status: {
+                    type: String,
+                    required: true,
+                    enum: ['In Stock', 'Out of Stock', 'Sold'],
+                    default: 'In Stock'
+                }
             }
         ],
         sizes: [
-            { type: String }
+            {
+                name: { type: String, required: true },
+                status: {
+                    type: String,
+                    required: true,
+                    enum: ['In Stock', 'Out of Stock', 'Sold'],
+                    default: 'In Stock'
+                }
+            }
         ],
         rating: {
             type: Number,

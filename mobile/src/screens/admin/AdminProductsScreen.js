@@ -631,7 +631,7 @@ const AdminProductsScreen = ({ navigation }) => {
                                         style={styles.addVariantBtn}
                                         onPress={() => {
                                             if (newColorName && newColorImage) {
-                                                setColors([...colors, { name: newColorName, image: newColorImage }]);
+                                                setColors([...colors, { name: newColorName, image: newColorImage, status: 'In Stock' }]);
                                                 setNewColorName('');
                                                 setNewColorImage('');
                                             }
@@ -643,7 +643,23 @@ const AdminProductsScreen = ({ navigation }) => {
                                 {colors.map((c, i) => (
                                     <View key={i} style={styles.variantItem}>
                                         <Image source={{ uri: c.image }} style={styles.variantImgPreview} />
-                                        <Text style={styles.variantText}>{c.name}</Text>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.variantText}>{c.name}</Text>
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    const statuses = ['In Stock', 'Out of Stock', 'Sold'];
+                                                    const currentIdx = statuses.indexOf(c.status || 'In Stock');
+                                                    const nextIdx = (currentIdx + 1) % statuses.length;
+                                                    const newColors = [...colors];
+                                                    newColors[i] = { ...c, status: statuses[nextIdx] };
+                                                    setColors(newColors);
+                                                }}
+                                            >
+                                                <Text style={{ fontSize: 10, color: (c.status === 'Sold' ? COLORS.error : (c.status === 'Out of Stock' ? COLORS.secondary : COLORS.success)), fontWeight: 'bold' }}>
+                                                    {(c.status || 'In Stock').toUpperCase()} (Click to cycle)
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
                                         <TouchableOpacity onPress={() => setColors(colors.filter((_, idx) => idx !== i))}>
                                             <X size={16} color={COLORS.error} />
                                         </TouchableOpacity>
@@ -667,7 +683,7 @@ const AdminProductsScreen = ({ navigation }) => {
                                         style={styles.addVariantBtn}
                                         onPress={() => {
                                             if (newSize) {
-                                                setSizes([...sizes, newSize]);
+                                                setSizes([...sizes, { name: newSize, status: 'In Stock' }]);
                                                 setNewSize('');
                                             }
                                         }}
@@ -676,14 +692,35 @@ const AdminProductsScreen = ({ navigation }) => {
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.sizeTagsContainer}>
-                                    {sizes.map((s, i) => (
-                                        <View key={i} style={styles.sizeTag}>
-                                            <Text style={styles.sizeTagText}>{s}</Text>
-                                            <TouchableOpacity onPress={() => setSizes(sizes.filter((_, idx) => idx !== i))}>
-                                                <X size={14} color={COLORS.white} />
+                                    {sizes.map((s, i) => {
+                                        const sizeName = typeof s === 'string' ? s : s.name;
+                                        const sizeStatus = typeof s === 'string' ? 'In Stock' : (s.status || 'In Stock');
+                                        return (
+                                            <TouchableOpacity
+                                                key={i}
+                                                style={[
+                                                    styles.sizeTag,
+                                                    sizeStatus === 'Sold' ? { backgroundColor: COLORS.error } : (sizeStatus === 'Out of Stock' ? { backgroundColor: COLORS.secondary } : {})
+                                                ]}
+                                                onPress={() => {
+                                                    const statuses = ['In Stock', 'Out of Stock', 'Sold'];
+                                                    const currentIdx = statuses.indexOf(sizeStatus);
+                                                    const nextIdx = (currentIdx + 1) % statuses.length;
+                                                    const newSizes = [...sizes];
+                                                    newSizes[i] = { name: sizeName, status: statuses[nextIdx] };
+                                                    setSizes(newSizes);
+                                                }}
+                                            >
+                                                <Text style={styles.sizeTagText}>{sizeName} {sizeStatus !== 'In Stock' ? `(${sizeStatus})` : ''}</Text>
+                                                <TouchableOpacity onPress={(e) => {
+                                                    e.stopPropagation();
+                                                    setSizes(sizes.filter((_, idx) => idx !== i));
+                                                }}>
+                                                    <X size={14} color={COLORS.white} />
+                                                </TouchableOpacity>
                                             </TouchableOpacity>
-                                        </View>
-                                    ))}
+                                        );
+                                    })}
                                 </View>
                             </View>
 
