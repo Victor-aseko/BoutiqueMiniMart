@@ -61,6 +61,10 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }, [route.params?.selectedColor, product._id]);
 
     const handleAddToCart = async () => {
+        if (product.status === 'Sold' || product.status === 'Out of Stock') {
+            Alert.alert('Not Available', `Sorry, this item is currently ${product.status.toLowerCase()}.`);
+            return;
+        }
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
@@ -122,6 +126,10 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     };
 
     const handleOrderNow = () => {
+        if (product.status === 'Sold' || product.status === 'Out of Stock') {
+            Alert.alert('Not Available', `Sorry, this item is currently ${product.status.toLowerCase()}.`);
+            return;
+        }
         if (!user) {
             setAuthModalVisible(true);
         } else {
@@ -249,13 +257,23 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </View>
 
                     <View style={styles.priceContainer}>
-                        {product.isOffer && product.originalPrice > product.price ? (
-                            <>
-                                <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.originalPrice))}</Text>
-                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price))} <Text style={styles.offTxt}>({product.offerPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)</Text></Text>
-                            </>
-                        ) : (
-                            <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
+                        <View style={{ flex: 1 }}>
+                            {product.isOffer && product.originalPrice > product.price ? (
+                                <>
+                                    <Text style={styles.offerOldPrice}>Kshs {Math.floor(Number(product.originalPrice))}</Text>
+                                    <Text style={styles.price}>Kshs {Math.floor(Number(product.price))} <Text style={styles.offTxt}>({product.offerPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)</Text></Text>
+                                </>
+                            ) : (
+                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
+                            )}
+                        </View>
+                        {product.status && product.status !== 'In Stock' && (
+                            <View style={[
+                                styles.statusDetailBadge,
+                                { backgroundColor: product.status === 'Sold' ? COLORS.error : COLORS.secondary }
+                            ]}>
+                                <Text style={styles.statusDetailBadgeText}>{product.status.toUpperCase()}</Text>
+                            </View>
                         )}
                     </View>
 
@@ -364,17 +382,24 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 </View>
                 <View style={{ flexDirection: 'row', flex: 2 }}>
                     <MyButton
-                        title="Add to Cart"
+                        title={product.status === 'Sold' ? "Sold" : product.status === 'Out of Stock' ? "Out of Stock" : "Add to Cart"}
                         onPress={handleAddToCart}
-                        style={[styles.addBtn, { flex: 1, marginRight: 8 }]}
-                        icon={<ShoppingBag color="#fff" size={20} />}
+                        style={[
+                            styles.addBtn,
+                            { flex: 1.2, marginRight: 8 },
+                            (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
+                        ]}
+                        icon={product.status === 'In Stock' || !product.status ? <ShoppingBag color="#fff" size={20} /> : null}
+                        disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
                     />
-                    <MyButton
-                        title="Order Now"
-                        onPress={handleOrderNow}
-                        style={[styles.addBtn, { flex: 1, marginLeft: 8, backgroundColor: COLORS.accent }]}
-                        variant="secondary"
-                    />
+                    {(product.status === 'In Stock' || !product.status) && (
+                        <MyButton
+                            title="Order Now"
+                            onPress={handleOrderNow}
+                            style={[styles.addBtn, { flex: 1, marginLeft: 8, backgroundColor: COLORS.accent }]}
+                            variant="secondary"
+                        />
+                    )}
                 </View>
             </View>
             <Modal
@@ -761,6 +786,19 @@ const styles = StyleSheet.create({
         flex: 2,
         marginVertical: 0,
         marginLeft: 15,
+    },
+    disabledBtn: {
+        backgroundColor: '#BDC3C7',
+    },
+    statusDetailBadge: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    statusDetailBadgeText: {
+        color: COLORS.white,
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     modalOverlay: {
         flex: 1,

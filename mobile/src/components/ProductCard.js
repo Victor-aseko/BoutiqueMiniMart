@@ -93,6 +93,11 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                         <Text style={styles.statusBadgeText}>TRENDING</Text>
                     </View>
                 )}
+                {product.status && product.status !== 'In Stock' && (
+                    <View style={[styles.statusBadge, product.status === 'Sold' ? styles.soldBadge : styles.outOfStockBadge, { top: 40 }]}>
+                        <Text style={styles.statusBadgeText}>{product.status.toUpperCase()}</Text>
+                    </View>
+                )}
 
                 {/* Variant Navigation Arrows - Pulse animation to grab attention */}
                 {(hasVariants && !hideVariants) && (
@@ -162,16 +167,23 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                 </View>
 
                 <TouchableOpacity
-                    style={styles.addToCartBtn}
+                    style={[
+                        styles.addToCartBtn,
+                        (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
+                    ]}
                     onPress={(e) => {
                         e.stopPropagation();
+                        if (product.status === 'Sold' || product.status === 'Out of Stock') return;
                         if (onAddToCart) {
                             onAddToCart(product, selectedVariant);
                         }
                     }}
+                    disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
                 >
                     <ShoppingCart color={COLORS.white} size={14} />
-                    <Text style={styles.addToCartText}>Add to Cart</Text>
+                    <Text style={styles.addToCartText}>
+                        {product.status === 'Sold' ? 'Product Sold' : product.status === 'Out of Stock' ? 'Out of Stock' : 'Add to Cart'}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -315,11 +327,20 @@ const styles = StyleSheet.create({
     trendingBadge: {
         backgroundColor: '#5856D6',
     },
+    soldBadge: {
+        backgroundColor: COLORS.error,
+    },
+    outOfStockBadge: {
+        backgroundColor: COLORS.secondary,
+    },
     statusBadgeText: {
         color: COLORS.white,
         fontSize: 10,
         fontWeight: 'bold',
         letterSpacing: 0.5,
+    },
+    disabledBtn: {
+        backgroundColor: '#BDC3C7',
     },
 });
 

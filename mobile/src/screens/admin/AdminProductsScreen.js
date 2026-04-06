@@ -53,6 +53,7 @@ const AdminProductsScreen = ({ navigation }) => {
     const [offerEndDate, setOfferEndDate] = useState('');
     const [isHotDeal, setIsHotDeal] = useState(false);
     const [isTrending, setIsTrending] = useState(false);
+    const [status, setStatus] = useState('In Stock');
 
     useEffect(() => {
         if (isOffer && originalPrice && offerPercentage) {
@@ -114,6 +115,7 @@ const AdminProductsScreen = ({ navigation }) => {
         setOfferEndDate('');
         setIsHotDeal(false);
         setIsTrending(false);
+        setStatus('In Stock');
         setIsModalOpen(true);
     };
 
@@ -148,6 +150,7 @@ const AdminProductsScreen = ({ navigation }) => {
         setIsOffer(product.isOffer || false);
         setIsHotDeal(product.isHotDeal || false);
         setIsTrending(product.isTrending || false);
+        setStatus(product.status || 'In Stock');
         setIsModalOpen(true);
     };
 
@@ -201,6 +204,7 @@ const AdminProductsScreen = ({ navigation }) => {
             offerEndDate: (isOffer && offerEndDate && offerEndDate.trim() !== '') ? offerEndDate : null,
             isHotDeal,
             isTrending,
+            status,
         };
 
         try {
@@ -308,6 +312,19 @@ const AdminProductsScreen = ({ navigation }) => {
                 <Text style={[styles.stockStatus, { color: item.countInStock > 0 ? COLORS.success : COLORS.error }]}>
                     {item.countInStock > 0 ? `${item.countInStock} in stock` : 'Out of stock'}
                 </Text>
+                {item.status && item.status !== 'In Stock' && (
+                    <View style={[
+                        styles.statusBadge,
+                        { backgroundColor: item.status === 'Sold' ? COLORS.error : COLORS.secondary }
+                    ]}>
+                        <Text style={[
+                            styles.statusBadgeText,
+                            { color: COLORS.white }
+                        ]}>
+                            {item.status}
+                        </Text>
+                    </View>
+                )}
             </View>
             <View style={styles.actionButtons}>
                 <TouchableOpacity
@@ -430,9 +447,29 @@ const AdminProductsScreen = ({ navigation }) => {
                                         icon={Briefcase}
                                     />
                                 </View>
+                             </View>
+
+                            <Text style={styles.sectionLabel}>Inventory Status</Text>
+                            <View style={styles.statusContainer}>
+                                {['In Stock', 'Out of Stock', 'Sold'].map((s) => (
+                                    <TouchableOpacity
+                                        key={s}
+                                        style={[
+                                            styles.statusOption,
+                                            status === s && styles.statusOptionActive,
+                                            { borderColor: s === 'Sold' ? COLORS.error : s === 'Out of Stock' ? COLORS.secondary : COLORS.success }
+                                        ]}
+                                        onPress={() => setStatus(s)}
+                                    >
+                                        <Text style={[
+                                            styles.statusOptionText,
+                                            status === s && styles.statusOptionTextActive
+                                        ]}>
+                                            {s}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-
-
 
                             <TouchableOpacity
                                 style={styles.offerToggle}
@@ -893,7 +930,44 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         borderWidth: 1,
         borderColor: COLORS.accent + '33',
-    }
+    },
+    statusBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginTop: 4,
+    },
+    statusBadgeText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 15,
+    },
+    statusOption: {
+        flex: 1,
+        height: 40,
+        borderRadius: 8,
+        borderWidth: 1.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+    },
+    statusOptionActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+    },
+    statusOptionText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.primary,
+    },
+    statusOptionTextActive: {
+        color: COLORS.white,
+    },
 });
 
 export default AdminProductsScreen;

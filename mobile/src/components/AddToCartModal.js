@@ -45,6 +45,7 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
     if (!product) return null;
 
     const handleConfirm = () => {
+        if (product.status === 'Sold' || product.status === 'Out of Stock') return;
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
@@ -100,6 +101,14 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                 <Text style={styles.price}>Kshs {displayPrice.toLocaleString()}</Text>
                                 {product.isOffer && (
                                     <Text style={styles.offerBadge}>{discountPercent}% OFF Applied</Text>
+                                )}
+                                {product.status && product.status !== 'In Stock' && (
+                                    <View style={[
+                                        styles.statusIndicator,
+                                        { backgroundColor: product.status === 'Sold' ? COLORS.error : COLORS.secondary }
+                                    ]}>
+                                        <Text style={styles.statusIndicatorText}>{product.status.toUpperCase()}</Text>
+                                    </View>
                                 )}
                             </View>
                         </View>
@@ -177,9 +186,13 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                         </ScrollView>
 
                         <MyButton
-                            title="Add to Cart"
+                            title={product.status === 'Sold' ? "Product Sold" : product.status === 'Out of Stock' ? "Out of Stock" : "Add to Cart"}
                             onPress={handleConfirm}
-                            style={styles.addBtn}
+                            style={[
+                                styles.addBtn,
+                                (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
+                            ]}
+                            disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
                         />
 
                     </View>
@@ -353,7 +366,21 @@ const styles = StyleSheet.create({
         marginTop: 5,
         paddingVertical: 12,
         borderRadius: 12,
-    }
+    },
+    disabledBtn: {
+        backgroundColor: '#BDC3C7',
+    },
+    statusIndicator: {
+        paddingHorizontal: 10,
+        paddingVertical: 2,
+        borderRadius: 20,
+        marginTop: 5,
+    },
+    statusIndicatorText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
 });
 
 export default AddToCartModal;
