@@ -145,7 +145,7 @@ const AdminProductsScreen = ({ navigation }) => {
 
         setOfferStartDate(formatDateForInput(product.offerStartDate));
         setOfferEndDate(formatDateForInput(product.offerEndDate));
-        
+
         // Set isOffer last to ensure all offer-related data is already in state
         setIsOffer(product.isOffer || false);
         setIsHotDeal(product.isHotDeal || false);
@@ -447,7 +447,7 @@ const AdminProductsScreen = ({ navigation }) => {
                                         icon={Briefcase}
                                     />
                                 </View>
-                             </View>
+                            </View>
 
                             <Text style={styles.sectionLabel}>Inventory Status</Text>
                             <View style={styles.statusContainer}>

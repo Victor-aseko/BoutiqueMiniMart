@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, Tag, Facebook, Instagram, Music, X, MessageSquare, Heart, ShoppingCart } from 'lucide-react-native';
+import { Search, Camera, Tag, Facebook, Instagram, Music, X, MessageSquare, Heart, ShoppingCart } from 'lucide-react-native';
 import { Linking } from 'react-native';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -31,6 +31,7 @@ import ProductCard from '../../components/ProductCard';
 import { COLORS } from '../../theme/theme';
 import AddToCartModal from '../../components/AddToCartModal';
 import SpecialOfferSlider from '../../components/SpecialOfferSlider';
+import AnimatedSearchPlaceholder from '../../components/AnimatedSearchPlaceholder';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
@@ -46,6 +47,23 @@ const HomeScreen = ({ navigation }) => {
     const [showAllArrivals, setShowAllArrivals] = useState(false);
     const [showAllOffers, setShowAllOffers] = useState(false);
     const [categoryGroups, setCategoryGroups] = useState([]);
+    const [currentPlaceholder, setCurrentPlaceholder] = useState('');
+
+    const searchPlaceholderItems = useMemo(() => [
+        "Search for your style...",
+        "M-PESA Payment accepted",
+        "Pay On Delivery available",
+        "New Arrivals in Shop",
+        "Men's Classic Suits",
+        "Elegant Women's Tops",
+        "Latest Designer Bags",
+        "Best Selling Beddings",
+        "Check our Special Offers"
+    ], []);
+
+    const handlePlaceholderChange = useCallback((text) => {
+        setCurrentPlaceholder(text);
+    }, []);
 
     // Normalize category names consistently with ShopScreen
     const normalizeCategory = name => {
@@ -67,19 +85,20 @@ const HomeScreen = ({ navigation }) => {
             // Helper to find image for a specific query
             const findImage = (catLabel, query = '') => {
                 const normTarget = catLabel.toLowerCase();
-                const p = products.find(p => {
-                    const pCatNormalized = normalizeCategory(p.category);
-                    const pName = p.name.toLowerCase();
+                
+                // 1. Try to find the specific recommended item first if query provided
+                if (query) {
+                    const specific = products.find(p => {
+                        const pCatNormalized = normalizeCategory(p.category);
+                        const pName = p.name.toLowerCase();
+                        return pCatNormalized === normTarget && pName.includes(query.toLowerCase());
+                    });
+                    if (specific) return specific.image;
+                }
 
-                    // Match normalized category
-                    const catMatch = pCatNormalized === normTarget;
-
-                    // Match query if provided
-                    const queryMatch = query ? pName.includes(query.toLowerCase()) : true;
-
-                    return catMatch && queryMatch;
-                });
-                return p ? p.image : null;
+                // 2. Fallback: just find ANY item in that category
+                const anyItem = products.find(p => normalizeCategory(p.category) === normTarget);
+                return anyItem ? anyItem.image : null;
             };
 
             // Define the 6 target categories as requested
@@ -520,10 +539,25 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.searchRow}>
                         <TouchableOpacity
                             style={styles.searchBarButton}
-                            onPress={() => navigation.navigate('SearchScreen')}
+                            onPress={() => {
+                                const infoItems = ["Search boutique items...", "M-PESA Payment accepted", "Pay On Delivery available", "Check our Special Offers"];
+                                const query = infoItems.includes(currentPlaceholder) ? "" : currentPlaceholder;
+                                navigation.navigate('SearchScreen', { initialQuery: query });
+                            }}
                         >
-                            <Search size={20} color={COLORS.textLight} style={styles.searchIcon} />
-                            <Text style={styles.searchText}>Search boutique products...</Text>
+                            <View style={styles.cameraIconContainer}>
+                                <Camera size={18} color="#555" />
+                                <View style={styles.miniSearchOverlay}>
+                                    <Search size={8} color="#555" strokeWidth={3} />
+                                </View>
+                            </View>
+                            <AnimatedSearchPlaceholder 
+                                onTextChange={handlePlaceholderChange}
+                                items={searchPlaceholderItems} 
+                            />
+                            <View style={styles.searchIconContainer}>
+                                <Search size={18} color={COLORS.white} />
+                            </View>
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
@@ -684,17 +718,43 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white, // Changed to white
+        backgroundColor: COLORS.white,
         borderRadius: 25,
-        paddingHorizontal: 20,
+        paddingLeft: 4, // Flush for camera icon
+        paddingRight: 4, // Flush for search button
         height: 46,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.08)', // Slightly more visible border
+        borderColor: 'rgba(0,0,0,0.08)',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
         elevation: 1,
+    },
+    cameraIconContainer: {
+        backgroundColor: '#f5f5f5',
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    miniSearchOverlay: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 4,
+        padding: 1,
+    },
+    searchIconContainer: {
+        backgroundColor: 'rgba(0,0,0,0.3)', // Added opacity
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     searchIcon: {
         marginRight: 10,

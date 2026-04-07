@@ -18,8 +18,9 @@ import ProductCard from '../../components/ProductCard';
 import AddToCartModal from '../../components/AddToCartModal';
 import { useCart } from '../../context/CartContext';
 
-const SearchScreen = ({ navigation }) => {
-    const [searchQuery, setSearchQuery] = useState('');
+const SearchScreen = ({ navigation, route }) => {
+    const initialQuery = route.params?.initialQuery || '';
+    const [searchQuery, setSearchQuery] = useState(initialQuery);
     const [products, setProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,8 +28,8 @@ const SearchScreen = ({ navigation }) => {
     const { addToCart } = useCart();
 
     useEffect(() => {
-        // Auto-focus the search input
-        if (inputRef.current) {
+        // Auto-focus the search input if not pre-filled
+        if (inputRef.current && !initialQuery) {
             setTimeout(() => inputRef.current.focus(), 100);
         }
         fetchProducts();
@@ -46,15 +47,36 @@ const SearchScreen = ({ navigation }) => {
     };
 
     useEffect(() => {
-        if (searchQuery.trim() === '') {
+        const trimmed = searchQuery.trim().toLowerCase();
+        if (trimmed === '') {
             setFilteredProducts([]);
         } else {
-            const query = searchQuery.toLowerCase();
-            const filtered = products.filter(p =>
-                p.name.toLowerCase().includes(query) ||
-                p.category.toLowerCase().includes(query) ||
-                p.description.toLowerCase().includes(query)
-            );
+            // Remove common possessives (matching "men's" as "men")
+            const cleanQuery = trimmed.replace(/'s/g, ''); 
+            const searchWords = cleanQuery.split(/\s+/).filter(word => word.length >= 3);
+            
+            const filtered = products.filter(p => {
+                const name = p.name.toLowerCase();
+                const category = p.category.toLowerCase();
+                const desc = p.description.toLowerCase();
+                const combined = `${name} ${category} ${desc}`;
+
+                // Precise word match for common gender categories
+                if (cleanQuery.includes('men') && !cleanQuery.includes('women')) {
+                    // Ensure we don't accidentally match "women"
+                    const hasWomen = combined.includes('women');
+                    const hasMen = combined.includes('men');
+                    // If it has "women", it's probably not a "men only" item unless specifically stated
+                    if (hasWomen && !name.includes('men\'s') && !category.includes('men\'s')) return false;
+                    return hasMen;
+                }
+
+                if (searchWords.length === 0) {
+                    return combined.includes(trimmed);
+                }
+
+                return searchWords.some(word => combined.includes(word));
+            });
             setFilteredProducts(filtered);
         }
     }, [searchQuery, products]);

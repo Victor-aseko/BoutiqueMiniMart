@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Search, ChevronDown } from 'lucide-react-native';
+import { Search, Camera, ChevronDown } from 'lucide-react-native';
 import api from '../../services/api';
 import ProductCard from '../../components/ProductCard';
 import AddToCartModal from '../../components/AddToCartModal';
 import { COLORS, SIZES } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import AnimatedSearchPlaceholder from '../../components/AnimatedSearchPlaceholder';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,22 @@ const ShopScreen = ({ navigation, route }) => {
 
     const { user } = useAuth();
     const { addToCart } = useCart();
+    const [currentPlaceholder, setCurrentPlaceholder] = useState('');
+
+    const searchPlaceholderItems = useMemo(() => [
+        "Search boutique items...",
+        "M-PESA Payment accepted",
+        "Pay On Delivery available",
+        "New Arrivals in Shop",
+        "Men's Classic Suits",
+        "Elegant Women's Tops",
+        "Latest Designer Bags",
+        "Best Selling Beddings"
+    ], []);
+
+    const handlePlaceholderChange = useCallback((text) => {
+        setCurrentPlaceholder(text);
+    }, []);
 
     // Dropdown states
     const [sortModalVisible, setSortModalVisible] = useState(false);
@@ -239,7 +256,7 @@ const ShopScreen = ({ navigation, route }) => {
 
     const suggestedProducts = useMemo(() => {
         if (sortedProducts.length > 0) return [];
-        
+
         // If no products found, find similar items within the same selected category if possible
         if (selectedCategory !== 'All') {
             const catLower = selectedCategory.toLowerCase();
@@ -248,7 +265,7 @@ const ShopScreen = ({ navigation, route }) => {
         }
 
         // Otherwise just show top rated or any available items as suggestions
-        return products.filter(p => p.countInStock > 0).sort((a,b) => b.rating - a.rating).slice(0, 4);
+        return products.filter(p => p.countInStock > 0).sort((a, b) => b.rating - a.rating).slice(0, 4);
     }, [products, sortedProducts, selectedCategory]);
 
     const renderProduct = React.useCallback(({ item }) => (
@@ -320,10 +337,25 @@ const ShopScreen = ({ navigation, route }) => {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.searchBar}
-                    onPress={() => navigation.navigate('SearchScreen')}
+                    onPress={() => {
+                        const infoItems = ["Search boutique items...", "M-PESA Payment accepted", "Pay On Delivery available"];
+                        const query = infoItems.includes(currentPlaceholder) ? "" : currentPlaceholder;
+                        navigation.navigate('SearchScreen', { initialQuery: query });
+                    }}
                 >
-                    <Search size={20} color={COLORS.textLight} style={styles.searchIcon} />
-                    <Text style={styles.searchText}>Search products...</Text>
+                    <View style={styles.cameraIconContainer}>
+                        <Camera size={16} color="#666" />
+                        <View style={styles.miniSearchOverlay}>
+                            <Search size={8} color="#666" strokeWidth={3} />
+                        </View>
+                    </View>
+                    <AnimatedSearchPlaceholder
+                        onTextChange={handlePlaceholderChange}
+                        items={searchPlaceholderItems}
+                    />
+                    <View style={styles.searchIconContainer}>
+                        <Search size={18} color={COLORS.white} />
+                    </View>
                 </TouchableOpacity>
             </View>
 
@@ -481,10 +513,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: COLORS.white,
         borderRadius: 22,
-        paddingHorizontal: 15,
+        paddingLeft: 4,
+        paddingRight: 4,
         height: 44,
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.08)',
+    },
+    cameraIconContainer: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        marginLeft: 5,
+    },
+    miniSearchOverlay: {
+        position: 'absolute',
+        bottom: 7,
+        right: 7,
+        backgroundColor: 'transparent',
+    },
+    searchIconContainer: {
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     searchIcon: {
         marginRight: 8,
