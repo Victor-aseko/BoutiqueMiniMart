@@ -77,7 +77,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         }
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
-        const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
+        
+        const defaultSize = product.sizes && product.sizes.length > 0 
+            ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name)
+            : product.size;
+        const finalSize = selectedSize || defaultSize || 'Default';
 
         const finalPrice = route.params?.isOffer
             ? Math.floor(Number(product.price))
@@ -86,7 +90,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const productToAdd = {
             ...product,
             image: finalColorImage,
-            price: finalPrice
+            price: finalPrice,
+            size: finalSize, // Ensure string
+            color: finalColor // Ensure string
         };
 
         const success = await addToCart(productToAdd, qty, finalColor, finalSize);
@@ -256,7 +262,22 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} resizeMode="cover" />
+                <View style={styles.imageContainer}>
+                    <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} resizeMode="cover" />
+                    {(() => {
+                        const currentStatus = selectedColor?.status && selectedColor?.status !== 'In Stock'
+                            ? selectedColor.status
+                            : (product.status && product.status !== 'In Stock' ? product.status : null);
+                        
+                        if (!currentStatus) return null;
+
+                        return (
+                            <View style={[styles.statusBadge, currentStatus === 'Sold' ? styles.soldBadge : styles.outOfStockBadge]}>
+                                <Text style={styles.statusBadgeText}>{currentStatus.toUpperCase()}</Text>
+                            </View>
+                        );
+                    })()}
+                </View>
 
                 <View style={styles.content}>
                     <View style={styles.metaRow}>
@@ -424,9 +445,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         const finalSold = isGlobalSold || isColorSold || isSizeSold;
                         const finalOut = isGlobalOut || isColorOut || isSizeOut;
 
+                        const buttonTitle = isGlobalSold ? "Product Sold" : isColorSold ? "Color Sold" : isSizeSold ? "Size Sold" : isGlobalOut ? "Out of Stock" : isColorOut ? "Color Out" : isSizeOut ? "Size Out" : "Add to Cart";
+
                         return (
                             <MyButton
-                                title={finalSold ? "Sold" : finalOut ? "Out of Stock" : "Add to Cart"}
+                                title={buttonTitle}
                                 onPress={handleAddToCart}
                                 style={[
                                     styles.addBtn,

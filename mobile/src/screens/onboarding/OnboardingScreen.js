@@ -9,7 +9,8 @@ import {
     Dimensions,
     Animated,
     StatusBar,
-    Easing
+    Easing,
+    Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SIZES } from '../../theme/theme';
@@ -49,10 +50,6 @@ const OnboardingScreen = ({ navigation }) => {
     const floatAnim = useRef(new Animated.Value(0)).current;
     const rotateAnim = useRef(new Animated.Value(0)).current;
 
-    // Notification animations
-    const bellAnim = useRef(new Animated.Value(0)).current;
-    const pulseAnim = useRef(new Animated.Value(0)).current;
-
     const neonColors = [
         '#8B4513', // Brown
         '#007AFF', // Blue
@@ -66,51 +63,11 @@ const OnboardingScreen = ({ navigation }) => {
 
     const slidesRef = useRef(null);
     const { completeOnboarding } = useAuth();
-    const { registerForPushNotificationsAsync } = useNotifications();
-
-    // Trigger permission request when user reached the Notification slide (index 2)
-    useEffect(() => {
-        if (currentIndex === 2) {
-            // We can pre-trigger or wait for the button press
-            // registerForPushNotificationsAsync(); 
-        }
-    }, [currentIndex]);
 
     // Reset animations whenever the main slide or the sub-cycle changes
     useEffect(() => {
         animateContent();
     }, [currentIndex, cycleIndex]);
-
-    // Notification Icon Animation (Index 2)
-    useEffect(() => {
-        if (currentIndex === 2) {
-            // Bell ringing loop
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(bellAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-                    Animated.timing(bellAnim, { toValue: -1, duration: 150, useNativeDriver: true }),
-                    Animated.timing(bellAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-                    Animated.timing(bellAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-                    Animated.delay(1200)
-                ])
-            ).start();
-
-            // Pulse loop
-            pulseAnim.setValue(0);
-            Animated.loop(
-                Animated.timing(pulseAnim, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.out(Easing.ease),
-                    useNativeDriver: true
-                })
-            ).start();
-        } else {
-            // Reset
-            bellAnim.setValue(0);
-            pulseAnim.setValue(0);
-        }
-    }, [currentIndex]);
 
     // Automatic cycling for the second screen
     useEffect(() => {
@@ -202,7 +159,7 @@ const OnboardingScreen = ({ navigation }) => {
     };
 
     const handleAction = () => {
-        if (currentIndex < 2) {
+        if (currentIndex < 1) {
             slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
         } else {
             completeOnboarding();
@@ -327,69 +284,7 @@ const OnboardingScreen = ({ navigation }) => {
         );
     };
 
-    const NotificationSlide = () => {
-        const bellRotation = bellAnim.interpolate({
-            inputRange: [-1, 1],
-            outputRange: ['-15deg', '15deg']
-        });
-
-        const pulseScale = pulseAnim.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0.8, 2.5]
-        });
-
-        const pulseOpacity = pulseAnim.interpolate({
-            inputRange: [0, 0.5, 1],
-            outputRange: [0.6, 0.3, 0]
-        });
-
-        return (
-            <View style={[styles.container, { width }]}>
-                <View style={[styles.imageContainer, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
-
-                    {/* Pulsing Rings */}
-                    <Animated.View style={[
-                        styles.bellRing,
-                        {
-                            transform: [{ scale: pulseScale }],
-                            opacity: pulseOpacity,
-                            borderColor: COLORS.accent,
-                            borderWidth: 2
-                        }
-                    ]} />
-
-                    <View style={styles.bellCircle}>
-                        <Animated.View style={{ transform: [{ rotate: bellRotation }] }}>
-                            <Bell size={80} color={COLORS.white} fill={COLORS.white} />
-                        </Animated.View>
-                    </View>
-                    <View style={styles.overlay} />
-                </View>
-                <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideUpAnim }], alignItems: 'center' }]}>
-                    <Text style={[styles.title, { textAlign: 'center' }]}>Stay Updated</Text>
-                    <Text style={[styles.description, { textAlign: 'center' }]}>
-                        Get instant alerts about Special Offers, Order Status, and New Arrivals directly on your phone.
-                    </Text>
-
-                    <TouchableOpacity
-                        style={styles.permissionBtn}
-                        onPress={async () => {
-                            const token = await registerForPushNotificationsAsync();
-                            if (token) {
-                                Alert.alert("Success", "Notifications enabled successfully!");
-                            } else {
-                                Alert.alert("Tip", "To receive updates, please ensure notifications are enabled in your phone settings.");
-                            }
-                        }}
-                    >
-                        <Text style={styles.permissionBtnText}>Enable Notifications</Text>
-                    </TouchableOpacity>
-                </Animated.View>
-            </View>
-        );
-    };
-
-    const DATA = [{ id: '1' }, { id: '2' }, { id: '3' }];
+    const DATA = [{ id: '1' }, { id: '2' }];
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -398,8 +293,7 @@ const OnboardingScreen = ({ navigation }) => {
                 data={DATA}
                 renderItem={({ index }) => {
                     if (index === 0) return <StaticSlide />;
-                    if (index === 1) return <CycleSlide />;
-                    return <NotificationSlide />;
+                    return <CycleSlide />;
                 }}
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -420,7 +314,6 @@ const OnboardingScreen = ({ navigation }) => {
                     <View style={styles.paginator}>
                         <View style={[styles.dot, { width: currentIndex === 0 ? 20 : 10, opacity: currentIndex === 0 ? 1 : 0.4 }]} />
                         <View style={[styles.dot, { width: currentIndex === 1 ? 20 : 10, opacity: currentIndex === 1 ? 1 : 0.4 }]} />
-                        <View style={[styles.dot, { width: currentIndex === 2 ? 20 : 10, opacity: currentIndex === 2 ? 1 : 0.4 }]} />
                     </View>
                 )}
 

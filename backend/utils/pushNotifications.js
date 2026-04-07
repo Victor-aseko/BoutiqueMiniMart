@@ -28,6 +28,8 @@ const sendPushNotification = async (pushTokens, title, body, data = {}) => {
             title: title,
             body: body,
             data: data,
+            priority: 'high',
+            channelId: 'default', // Highly critical for Android standalone apps (APK) to show popups/sound
         });
     }
 

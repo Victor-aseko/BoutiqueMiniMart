@@ -33,9 +33,11 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                 setSelectedColor(null);
             }
             if (product.selectedSizeForWishlist) {
-                setSelectedSize(product.selectedSizeForWishlist);
+                const s = product.selectedSizeForWishlist;
+                setSelectedSize(typeof s === 'string' ? s : (s.name || 'Default'));
             } else if (product.sizes && product.sizes.length > 0) {
-                setSelectedSize(product.sizes[0]);
+                const s = product.sizes[0];
+                setSelectedSize(typeof s === 'string' ? s : (s.name || 'Default'));
             } else {
                 setSelectedSize('');
             }
@@ -45,10 +47,28 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
     if (!product) return null;
 
     const handleConfirm = () => {
-        if (product.status === 'Sold' || product.status === 'Out of Stock') return;
+        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
+        const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
+        
+        const isColorSold = selectedColor?.status === 'Sold';
+        const isColorOut = selectedColor?.status === 'Out of Stock';
+
+        const finalSold = product.status === 'Sold' || isColorSold || isSizeSold;
+        const finalOut = product.status === 'Out of Stock' || isColorOut || isSizeOut;
+
+        if (finalSold || finalOut) {
+            Alert.alert('Not Available', 'Sorry, this specific variation is currently ' + (finalSold ? 'sold' : 'out of stock'));
+            return;
+        }
+
         const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
-        const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
+        
+        const defaultSize = product.sizes && product.sizes.length > 0 
+            ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name)
+            : product.size;
+        const finalSize = selectedSize || defaultSize || 'Default';
 
         // Use the product price as is, as it already includes any applicable discounts from the server/admin
         const finalPrice = Math.floor(Number(product.price));
@@ -56,7 +76,9 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
         const productToAdd = {
             ...product,
             price: finalPrice,
-            image: finalColorImage
+            image: finalColorImage,
+            size: finalSize,
+            color: finalColor
         };
 
         onAddToCart(productToAdd, qty, finalColor, finalSize);
@@ -110,6 +132,8 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                         <Text style={styles.statusIndicatorText}>{product.status.toUpperCase()}</Text>
                                     </View>
                                 )}
+                                <Text style={styles.itemRef}>Ref: {product.brand || 'MiniBoutique'}</Text>
+                                <Text style={styles.itemRef}>Selected: {selectedColor?.name || 'Default'}{selectedSize ? ` / ${selectedSize}` : ''}</Text>
                             </View>
                         </View>
 
@@ -212,9 +236,11 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                             const finalSold = isGlobalSold || isColorSold || isSizeSold;
                             const finalOut = isGlobalOut || isColorOut || isSizeOut;
 
+                            const buttonTitle = isGlobalSold ? "Product Sold" : isColorSold ? "Color Sold" : isSizeSold ? "Size Sold" : isGlobalOut ? "Out of Stock" : isColorOut ? "Color Out" : isSizeOut ? "Size Out" : "Add to Cart";
+
                             return (
                                 <MyButton
-                                    title={finalSold ? "Product Sold" : finalOut ? "Out of Stock" : "Add to Cart"}
+                                    title={buttonTitle}
                                     onPress={handleConfirm}
                                     style={[
                                         styles.addBtn,
@@ -410,6 +436,11 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    itemRef: {
+        fontSize: 12,
+        color: COLORS.textLight,
+        marginTop: 2,
     },
 });
 

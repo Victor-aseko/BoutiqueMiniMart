@@ -551,7 +551,7 @@ const HomeScreen = ({ navigation }) => {
                                 <View style={styles.heroOfferOverlay}>
                                     <SpecialOfferSlider
                                         offers={specialOffers}
-                                        onOfferPress={(offer) => navigateToDetails(offer, null, true)}
+                                        onOfferPress={(offer, color) => navigateToDetails(offer, color, true)}
                                     />
                                 </View>
                             )}
@@ -588,7 +588,7 @@ const HomeScreen = ({ navigation }) => {
                                 <View key={item._id} style={{ width: CARD_WIDTH, marginRight: 10, position: 'relative' }}>
                                     <ProductCard
                                         product={item}
-                                        onPress={() => navigation.navigate('ProductDetails', { product: item, isOffer: true })}
+                                        onPress={(p, color) => navigateToDetails(p, color, true)}
                                         onAddToCart={handleAddToCart}
                                         isOffer={true}
                                     />

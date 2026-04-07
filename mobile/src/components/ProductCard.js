@@ -93,11 +93,25 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                         <Text style={styles.statusBadgeText}>TRENDING</Text>
                     </View>
                 )}
-                {product.status && product.status !== 'In Stock' && (
-                    <View style={[styles.statusBadge, product.status === 'Sold' ? styles.soldBadge : styles.outOfStockBadge, { top: 40 }]}>
-                        <Text style={styles.statusBadgeText}>{product.status.toUpperCase()}</Text>
-                    </View>
-                )}
+                {(() => {
+                    const baseStatus = (product.colors && product.colors.length > 0) ? product.colors[0].status : null;
+                    const variantStatus = selectedVariant?.status || baseStatus;
+                    const statusToShow = (variantStatus && variantStatus !== 'In Stock') 
+                        ? variantStatus 
+                        : (product.status && product.status !== 'In Stock' ? product.status : null);
+                    
+                    if (!statusToShow) return null;
+
+                    return (
+                        <View style={[
+                            styles.statusBadge, 
+                            statusToShow === 'Sold' ? styles.soldBadge : styles.outOfStockBadge, 
+                            { top: 40 }
+                        ]}>
+                            <Text style={styles.statusBadgeText}>{statusToShow.toUpperCase()}</Text>
+                        </View>
+                    );
+                })()}
 
                 {/* Variant Navigation Arrows - Pulse animation to grab attention */}
                 {(hasVariants && !hideVariants) && (
@@ -150,7 +164,7 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                     <Text style={{ fontSize: 11, color: COLORS.textLight, marginBottom: 4 }} numberOfLines={1}>
                         {product.selectedColorForWishlist?.name ? `Color: ${product.selectedColorForWishlist.name}` : ''}
                         {product.selectedColorForWishlist?.name && product.selectedSizeForWishlist ? ' | ' : ''}
-                        {product.selectedSizeForWishlist ? `Size: ${product.selectedSizeForWishlist}` : ''}
+                        {product.selectedSizeForWishlist ? `Size: ${typeof product.selectedSizeForWishlist === 'string' ? product.selectedSizeForWishlist : (product.selectedSizeForWishlist.name || 'Default')}` : ''}
                     </Text>
                 )}
 
@@ -166,25 +180,42 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                     <Rating rating={product.rating} size={10} />
                 </View>
 
-                <TouchableOpacity
-                    style={[
-                        styles.addToCartBtn,
-                        (product.status === 'Sold' || product.status === 'Out of Stock') && styles.disabledBtn
-                    ]}
-                    onPress={(e) => {
-                        e.stopPropagation();
-                        if (product.status === 'Sold' || product.status === 'Out of Stock') return;
-                        if (onAddToCart) {
-                            onAddToCart(product, selectedVariant);
-                        }
-                    }}
-                    disabled={product.status === 'Sold' || product.status === 'Out of Stock'}
-                >
-                    <ShoppingCart color={COLORS.white} size={14} />
-                    <Text style={styles.addToCartText}>
-                        {product.status === 'Sold' ? 'Product Sold' : product.status === 'Out of Stock' ? 'Out of Stock' : 'Add to Cart'}
-                    </Text>
-                </TouchableOpacity>
+                {(() => {
+                    const isGlobalSold = product.status === 'Sold';
+                    const baseStatus = (product.colors && product.colors.length > 0) ? product.colors[0].status : null;
+                    const isVariantSold = (selectedVariant?.status || baseStatus) === 'Sold';
+                    const isSold = isGlobalSold || isVariantSold;
+
+                    const isGlobalOut = product.status === 'Out of Stock';
+                    const isVariantOut = (selectedVariant?.status || baseStatus) === 'Out of Stock';
+                    const isOut = isGlobalOut || isVariantOut;
+
+                    const buttonTitle = isGlobalSold ? 'Product Sold' : isVariantSold ? 'Color Sold' : isGlobalOut ? 'Out of Stock' : isVariantOut ? 'Color Out' : 'Add to Cart';
+
+                    return (
+                        <TouchableOpacity
+                            style={[
+                                styles.addToCartBtn,
+                                (isSold || isOut) && styles.disabledBtn
+                            ]}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                if (isSold || isOut) return;
+                                if (onAddToCart) {
+                                    // Pass base variant if none selected explicitly for better defaults
+                                    const variantToPass = selectedVariant || (product.colors && product.colors.length > 0 ? product.colors[0] : null);
+                                    onAddToCart(product, variantToPass);
+                                }
+                            }}
+                            disabled={isSold || isOut}
+                        >
+                            <ShoppingCart color={COLORS.white} size={14} />
+                            <Text style={styles.addToCartText}>
+                                {buttonTitle}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })()}
             </View>
         </TouchableOpacity>
     );
