@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { COLORS, SIZES } from '../theme/theme';
 import { User, X } from 'lucide-react-native';
 
@@ -13,32 +13,41 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
-                <View style={styles.modalContainer}>
-                    <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
-                        <X size={20} color={COLORS.textLight} />
-                    </TouchableOpacity>
+            <TouchableWithoutFeedback onPress={onClose}>
+                <View style={styles.overlay}>
+                    <TouchableWithoutFeedback onPress={() => {}}> 
+                        <View style={styles.modalContainer}>
+                            <TouchableOpacity style={styles.closeIcon} onPress={onClose} activeOpacity={0.6}>
+                                <X size={22} color={COLORS.textLight} />
+                            </TouchableOpacity>
 
-                    <View style={styles.iconCircle}>
-                        <User size={30} color={COLORS.primary} />
-                    </View>
+                            <View style={styles.iconCircle}>
+                                <User size={30} color={COLORS.primary} />
+                            </View>
 
-                    <Text style={styles.title}>{title} 👤</Text>
-                    <Text style={styles.message}>{message}</Text>
+                            <Text style={styles.title}>{title} 👤</Text>
+                            <Text style={styles.message}>{message}</Text>
 
-                    <TouchableOpacity style={styles.loginBtn} onPress={onLogin}>
-                        <Text style={styles.loginText}>Login / Register</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity style={styles.loginBtn} onPress={onLogin} activeOpacity={0.8}>
+                                <Text style={styles.loginText}>Login / Register</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.guestBtn} onPress={onGuest}>
-                        <Text style={styles.guestText}>Proceed as Guest</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity style={styles.guestBtn} onPress={onGuest} activeOpacity={0.8}>
+                                <Text style={styles.guestText}>Proceed as Guest</Text>
+                            </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                        <Text style={styles.cancelText}>Cancel</Text>
-                    </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={styles.cancelBtn} 
+                                onPress={onClose}
+                                activeOpacity={0.6}
+                                hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+                            >
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </View>
-            </View>
+            </TouchableWithoutFeedback>
         </Modal>
     );
 };
