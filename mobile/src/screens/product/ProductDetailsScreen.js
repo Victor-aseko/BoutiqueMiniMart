@@ -209,7 +209,8 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 location: selectedAddress.city,
                 color: finalColor,
                 size: finalSize,
-                price: finalPrice // Pass price explicitly too
+                price: finalPrice, // Pass price explicitly too
+                guestUser: route.params?.guestUser
             }
         });
 
@@ -257,7 +258,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             // Re-open modal if we just came back with an address
             setOrderModalVisible(true);
             // Clear param so it doesn't persist weirdly
-            navigation.setParams({ selectedAddress: null });
+            navigation.setParams({ selectedAddress: null, guestUser: route.params.guestUser });
         }
     }, [route.params?.product, route.params?.selectedAddress]);
 

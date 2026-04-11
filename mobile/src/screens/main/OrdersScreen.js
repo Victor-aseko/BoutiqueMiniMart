@@ -143,7 +143,7 @@ const OrdersScreen = ({ navigation, route }) => {
                 setGuestUser(route.params.guestUser);
             }
 
-            // IMPORTANT: Clear the selectedAddress param so we don't re-trigger this logic
+            // IMPORTANT: Clear params so we don't re-trigger this logic
             navigation.setParams({ selectedAddress: null, guestUser: null });
         }
 
@@ -171,9 +171,13 @@ const OrdersScreen = ({ navigation, route }) => {
                     shippingAddress: route.params.shippingAddress || null
                 });
                 setIsFromCart(false);
+                
+                if (route.params.guestUser) {
+                    setGuestUser(route.params.guestUser);
+                }
             }
             // Clear the product param once consumed to prevent re-initialization loops
-            navigation.setParams({ product: null });
+            navigation.setParams({ product: null, guestUser: null });
         }
 
         // 3. Handle initial order creation from Cart
@@ -195,7 +199,12 @@ const OrdersScreen = ({ navigation, route }) => {
             });
             // Clear the cartItems param
             setIsFromCart(true);
-            navigation.setParams({ cartItems: null, isFromCart: null });
+
+            if (route.params.guestUser) {
+                setGuestUser(route.params.guestUser);
+            }
+
+            navigation.setParams({ cartItems: null, isFromCart: null, guestUser: null });
         }
     }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems, route.params?.isFromCart]);
 

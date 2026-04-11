@@ -110,7 +110,9 @@ const AddressScreen = ({ navigation, route }) => {
                         selectedAddress: address,
                         guestUser: !user ? { name: address.name, email: address.email, phone: address.phone } : null,
                         isOffer: route.params?.isOffer || false,
-                        product: route.params?.product
+                        product: route.params?.product,
+                        selectedColor: route.params?.selectedColor,
+                        selectedSize: route.params?.selectedSize
                     }
                 }
             });
