@@ -42,6 +42,7 @@ const AddressScreen = ({ navigation, route }) => {
     const [phone, setPhone] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
     const [guestName, setGuestName] = useState('');
+    const [guestAddresses, setGuestAddresses] = useState([]);
 
     const handleAddAddress = async () => {
         if (!street || !city || !phone || (!user && (!guestEmail || !guestName))) {
@@ -50,9 +51,15 @@ const AddressScreen = ({ navigation, route }) => {
         }
 
         if (!user) {
-            // Guest mode: Just pass it back
-            const guestAddress = { street, city, postalCode, country, phone, name: guestName, email: guestEmail };
-            handleReturn(guestAddress);
+            // Guest mode: Local state
+            const newAddress = { street, city, postalCode, country, phone, name: guestName, email: guestEmail };
+            setGuestAddresses(prev => [...prev, newAddress]);
+            
+            Alert.alert('Success', 'Address added successfully');
+            setModalVisible(false);
+            setStreet('');
+            setCity('');
+            setPhone('');
             return;
         }
 
@@ -156,28 +163,49 @@ const AddressScreen = ({ navigation, route }) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {user?.addresses && user.addresses.length > 0 ? (
-                    user.addresses.map((address, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={styles.addressCard}
-                            onPress={() => handleReturn(address)}
-                        >
-                            <View style={styles.addressInfo}>
-                                <View style={styles.iconContainer}>
-                                    <MapPin size={24} color={COLORS.accent} />
+                {((user?.addresses && user.addresses.length > 0) || (guestAddresses.length > 0)) ? (
+                    <>
+                        {user?.addresses?.map((address, index) => (
+                            <TouchableOpacity
+                                key={`user-${index}`}
+                                style={styles.addressCard}
+                                onPress={() => handleReturn(address)}
+                            >
+                                <View style={styles.addressInfo}>
+                                    <View style={styles.iconContainer}>
+                                        <MapPin size={24} color={COLORS.accent} />
+                                    </View>
+                                    <View style={styles.details}>
+                                        <Text style={styles.street}>{address.street}</Text>
+                                        <Text style={styles.city}>{address.city}, {address.postalCode}</Text>
+                                        <Text style={styles.country}>{address.country}</Text>
+                                    </View>
                                 </View>
-                                <View style={styles.details}>
-                                    <Text style={styles.street}>{address.street}</Text>
-                                    <Text style={styles.city}>{address.city}, {address.postalCode}</Text>
-                                    <Text style={styles.country}>{address.country}</Text>
-                                </View>
-                            </View>
-                            <TouchableOpacity onPress={() => handleDeleteAddress(index)}>
-                                <Trash2 size={20} color={COLORS.error} />
+                                <TouchableOpacity onPress={() => handleDeleteAddress(index)}>
+                                    <Trash2 size={20} color={COLORS.error} />
+                                </TouchableOpacity>
                             </TouchableOpacity>
-                        </TouchableOpacity>
-                    ))
+                        ))}
+                        {guestAddresses.map((address, index) => (
+                            <TouchableOpacity
+                                key={`guest-${index}`}
+                                style={styles.addressCard}
+                                onPress={() => handleReturn(address)}
+                            >
+                                <View style={styles.addressInfo}>
+                                    <View style={styles.iconContainer}>
+                                        <MapPin size={24} color={COLORS.accent} />
+                                    </View>
+                                    <View style={styles.details}>
+                                        <Text style={styles.street}>{address.street}</Text>
+                                        <Text style={styles.city}>{address.city}</Text>
+                                        <Text style={styles.phone}>{address.phone}</Text>
+                                        <Text style={styles.guestBadge}>Guest Selection</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </>
                 ) : (
                     <View style={styles.empty}>
                         <MapPin size={60} color={COLORS.border} />
@@ -337,8 +365,20 @@ const styles = StyleSheet.create({
     },
     city: {
         fontSize: 14,
+        color: COLORS.text,
+        marginBottom: 2,
+    },
+    phone: {
+        fontSize: 14,
         color: COLORS.textLight,
         marginTop: 2,
+    },
+    guestBadge: {
+        fontSize: 10,
+        color: COLORS.accent,
+        fontWeight: 'bold',
+        marginTop: 4,
+        textTransform: 'uppercase',
     },
     country: {
         fontSize: 14,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { COLORS, SIZES } from '../theme/theme';
-import { User, X, LogIn, ExternalLink } from 'lucide-react-native';
+import { User, X, LogIn, ShoppingBag } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -10,16 +10,13 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
         <Modal
             visible={visible}
             transparent
-            animationType="slide"
+            animationType="fade"
             onRequestClose={onClose}
         >
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback onPress={() => {}}> 
                         <View style={styles.modalContent}>
-                            {/* Decorative Header */}
-                            <View style={styles.headerDecoration} />
-                            
                             <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
                                 <X size={22} color={COLORS.textLight} />
                             </TouchableOpacity>
@@ -27,7 +24,7 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
                             <View style={styles.contentBody}>
                                 <View style={styles.iconContainer}>
                                     <View style={styles.iconBackground}>
-                                        <User size={34} color={COLORS.primary} strokeWidth={2.5} />
+                                        <User size={38} color={COLORS.primary} strokeWidth={2.5} />
                                     </View>
                                 </View>
 
@@ -36,30 +33,30 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
 
                                 <View style={styles.buttonGroup}>
                                     <TouchableOpacity 
-                                        style={styles.primaryBtn} 
+                                        style={styles.loginBtn} 
                                         onPress={onLogin} 
                                         activeOpacity={0.8}
                                     >
                                         <LogIn size={20} color={COLORS.white} style={styles.btnIcon} />
-                                        <Text style={styles.primaryBtnText}>Login / Register</Text>
+                                        <Text style={styles.loginBtnText}>Login / Register</Text>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity 
-                                        style={styles.secondaryBtn} 
+                                        style={styles.guestBtn} 
                                         onPress={onGuest} 
                                         activeOpacity={0.8}
                                     >
-                                        <ExternalLink size={20} color={COLORS.primary} style={styles.btnIcon} />
-                                        <Text style={styles.secondaryBtnText}>Proceed as Guest</Text>
+                                        <ShoppingBag size={20} color={COLORS.white} style={styles.btnIcon} />
+                                        <Text style={styles.guestBtnText}>Proceed as Guest</Text>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity 
-                                        style={styles.textBtn} 
+                                        style={styles.cancelBtn} 
                                         onPress={onClose}
                                         activeOpacity={0.6}
                                         hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
                                     >
-                                        <Text style={styles.textBtnTitle}>Maybe Later</Text>
+                                        <Text style={styles.cancelBtnText}>Cancel</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -74,43 +71,37 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
         width: width * 0.88,
         backgroundColor: COLORS.white,
-        borderRadius: 30,
+        borderRadius: 25,
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: '#E3F2FD', // Very light blue border
+        borderColor: '#E3F2FD',
         elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.25,
+        shadowOpacity: 0.3,
         shadowRadius: 15,
-    },
-    headerDecoration: {
-        height: 8,
-        backgroundColor: '#2196F3', // The Blue color
-        width: '100%',
     },
     closeButton: {
         position: 'absolute',
         right: 18,
-        top: 20,
+        top: 18,
         zIndex: 10,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 20,
         padding: 5,
     },
     contentBody: {
-        padding: 30,
+        padding: 25,
         alignItems: 'center',
     },
     iconContainer: {
-        marginBottom: 20,
+        marginBottom: 15,
+        marginTop: 10,
     },
     iconBackground: {
         width: 80,
@@ -119,71 +110,66 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary + '15',
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: COLORS.primary + '10',
     },
     modalTitle: {
         fontSize: 22,
-        fontWeight: '800',
-        color: '#1565C0', // Rich dark blue
-        marginBottom: 12,
+        fontWeight: 'bold',
+        color: '#2196F3', // The Blue color
+        marginBottom: 10,
         textAlign: 'center',
-        letterSpacing: 0.5,
     },
     modalMessage: {
         fontSize: 16,
         color: COLORS.textLight,
         textAlign: 'center',
-        marginBottom: 30,
-        lineHeight: 24,
+        marginBottom: 25,
+        lineHeight: 22,
         paddingHorizontal: 10,
     },
     buttonGroup: {
         width: '100%',
         gap: 12,
     },
-    primaryBtn: {
+    loginBtn: {
         width: '100%',
         backgroundColor: COLORS.primary,
         flexDirection: 'row',
         paddingVertical: 15,
-        borderRadius: 18,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    primaryBtnText: {
+    loginBtnText: {
         color: COLORS.white,
         fontSize: 16,
         fontWeight: 'bold',
     },
-    secondaryBtn: {
+    guestBtn: {
         width: '100%',
-        backgroundColor: COLORS.white,
-        borderWidth: 1.5,
-        borderColor: COLORS.primary,
+        backgroundColor: '#2196F3', // Specific Blue background
         flexDirection: 'row',
         paddingVertical: 15,
-        borderRadius: 18,
+        borderRadius: 15,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    secondaryBtnText: {
-        color: COLORS.primary,
+    guestBtnText: {
+        color: COLORS.white,
         fontSize: 16,
         fontWeight: 'bold',
     },
     btnIcon: {
         marginRight: 10,
     },
-    textBtn: {
+    cancelBtn: {
         marginTop: 10,
         paddingVertical: 10,
+        alignItems: 'center',
     },
-    textBtnTitle: {
+    cancelBtnText: {
         color: COLORS.textLight,
-        fontSize: 14,
+        fontSize: 15,
         fontWeight: '600',
-        textDecorationLine: 'underline',
     }
 });
 

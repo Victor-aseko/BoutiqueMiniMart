@@ -9,7 +9,8 @@ import {
     Platform,
     Modal,
     TextInput,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    Dimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Heart, Share as ShareIcon, Phone } from 'lucide-react-native';
@@ -26,7 +27,7 @@ import Rating from '../../components/Rating';
 import AuthModal from '../../components/AuthModal';
 import GuestOptionModal from '../../components/GuestOptionModal';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
