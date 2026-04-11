@@ -23,15 +23,14 @@ const AddressScreen = ({ navigation, route }) => {
     const { user, updateProfile } = useAuth();
 
     useEffect(() => {
-        // If user is logged out, redirect after the current render cycle completes
-        // This prevents native crashes on Android APKs caused by rapid transitions
-        if (!user) {
+        // Guest mode support: Don't redirect if returnScreen is provided (checkout flow)
+        if (!user && !route.params?.returnScreen) {
             const timer = setTimeout(() => {
                 navigation.navigate('Auth');
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [user]);
+    }, [user, route.params?.returnScreen]);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -39,21 +38,26 @@ const AddressScreen = ({ navigation, route }) => {
     const [street, setStreet] = useState('');
     const [city, setCity] = useState('');
     const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
+    const [country, setCountry] = useState('Kenya');
     const [phone, setPhone] = useState('');
+    const [guestEmail, setGuestEmail] = useState('');
+    const [guestName, setGuestName] = useState('');
 
     const handleAddAddress = async () => {
-        if (!street || !city || !postalCode || !country || !phone) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!street || !city || !phone || ( !user && (!guestEmail || !guestName))) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+        }
+
+        if (!user) {
+            // Guest mode: Just pass it back
+            const guestAddress = { street, city, postalCode, country, phone, name: guestName, email: guestEmail };
+            handleReturn(guestAddress);
             return;
         }
 
         setLoading(true);
         try {
-            if (!user) {
-                Alert.alert('Error', 'User not logged in');
-                return;
-            }
             const newAddress = { street, city, postalCode, country, phone };
             const updatedAddresses = [...(user.addresses || []), newAddress];
 
@@ -66,8 +70,6 @@ const AddressScreen = ({ navigation, route }) => {
             setModalVisible(false);
             setStreet('');
             setCity('');
-            setPostalCode('');
-            setCountry('');
             setPhone('');
             Alert.alert('Success', 'Address added successfully');
         } catch (err) {
@@ -75,6 +77,43 @@ const AddressScreen = ({ navigation, route }) => {
             Alert.alert('Error', err.response?.data?.message || err.message || 'Failed to add address');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleReturn = (address) => {
+        const returnScreen = route.params?.returnScreen;
+
+        if (returnScreen === 'OrdersScreen') {
+            navigation.navigate('Orders', {
+                screen: 'OrdersScreen',
+                params: {
+                    selectedAddress: address,
+                    guestUser: !user ? { name: address.name, email: address.email, phone: address.phone } : null,
+                    // Pass through all received order params
+                    product: route.params?.product,
+                    qty: route.params?.qty,
+                    color: route.params?.color,
+                    size: route.params?.size,
+                    price: route.params?.price,
+                    location: route.params?.location,
+                    shippingAddress: route.params?.shippingAddress,
+                    cartItems: route.params?.cartItems,
+                    isFromCart: route.params?.isFromCart
+                }
+            });
+        } else if (returnScreen === 'ProductDetails') {
+            navigation.navigate('MainTabs', {
+                screen: route.params?.returnTab || 'HomeTab',
+                params: {
+                    screen: 'ProductDetails',
+                    params: {
+                        selectedAddress: address,
+                        guestUser: !user ? { name: address.name, email: address.email, phone: address.phone } : null,
+                        isOffer: route.params?.isOffer || false,
+                        product: route.params?.product
+                    }
+                }
+            });
         }
     };
 
@@ -120,43 +159,7 @@ const AddressScreen = ({ navigation, route }) => {
                         <TouchableOpacity
                             key={index}
                             style={styles.addressCard}
-                            onPress={() => {
-                                const returnScreen = route.params?.returnScreen;
-
-                                if (returnScreen === 'OrdersScreen') {
-                                    navigation.navigate('Orders', {
-                                        screen: 'OrdersScreen',
-                                        params: {
-                                            selectedAddress: address,
-                                            // Pass through all received order params to protect against state loss
-                                            product: route.params?.product,
-                                            qty: route.params?.qty,
-                                            color: route.params?.color,
-                                            size: route.params?.size,
-                                            price: route.params?.price,
-                                            location: route.params?.location,
-                                            shippingAddress: route.params?.shippingAddress,
-                                            cartItems: route.params?.cartItems,
-                                            isFromCart: route.params?.isFromCart
-                                        }
-                                    });
-                                } else if (returnScreen === 'ProductDetails') {
-                                    navigation.navigate('MainTabs', {
-                                        screen: route.params?.returnTab || 'HomeTab',
-                                        params: {
-                                            screen: 'ProductDetails',
-                                            params: {
-                                                selectedAddress: address,
-                                                isOffer: route.params?.isOffer || false,
-                                                product: route.params?.product
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    // Default behavior if not in a specific checkout flow
-                                    // Maybe just show details or do nothing
-                                }
-                            }}
+                            onPress={() => handleReturn(address)}
                         >
                             <View style={styles.addressInfo}>
                                 <View style={styles.iconContainer}>
@@ -203,30 +206,36 @@ const AddressScreen = ({ navigation, route }) => {
                         >
                             <Text style={styles.modalTitle}>Add New Address</Text>
 
+                            {!user && (
+                                <>
+                                    <MyInput
+                                        label="Full Name"
+                                        placeholder="Enter your name"
+                                        value={guestName}
+                                        onChangeText={setGuestName}
+                                    />
+                                    <MyInput
+                                        label="Email Address"
+                                        placeholder="email@example.com"
+                                        value={guestEmail}
+                                        onChangeText={setGuestEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                    />
+                                </>
+                            )}
+
                             <MyInput
-                                label="Street"
-                                placeholder="123 Boutique St"
+                                label="Street / Apartment / Landmarks"
+                                placeholder="123 Boutique St, Apt 4B"
                                 value={street}
                                 onChangeText={setStreet}
                             />
                             <MyInput
-                                label="City"
-                                placeholder="New York"
+                                label="City / Town"
+                                placeholder="e.g. Nairobi, Nakuru"
                                 value={city}
                                 onChangeText={setCity}
-                            />
-                            <MyInput
-                                label="Postal Code"
-                                placeholder="10001"
-                                value={postalCode}
-                                onChangeText={setPostalCode}
-                                keyboardType="numeric"
-                            />
-                            <MyInput
-                                label="Country"
-                                placeholder="USA"
-                                value={country}
-                                onChangeText={setCountry}
                             />
                             <MyInput
                                 label="Phone Number"
@@ -235,6 +244,22 @@ const AddressScreen = ({ navigation, route }) => {
                                 onChangeText={setPhone}
                                 keyboardType="phone-pad"
                             />
+
+                            <View style={[styles.row, { display: 'none' }]}>
+                                <MyInput
+                                    label="Postal Code"
+                                    placeholder="10001"
+                                    value={postalCode}
+                                    onChangeText={setPostalCode}
+                                    keyboardType="numeric"
+                                />
+                                <MyInput
+                                    label="Country"
+                                    placeholder="Kenya"
+                                    value={country}
+                                    onChangeText={setCountry}
+                                />
+                            </View>
 
                             <View style={styles.modalActions}>
                                 <TouchableOpacity

@@ -35,6 +35,8 @@ const OrdersScreen = ({ navigation, route }) => {
     const [shippingPrice, setShippingPrice] = useState(0);
     const [isFromCart, setIsFromCart] = useState(false);
     const [exitModalVisible, setExitModalVisible] = useState(false);
+    const [guestUser, setGuestUser] = useState(null);
+    const { login } = useAuth();
     const { unreadCount } = useNotifications();
 
     const getShippingFee = (city, itemsPrice) => {
@@ -130,14 +132,19 @@ const OrdersScreen = ({ navigation, route }) => {
 
         // 1. Handle incoming address selection (from AddressScreen)
         if (route.params?.selectedAddress && pendingOrder) {
-            console.log('Applying selected address to pending order');
+            console.log('Applying selected address to pending order. Guest mode:', !!route.params.guestUser);
             setPendingOrder(prev => ({
                 ...prev,
                 shippingAddress: route.params.selectedAddress,
                 location: route.params.selectedAddress.city || prev.location
             }));
+            
+            if (route.params.guestUser) {
+                setGuestUser(route.params.guestUser);
+            }
+
             // IMPORTANT: Clear the selectedAddress param so we don't re-trigger this logic
-            navigation.setParams({ selectedAddress: null });
+            navigation.setParams({ selectedAddress: null, guestUser: null });
         }
 
         // 2. Handle initial order creation from ProductDetails
@@ -195,7 +202,10 @@ const OrdersScreen = ({ navigation, route }) => {
     const { clearCart } = useCart();
 
     const handlePlaceOrder = async () => {
-        if (!pendingOrder || !user) return;
+        if (!pendingOrder || (!user && !guestUser)) {
+            Alert.alert('Error', 'Please provide a shipping address and contact details');
+            return;
+        }
 
         setPlacingOrder(true);
         try {
@@ -240,15 +250,24 @@ const OrdersScreen = ({ navigation, route }) => {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${user.token}`
+                    ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {})
                 },
-                body: JSON.stringify(orderData)
+                body: JSON.stringify({
+                    ...orderData,
+                    guestUser: !user ? guestUser : null
+                })
             });
 
             const data = await response.json();
 
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to place order');
+            }
+
+            // Handle Silent Account Creation / Automatic Login
+            if (!user && data.auth) {
+                console.log('Silent account created. Logging in guest...');
+                await login(data.auth);
             }
 
             // Clear cart if this order came from the cart
@@ -417,10 +436,10 @@ const OrdersScreen = ({ navigation, route }) => {
                                     <View style={styles.variantContainer}>
                                         <Text style={styles.pendingDetail}>Qty: {item.qty}</Text>
                                         {item.size && item.size !== 'Default' && (
-                                            <Text style={styles.pendingVariant}>Size: {item.size}</Text>
+                                            <Text style={styles.pendingVariant}>Size: {typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')}</Text>
                                         )}
                                         {item.color && item.color !== 'Default' && (
-                                            <Text style={styles.pendingVariant}>Color: {item.color}</Text>
+                                            <Text style={styles.pendingVariant}>Color: {typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')}</Text>
                                         )}
                                     </View>
                                     <Text style={styles.pendingPrice}>Kshs {(Number(item.price || 0) * Number(item.qty || 1)).toFixed(2)}</Text>

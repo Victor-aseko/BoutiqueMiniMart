@@ -62,13 +62,13 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
             return;
         }
 
-        const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
+        const finalColor = (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString();
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         
         const defaultSize = product.sizes && product.sizes.length > 0 
             ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name)
             : product.size;
-        const finalSize = selectedSize || defaultSize || 'Default';
+        const finalSize = (selectedSize || (typeof defaultSize === 'string' ? defaultSize : (defaultSize?.name || 'Default')) || 'Default').toString();
 
         // Use the product price as is, as it already includes any applicable discounts from the server/admin
         const finalPrice = Math.floor(Number(product.price));

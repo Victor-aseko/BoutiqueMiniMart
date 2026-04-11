@@ -2,12 +2,13 @@ const asyncHandler = require('express-async-handler');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { generateToken } = require('../controllers/authController');
 
 // @desc    Create new order
 // @route   POST /api/orders
-// @access  Private
+// @access  Private/Public (Guest allowed)
 const addOrderItems = asyncHandler(async (req, res) => {
-    console.log('POST /orders by user:', req.user && req.user._id);
+    console.log('POST /orders. Authenticated:', !!req.user);
     const {
         orderItems,
         shippingAddress,
@@ -16,17 +17,59 @@ const addOrderItems = asyncHandler(async (req, res) => {
         taxPrice,
         shippingPrice,
         totalPrice,
+        guestUser
     } = req.body;
+
+    let user = req.user;
+    let authData = null;
+
+    // Handle Guest Checkout
+    if (!user) {
+        if (!guestUser || !guestUser.email || !guestUser.name) {
+            res.status(400);
+            throw new Error('Please provide guest details (name and email)');
+        }
+
+        const email = guestUser.email.toLowerCase();
+        let existingUser = await User.findOne({ email });
+
+        if (!existingUser) {
+            console.log('Creating guest account for:', email);
+            const crypto = require('crypto');
+            existingUser = await User.create({
+                name: guestUser.name,
+                email: email,
+                password: crypto.randomBytes(12).toString('hex'), // Random password
+                addresses: [shippingAddress]
+            });
+        } else {
+            console.log('Guest checkout for existing email:', email);
+            // Optionally update address if not present
+            if (existingUser.addresses.length === 0) {
+                existingUser.addresses.push(shippingAddress);
+                await existingUser.save();
+            }
+        }
+        
+        user = existingUser;
+        authData = {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            isAdmin: user.isAdmin,
+            addresses: user.addresses,
+            token: generateToken(user._id)
+        };
+    }
 
     if (orderItems && orderItems.length === 0) {
         res.status(400);
         throw new Error('No order items');
         return;
     } else {
-
         const order = new Order({
             orderItems,
-            user: req.user._id,
+            user: user._id,
             shippingAddress,
             paymentMethod,
             itemsPrice,
@@ -34,12 +77,14 @@ const addOrderItems = asyncHandler(async (req, res) => {
             shippingPrice,
             totalPrice,
         });
-        //console.log('Order created with user:', order.user);
 
         const createdOrder = await order.save();
 
-        // Send response immediately to avoid blocking UI if email service is slow/down
-        res.status(201).json(createdOrder);
+        // Send response with order and potential auth data for automatic login
+        res.status(201).json({
+            ...createdOrder.toObject(),
+            auth: authData
+        });
 
         // Notify vendor (Background Process)
         const notifyVendor = async () => {
@@ -48,7 +93,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
                 await sendEmail({
                     email: 'miniboutique043@gmail.com',
                     subject: 'New Order Placed - Boutique Mini Mart',
-                    message: `A new order (${createdOrder._id}) has been placed by ${req.user.name}.\n\nTotal: ${createdOrder.totalPrice}\nPayment Method: ${createdOrder.paymentMethod}\n\nPlease check the admin dashboard for details.`
+                    message: `A new order (${createdOrder._id}) has been placed by ${user.name}.\n\nTotal: ${createdOrder.totalPrice}\nPayment Method: ${createdOrder.paymentMethod}\n\nPlease check the admin dashboard for details.`
                 });
             } catch (e) {
                 console.error('Failed to send order notification email:', e);
@@ -63,7 +108,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
                 const notifications = admins.map(admin => ({
                     user: admin._id,
                     title: 'New Order Received! 🎉',
-                    message: `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} has been placed by ${req.user.name}. Sum: Kshs ${createdOrder.totalPrice.toFixed(2)}`,
+                    message: `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} has been placed by ${user.name}. Sum: Kshs ${createdOrder.totalPrice.toFixed(2)}`,
                     type: 'ORDER_PLACED',
                     orderId: createdOrder._id
                 }));
@@ -76,7 +121,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
                     await sendPushNotification(
                         adminTokens,
                         'New Order Received! 🎉',
-                        `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} placed by ${req.user.name}`,
+                        `Order #${createdOrder._id.toString().slice(-6).toUpperCase()} placed by ${user.name}`,
                         { screen: 'Orders' }
                     );
                 }

@@ -61,8 +61,8 @@ const CartScreen = ({ navigation }) => {
                     image: item.image,
                     price: item.price,
                     qty: item.qty,
-                    color: item.color,
-                    size: item.size,
+                    color: (typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')),
+                    size: (typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')),
                     _id: item._id
                 })),
                 isFromCart: true
@@ -153,7 +153,15 @@ const CartScreen = ({ navigation }) => {
                     style={[styles.checkoutBtn, { backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center' }]}
                     onPress={() => {
                         if (!user) {
-                            setAuthModalVisible(true);
+                            Alert.alert(
+                                'Account Required',
+                                'Login to sync your cart and use saved addresses, or checkout as a guest.',
+                                [
+                                    { text: 'Login / Register', onPress: () => setAuthModalVisible(true) },
+                                    { text: 'Checkout as Guest', onPress: handleProceedToConfirm },
+                                    { text: 'Cancel', style: 'cancel' }
+                                ]
+                            );
                         } else {
                             handleProceedToConfirm();
                         }
@@ -178,10 +186,10 @@ const CartScreen = ({ navigation }) => {
                             image: item.image,
                             price: item.price,
                             qty: item.qty,
-                            color: item.color,
-                            size: item.size,
-                            _id: item._id
-                        })),
+                        color: (typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')),
+                        size: (typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')),
+                        _id: item._id
+                    })),
                         isFromCart: true
                     }
                 }}

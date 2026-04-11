@@ -53,12 +53,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             setSelectedColor(product.colors[0]);
         }
 
-        if (product.selectedSizeForWishlist) {
+        if (route.params?.selectedSize) {
+            setSelectedSize(route.params.selectedSize);
+        } else if (product.selectedSizeForWishlist) {
             setSelectedSize(product.selectedSizeForWishlist);
         } else if (product.sizes && product.sizes.length > 0) {
-            setSelectedSize(product.sizes[0]);
+            const firstSize = typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name;
+            setSelectedSize(firstSize);
         }
-    }, [route.params?.selectedColor, product._id]);
+    }, [route.params?.selectedColor, route.params?.selectedSize, product._id]);
 
     const handleAddToCart = async () => {
         const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
@@ -75,13 +78,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             Alert.alert('Not Available', `Sorry, this item (${selectedColor?.name || ''} ${selectedSize || ''}) is currently ${finalSold ? 'sold' : 'out of stock'}.`);
             return;
         }
-        const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
+        const finalColor = (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString();
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
         
         const defaultSize = product.sizes && product.sizes.length > 0 
             ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name)
             : product.size;
-        const finalSize = selectedSize || defaultSize || 'Default';
+        const finalSize = (selectedSize || defaultSize || 'Default').toString();
 
         const finalPrice = route.params?.isOffer
             ? Math.floor(Number(product.price))
@@ -157,7 +160,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             return;
         }
         if (!user) {
-            setAuthModalVisible(true);
+            Alert.alert(
+                'Account Required',
+                'Would you like to login to use your saved addresses if you already have one, or proceed as a guest?',
+                [
+                    { text: 'Login / Register', onPress: () => setAuthModalVisible(true) },
+                    { text: 'Proceed as Guest', onPress: () => setOrderModalVisible(true) },
+                    { text: 'Cancel', style: 'cancel' }
+                ]
+            );
         } else {
             setOrderModalVisible(true);
         }
@@ -176,8 +187,8 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             Alert.alert('Please add a shipping address');
             return;
         }
-        const finalColor = selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default';
-        const finalSize = selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default';
+        const finalColor = (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString();
+        const finalSize = (selectedSize || (product.sizes && product.sizes.length > 0 ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name) : product.size) || 'Default').toString();
 
         const finalPrice = route.params?.isOffer
             ? Math.floor(Number(product.price))
@@ -233,6 +244,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     useEffect(() => {
         if (route.params?.product) {
             setProduct(route.params.product);
+        }
+        if (route.params?.selectedColor) {
+            setSelectedColor(route.params.selectedColor);
+        }
+        if (route.params?.selectedSize) {
+            setSelectedSize(route.params.selectedSize);
         }
         if (route.params?.selectedAddress) {
             setSelectedAddress(route.params.selectedAddress);
@@ -540,23 +557,26 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                 <Text style={styles.modalLabel}>Size:</Text>
                                 <View style={styles.optionsRow}>
                                     {product.sizes && product.sizes.length > 0 ? (
-                                        product.sizes.map((s, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.optionBtn,
-                                                    selectedSize === s && styles.optionBtnSelected
-                                                ]}
-                                                onPress={() => setSelectedSize(s)}
-                                            >
-                                                <Text style={[
-                                                    styles.optionText,
-                                                    selectedSize === s && styles.optionTextSelected
-                                                ]}>{s}</Text>
-                                            </TouchableOpacity>
-                                        ))
+                                        product.sizes.map((s, i) => {
+                                            const sizeName = typeof s === 'string' ? s : s.name;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    style={[
+                                                        styles.optionBtn,
+                                                        selectedSize === sizeName && styles.optionBtnSelected
+                                                    ]}
+                                                    onPress={() => setSelectedSize(sizeName)}
+                                                >
+                                                    <Text style={[
+                                                        styles.optionText,
+                                                        selectedSize === sizeName && styles.optionTextSelected
+                                                    ]}>{sizeName}</Text>
+                                                </TouchableOpacity>
+                                            )
+                                        })
                                     ) : (
-                                        <Text style={styles.modalValue}>{product.size || 'Default'}</Text>
+                                        <Text style={styles.modalValue}>{typeof product.size === 'string' ? product.size : (product.size?.name || 'Default')}</Text>
                                     )}
                                 </View>
 
@@ -573,7 +593,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                                         returnScreen: 'ProductDetails',
                                                         returnTab: currentTab,
                                                         isOffer: route.params?.isOffer || false,
-                                                        product: product
+                                                        product: product,
+                                                        selectedColor: selectedColor,
+                                                        selectedSize: selectedSize
                                                     }
                                                 });
                                             }}
@@ -643,8 +665,8 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                             price: route.params?.isOffer ? Math.floor(Number(product.price)) : product.price
                         },
                         qty: qty,
-                        color: selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default',
-                        size: selectedSize || (product.sizes && product.sizes.length > 0 ? product.sizes[0] : product.size) || 'Default',
+                        color: (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString(),
+                        size: (selectedSize || (product.sizes && product.sizes.length > 0 ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name) : product.size) || 'Default').toString(),
                         price: route.params?.isOffer ? Math.floor(Number(product.price)) : product.price
                     }
                 }}

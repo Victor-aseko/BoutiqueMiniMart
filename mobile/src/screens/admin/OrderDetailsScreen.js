@@ -326,9 +326,9 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                                 <Text style={styles.itemSub}>Qty: {item.qty}  x  Kshs {item.price}</Text>
                                 {(item.color || item.size) && (
                                     <Text style={styles.itemVariant}>
-                                        {item.color ? `Color: ${item.color}` : ''}
+                                        {item.color ? `Color: ${typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')}` : ''}
                                         {item.color && item.size ? ' | ' : ''}
-                                        {item.size ? `Size: ${item.size}` : ''}
+                                        {item.size ? `Size: ${typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')}` : ''}
                                     </Text>
                                 )}
                             </View>
