@@ -145,7 +145,6 @@ const OrdersScreen = ({ navigation, route }) => {
 
             // Fallback: Ensure loading is false if we are clearly in selection mode
             setIsLoading(false);
-            setFetchingOrders(false);
 
             // IMPORTANT: Clear params so we don't re-trigger this logic
             navigation.setParams({ selectedAddress: null, guestUser: null });
@@ -156,7 +155,6 @@ const OrdersScreen = ({ navigation, route }) => {
             if (isLoading && pendingOrder) {
                 console.log('Loading watchdog triggered - forcing setIsLoading(false)');
                 setIsLoading(false);
-                setFetchingOrders(false);
             }
         }, 1500);
 
@@ -314,18 +312,15 @@ const OrdersScreen = ({ navigation, route }) => {
 
     const fetchOrders = async () => {
         if (!user) {
-            setFetchingOrders(false);
             setIsLoading(false);
             return;
         }
-        setFetchingOrders(true);
         try {
             const response = await api.get('/orders/myorders');
             setOrders(response.data);
         } catch (err) {
             console.log('Error fetching orders', err);
         } finally {
-            setFetchingOrders(false);
             setIsLoading(false);
             setIsRefreshing(false);
         }
