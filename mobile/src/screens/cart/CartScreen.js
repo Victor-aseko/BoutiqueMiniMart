@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -15,11 +15,13 @@ import { useAuth } from '../../context/AuthContext';
 import { COLORS, SIZES } from '../../theme/theme';
 import MyButton from '../../components/MyButton';
 import AuthModal from '../../components/AuthModal';
+import GuestOptionModal from '../../components/GuestOptionModal';
 
 const CartScreen = ({ navigation }) => {
     const { cartItems, updateCartQty, removeFromCart, cartTotal } = useCart();
     const { user } = useAuth();
-    const [authModalVisible, setAuthModalVisible] = React.useState(false);
+    const [authModalVisible, setAuthModalVisible] = useState(false);
+    const [guestModalVisible, setGuestModalVisible] = useState(false);
 
     const getShippingFee = (city, itemsPrice) => {
         if (!city) return 50; // Default for Nairobi/Unknown
@@ -153,15 +155,7 @@ const CartScreen = ({ navigation }) => {
                     style={[styles.checkoutBtn, { backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 15, alignItems: 'center' }]}
                     onPress={() => {
                         if (!user) {
-                            Alert.alert(
-                                'Account Required',
-                                'Login to sync your cart and use saved addresses, or checkout as a guest.',
-                                [
-                                    { text: 'Login / Register', onPress: () => setAuthModalVisible(true) },
-                                    { text: 'Checkout as Guest', onPress: handleProceedToConfirm },
-                                    { text: 'Cancel', style: 'cancel' }
-                                ]
-                            );
+                            setGuestModalVisible(true);
                         } else {
                             handleProceedToConfirm();
                         }
@@ -170,6 +164,19 @@ const CartScreen = ({ navigation }) => {
                     <Text style={{ color: COLORS.white, fontWeight: 'bold', fontSize: 16 }}>Checkout</Text>
                 </TouchableOpacity>
             </View>
+
+            <GuestOptionModal
+                visible={guestModalVisible}
+                onClose={() => setGuestModalVisible(false)}
+                onLogin={() => {
+                    setGuestModalVisible(false);
+                    setAuthModalVisible(true);
+                }}
+                onGuest={() => {
+                    setGuestModalVisible(false);
+                    handleProceedToConfirm();
+                }}
+            />
 
             <AuthModal
                 visible={authModalVisible}
