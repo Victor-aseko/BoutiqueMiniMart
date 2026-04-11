@@ -111,6 +111,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginQuietly = async (userData) => {
+        try {
+            if (!userData.addresses) userData.addresses = [];
+            api.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
+            setUser(userData);
+            await AsyncStorage.setItem('user', JSON.stringify(userData));
+            await AsyncStorage.setItem('manuallyLoggedOut', 'false');
+            return true;
+        } catch (e) {
+            console.error('Quiet login failed', e);
+            return false;
+        }
+    };
+
     const register = async (name, email, password) => {
         setAuthLoading(true);
         setError(null);
@@ -222,6 +236,7 @@ export const AuthProvider = ({ children }) => {
             error,
             hasSeenOnboarding,
             login,
+            loginQuietly,
             register,
             loginWithGoogle,
             logout,

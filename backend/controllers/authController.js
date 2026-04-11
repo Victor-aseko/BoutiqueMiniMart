@@ -240,4 +240,4 @@ const googleLogin = asyncHandler(async (req, res) => {
     });
 });
 
-module.exports = { authUser, registerUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, googleLogin };
+module.exports = { generateToken, authUser, registerUser, getUserProfile, forgotPassword, resetPassword, updateUserProfile, googleLogin };

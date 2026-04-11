@@ -36,7 +36,7 @@ const OrdersScreen = ({ navigation, route }) => {
     const [isFromCart, setIsFromCart] = useState(false);
     const [exitModalVisible, setExitModalVisible] = useState(false);
     const [guestUser, setGuestUser] = useState(null);
-    const { login } = useAuth();
+    const { loginQuietly } = useAuth();
     const { unreadCount } = useNotifications();
 
     const getShippingFee = (city, itemsPrice) => {
@@ -267,7 +267,7 @@ const OrdersScreen = ({ navigation, route }) => {
             // Handle Silent Account Creation / Automatic Login
             if (!user && data.auth) {
                 console.log('Silent account created. Logging in guest...');
-                await login(data.auth);
+                await loginQuietly(data.auth);
             }
 
             // Clear cart if this order came from the cart
