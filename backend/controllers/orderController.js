@@ -23,20 +23,6 @@ const addOrderItems = asyncHandler(async (req, res) => {
     let user = req.user;
     let authData = null;
 
-    // Normalize shipping address to support both 'street' and 'address' naming conventions
-    const normalizedShippingAddress = shippingAddress ? {
-        ...shippingAddress,
-        address: shippingAddress.address || shippingAddress.street || 'N/A',
-        street: shippingAddress.street || shippingAddress.address || 'N/A'
-    } : {
-        address: 'N/A',
-        street: 'N/A',
-        city: 'N/A',
-        postalCode: '00100',
-        country: 'Kenya',
-        phone: 'N/A'
-    };
-
     // Handle Guest Checkout
     if (!user) {
         if (!guestUser || !guestUser.email || !guestUser.name) {
@@ -54,17 +40,17 @@ const addOrderItems = asyncHandler(async (req, res) => {
                 name: guestUser.name,
                 email: email,
                 password: crypto.randomBytes(12).toString('hex'), // Random password
-                addresses: [normalizedShippingAddress]
+                addresses: [shippingAddress]
             });
         } else {
             console.log('Guest checkout for existing email:', email);
             // Optionally update address if not present
             if (existingUser.addresses.length === 0) {
-                existingUser.addresses.push(normalizedShippingAddress);
+                existingUser.addresses.push(shippingAddress);
                 await existingUser.save();
             }
         }
-        
+
         user = existingUser;
         authData = {
             _id: user._id,
@@ -84,7 +70,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
         const order = new Order({
             orderItems,
             user: user._id,
-            shippingAddress: normalizedShippingAddress,
+            shippingAddress,
             paymentMethod,
             itemsPrice,
             taxPrice,

@@ -9,8 +9,7 @@ import {
     Platform,
     Modal,
     TextInput,
-    KeyboardAvoidingView,
-    Dimensions
+    KeyboardAvoidingView
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Heart, Share as ShareIcon, Phone } from 'lucide-react-native';
@@ -22,13 +21,9 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useRecentlyViewed } from '../../context/RecentlyViewedContext';
-import { useNotifications } from '../../context/NotificationContext';
 import MyButton from '../../components/MyButton';
 import Rating from '../../components/Rating';
 import AuthModal from '../../components/AuthModal';
-import GuestOptionModal from '../../components/GuestOptionModal';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
@@ -45,7 +40,6 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     const { addToCart } = useCart();
     const { user } = useAuth();
     const [authModalVisible, setAuthModalVisible] = useState(false);
-    const [guestModalVisible, setGuestModalVisible] = useState(false);
     const { addToWishlist, wishlist } = useWishlist();
     const { addRecentlyViewed } = useRecentlyViewed();
 
@@ -73,7 +67,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
         const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
-        
+
         const isColorSold = selectedColor?.status === 'Sold';
         const isColorOut = selectedColor?.status === 'Out of Stock';
 
@@ -86,8 +80,8 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         }
         const finalColor = (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString();
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
-        
-        const defaultSize = product.sizes && product.sizes.length > 0 
+
+        const defaultSize = product.sizes && product.sizes.length > 0
             ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name)
             : product.size;
         const finalSize = (selectedSize || defaultSize || 'Default').toString();
@@ -138,13 +132,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             Alert.alert('Already in Wishlist');
             return;
         }
-        
+
         const productForWishlist = {
             ...product,
             selectedColorForWishlist: selectedColor,
             selectedSizeForWishlist: selectedSize
         };
-        
+
         addToWishlist(productForWishlist);
         setIsFavorite(true);
         Alert.alert('Added to Wishlist!');
@@ -154,7 +148,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
         const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
-        
+
         const isColorSold = selectedColor?.status === 'Sold';
         const isColorOut = selectedColor?.status === 'Out of Stock';
 
@@ -166,7 +160,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             return;
         }
         if (!user) {
-            setGuestModalVisible(true);
+            Alert.alert(
+                'Account Required',
+                'Would you like to login to use your saved addresses if you already have one, or proceed as a guest?',
+                [
+                    { text: 'Login / Register', onPress: () => setAuthModalVisible(true) },
+                    { text: 'Proceed as Guest', onPress: () => setOrderModalVisible(true) },
+                    { text: 'Cancel', style: 'cancel' }
+                ]
+            );
         } else {
             setOrderModalVisible(true);
         }
@@ -284,7 +286,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         const currentStatus = selectedColor?.status && selectedColor?.status !== 'In Stock'
                             ? selectedColor.status
                             : (product.status && product.status !== 'In Stock' ? product.status : null);
-                        
+
                         if (!currentStatus) return null;
 
                         return (
@@ -451,7 +453,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
                         const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
                         const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
-                        
+
                         const isColorSold = selectedColor?.status === 'Sold';
                         const isColorOut = selectedColor?.status === 'Out of Stock';
 
@@ -481,7 +483,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
                         const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
                         const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
-                        
+
                         const isColorSold = selectedColor?.status === 'Sold';
                         const isColorOut = selectedColor?.status === 'Out of Stock';
 
@@ -648,20 +650,6 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
-
-            <GuestOptionModal
-                visible={guestModalVisible}
-                onClose={() => setGuestModalVisible(false)}
-                onLogin={() => {
-                    setGuestModalVisible(false);
-                    setAuthModalVisible(true);
-                }}
-                onGuest={() => {
-                    setGuestModalVisible(false);
-                    setOrderModalVisible(true);
-                }}
-                message="Would you like to login to use your saved addresses, or proceed as a guest for a quick order?"
-            />
 
             <AuthModal
                 visible={authModalVisible}
