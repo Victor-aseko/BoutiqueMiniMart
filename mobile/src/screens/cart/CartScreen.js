@@ -18,6 +18,7 @@ import AuthModal from '../../components/AuthModal';
 import GuestOptionModal from '../../components/GuestOptionModal';
 
 const CartScreen = ({ navigation }) => {
+    console.log('CartScreen Render. GuestOptionModal exists:', !!GuestOptionModal);
     const { cartItems, updateCartQty, removeFromCart, cartTotal } = useCart();
     const { user } = useAuth();
     const [authModalVisible, setAuthModalVisible] = useState(false);

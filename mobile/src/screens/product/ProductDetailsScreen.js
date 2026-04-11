@@ -9,7 +9,8 @@ import {
     Platform,
     Modal,
     TextInput,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    Dimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronRight, Plus, Minus, ShoppingBag, Heart, Share as ShareIcon, Phone } from 'lucide-react-native';

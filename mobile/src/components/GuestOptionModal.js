@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { COLORS, SIZES } from '../theme/theme';
-import { User, ShoppingBag, X } from 'lucide-react-native';
+import { User, X } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#2196F3', // Specific blue color
+        color: '#2196F3',
         marginBottom: 10,
         textAlign: 'center',
     },
