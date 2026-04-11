@@ -21,9 +21,13 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useRecentlyViewed } from '../../context/RecentlyViewedContext';
+import { useNotifications } from '../../context/NotificationContext';
 import MyButton from '../../components/MyButton';
 import Rating from '../../components/Rating';
 import AuthModal from '../../components/AuthModal';
+import GuestOptionModal from '../../components/GuestOptionModal';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
@@ -40,6 +44,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     const { addToCart } = useCart();
     const { user } = useAuth();
     const [authModalVisible, setAuthModalVisible] = useState(false);
+    const [guestModalVisible, setGuestModalVisible] = useState(false);
     const { addToWishlist, wishlist } = useWishlist();
     const { addRecentlyViewed } = useRecentlyViewed();
 
@@ -160,15 +165,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             return;
         }
         if (!user) {
-            Alert.alert(
-                'Account Required',
-                'Would you like to login to use your saved addresses if you already have one, or proceed as a guest?',
-                [
-                    { text: 'Login / Register', onPress: () => setAuthModalVisible(true) },
-                    { text: 'Proceed as Guest', onPress: () => setOrderModalVisible(true) },
-                    { text: 'Cancel', style: 'cancel' }
-                ]
-            );
+            setGuestModalVisible(true);
         } else {
             setOrderModalVisible(true);
         }
@@ -650,6 +647,20 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
+
+            <GuestOptionModal
+                visible={guestModalVisible}
+                onClose={() => setGuestModalVisible(false)}
+                onLogin={() => {
+                    setGuestModalVisible(false);
+                    setAuthModalVisible(true);
+                }}
+                onGuest={() => {
+                    setGuestModalVisible(false);
+                    setOrderModalVisible(true);
+                }}
+                message="Would you like to login to use your saved addresses, or proceed as a guest for a quick order?"
+            />
 
             <AuthModal
                 visible={authModalVisible}
