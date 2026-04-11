@@ -29,6 +29,7 @@ const OrdersScreen = ({ navigation, route }) => {
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [fetchingOrders, setFetchingOrders] = useState(false);
     const [pendingOrder, setPendingOrder] = useState(null);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('Cash (Pay on Delivery)');
@@ -206,7 +207,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
             navigation.setParams({ cartItems: null, isFromCart: null, guestUser: null });
         }
-    }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems, route.params?.isFromCart]);
+    }, [route.params?.selectedAddress, route.params?.product, route.params?.cartItems, route.params?.isFromCart, route.params?.guestUser]);
 
     const { clearCart } = useCart();
 
@@ -220,7 +221,7 @@ const OrdersScreen = ({ navigation, route }) => {
         try {
             const sa = pendingOrder.shippingAddress || {};
             const shippingAddress = {
-                address: sa.street || sa.address || pendingOrder.location || 'N/A',
+                street: sa.street || sa.address || pendingOrder.location || 'N/A',
                 city: sa.city || pendingOrder.location || 'N/A',
                 postalCode: sa.postalCode || '00100',
                 country: sa.country || 'Kenya',
@@ -312,13 +313,19 @@ const OrdersScreen = ({ navigation, route }) => {
     };
 
     const fetchOrders = async () => {
-        if (!user) return; // Guard clause for extra safety
+        if (!user) {
+            setFetchingOrders(false);
+            setIsLoading(false);
+            return;
+        }
+        setFetchingOrders(true);
         try {
             const response = await api.get('/orders/myorders');
             setOrders(response.data);
         } catch (err) {
             console.log('Error fetching orders', err);
         } finally {
+            setFetchingOrders(false);
             setIsLoading(false);
             setIsRefreshing(false);
         }
