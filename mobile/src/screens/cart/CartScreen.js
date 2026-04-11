@@ -53,11 +53,13 @@ const CartScreen = ({ navigation }) => {
     const handleProceedToConfirm = React.useCallback(() => {
         console.log('Proceeding to Confirm Orders with items:', cartItems.length);
 
-        // Use a more explicit navigation path to avoid ambiguity during auth state shifts
-        navigation.navigate('Orders', {
-            screen: 'OrdersScreen',
-            params: {
-                cartItems: cartItems.map(item => ({
+        // Use a tiny timeout to allow GuestModal to close before navigation
+        setTimeout(() => {
+            // Use a more explicit navigation path to avoid ambiguity during auth state shifts
+            navigation.navigate('Orders', {
+                screen: 'OrdersScreen',
+                params: {
+                    cartItems: cartItems.map(item => ({
                     product: item.product?._id || item.product,
                     name: item.name,
                     image: item.image,
@@ -70,6 +72,7 @@ const CartScreen = ({ navigation }) => {
                 isFromCart: true
             }
         });
+        }, 150);
     }, [navigation, cartItems]);
 
     const renderItem = ({ item }) => (

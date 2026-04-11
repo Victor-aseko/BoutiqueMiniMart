@@ -143,9 +143,22 @@ const OrdersScreen = ({ navigation, route }) => {
                 setGuestUser(route.params.guestUser);
             }
 
+            // Fallback: Ensure loading is false if we are clearly in selection mode
+            setIsLoading(false);
+            setFetchingOrders(false);
+
             // IMPORTANT: Clear params so we don't re-trigger this logic
             navigation.setParams({ selectedAddress: null, guestUser: null });
         }
+
+        // Safety watchdog: If we have a pending order but still in loading state, force release after 1.5s
+        const timer = setTimeout(() => {
+            if (isLoading && pendingOrder) {
+                console.log('Loading watchdog triggered - forcing setIsLoading(false)');
+                setIsLoading(false);
+                setFetchingOrders(false);
+            }
+        }, 1500);
 
         // 2. Handle initial order creation from ProductDetails
         if (route.params?.product) {
@@ -182,7 +195,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
         // 3. Handle initial order creation from Cart
         if (route.params?.cartItems) {
-            console.log('Initializing pending order from cartItems');
+            console.log('Initializing pending order from cartItems param');
             setPendingOrder({
                 items: route.params.cartItems.map(item => ({
                     product: item.product?._id || item.product,
@@ -253,26 +266,13 @@ const OrdersScreen = ({ navigation, route }) => {
                 totalPrice: itemsPrice + shippingPrice,
             };
 
-            // Using fetch to bypass potential axios network issues
-            console.log('Placing order with fetch...');
-            const response = await fetch(`${api.defaults.baseURL}/orders`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    ...(user?.token ? { 'Authorization': `Bearer ${user.token}` } : {})
-                },
-                body: JSON.stringify({
-                    ...orderData,
-                    guestUser: !user ? guestUser : null
-                })
+            console.log('Placing order with api.post...');
+            const response = await api.post('/orders', {
+                ...orderData,
+                guestUser: !user ? guestUser : null
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to place order');
-            }
+            const data = response.data;
 
             // Handle Silent Account Creation / Automatic Login
             if (!user && data.auth) {

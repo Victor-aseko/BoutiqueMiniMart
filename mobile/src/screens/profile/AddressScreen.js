@@ -200,7 +200,6 @@ const AddressScreen = ({ navigation, route }) => {
                                         <Text style={styles.street}>{address.street}</Text>
                                         <Text style={styles.city}>{address.city}</Text>
                                         <Text style={styles.phone}>{address.phone}</Text>
-                                        <Text style={styles.guestBadge}>Guest Selection</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -365,20 +364,12 @@ const styles = StyleSheet.create({
     },
     city: {
         fontSize: 14,
-        color: COLORS.text,
-        marginBottom: 2,
+        color: COLORS.textLight,
     },
     phone: {
         fontSize: 14,
         color: COLORS.textLight,
         marginTop: 2,
-    },
-    guestBadge: {
-        fontSize: 10,
-        color: COLORS.accent,
-        fontWeight: 'bold',
-        marginTop: 4,
-        textTransform: 'uppercase',
     },
     country: {
         fontSize: 14,
