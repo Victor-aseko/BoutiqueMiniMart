@@ -24,10 +24,17 @@ const addOrderItems = asyncHandler(async (req, res) => {
     let authData = null;
 
     // Normalize shipping address to support both 'street' and 'address' naming conventions
-    const normalizedShippingAddress = {
+    const normalizedShippingAddress = shippingAddress ? {
         ...shippingAddress,
-        address: shippingAddress.address || shippingAddress.street,
-        street: shippingAddress.street || shippingAddress.address
+        address: shippingAddress.address || shippingAddress.street || 'N/A',
+        street: shippingAddress.street || shippingAddress.address || 'N/A'
+    } : {
+        address: 'N/A',
+        street: 'N/A',
+        city: 'N/A',
+        postalCode: '00100',
+        country: 'Kenya',
+        phone: 'N/A'
     };
 
     // Handle Guest Checkout

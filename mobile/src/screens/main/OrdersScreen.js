@@ -221,6 +221,7 @@ const OrdersScreen = ({ navigation, route }) => {
         try {
             const sa = pendingOrder.shippingAddress || {};
             const shippingAddress = {
+                address: sa.street || sa.address || pendingOrder.location || 'N/A',
                 street: sa.street || sa.address || pendingOrder.location || 'N/A',
                 city: sa.city || pendingOrder.location || 'N/A',
                 postalCode: sa.postalCode || '00100',
