@@ -83,6 +83,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 30,
         overflow: 'hidden',
+        borderWidth: 1.5,
+        borderColor: '#E3F2FD', // Very light blue border
         elevation: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 10 },
