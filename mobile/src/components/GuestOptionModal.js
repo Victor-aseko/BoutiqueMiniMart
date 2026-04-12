@@ -71,13 +71,13 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)', // Adjusted opacity
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
         width: width * 0.88,
-        backgroundColor: COLORS.white,
+        backgroundColor: 'rgba(255, 255, 255, 0.98)', // Subtle opacity to modal background
         borderRadius: 25,
         overflow: 'hidden',
         borderWidth: 1.5,
@@ -162,14 +162,18 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     cancelBtn: {
-        marginTop: 10,
-        paddingVertical: 10,
+        marginTop: 5,
+        paddingVertical: 14,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#D1D5DB', // Subtle border
+        borderRadius: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.03)', // Slight opacity on the background
     },
     cancelBtnText: {
         color: COLORS.textLight,
         fontSize: 15,
-        fontWeight: '600',
+        fontWeight: 'bold', // Made slightly bolder to match new border style
     }
 });
 
