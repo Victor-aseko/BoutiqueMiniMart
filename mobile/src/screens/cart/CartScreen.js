@@ -79,38 +79,35 @@ const CartScreen = ({ navigation, route }) => {
 
         console.log('Proceeding to Confirm Orders with items:', cartItems.length);
 
-        setCheckoutModalVisible(false);
+        navigation.navigate('Orders', {
+            screen: 'OrdersScreen',
+            params: {
+                cartItems: cartItems.map(item => ({
+                    product: item.product?._id || item.product,
+                    name: item.name,
+                    image: item.image,
+                    price: item.price,
+                    qty: item.qty,
+                    color: (typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')),
+                    size: (typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')),
+                    _id: item._id
+                })),
+                shippingAddress: {
+                    ...selectedAddress,
+                    phone: phoneNumber
+                },
+                location: selectedAddress.city,
+                guestUser: route.params?.guestUser || null,
+                isFromCart: true
+            }
+        });
 
-        // Use a tiny timeout to allow GuestModal to close before navigation
+        // Delay closing the modal and clearing state until the navigation transition starts
         setTimeout(() => {
-            // Use a more explicit navigation path to avoid ambiguity during auth state shifts
-            navigation.navigate('Orders', {
-                screen: 'OrdersScreen',
-                params: {
-                    cartItems: cartItems.map(item => ({
-                        product: item.product?._id || item.product,
-                        name: item.name,
-                        image: item.image,
-                        price: item.price,
-                        qty: item.qty,
-                        color: (typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')),
-                        size: (typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')),
-                        _id: item._id
-                    })),
-                    shippingAddress: {
-                        ...selectedAddress,
-                        phone: phoneNumber
-                    },
-                    location: selectedAddress.city,
-                    guestUser: route.params?.guestUser || null,
-                    isFromCart: true
-                }
-            });
-
-            // Clear local state
+            setCheckoutModalVisible(false);
             setSelectedAddress(null);
             setPhoneNumber('');
-        }, 150);
+        }, 500);
     }, [navigation, cartItems, selectedAddress, phoneNumber, user, route.params?.guestUser]);
 
     const renderItem = ({ item }) => (

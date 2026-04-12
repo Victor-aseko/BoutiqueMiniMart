@@ -193,34 +193,32 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
 
-        setOrderModalVisible(false);
-        
-        // Short delay to allow modal to close fully before navigation
-        setTimeout(() => {
-            navigation.navigate('Orders', {
-                screen: 'OrdersScreen',
-                params: {
-                    product: { ...product, image: finalColorImage, price: finalPrice },
-                    qty: orderQty,
-                    shippingAddress: {
-                        ...selectedAddress,
-                        phone: phoneNumber
-                    },
-                    location: selectedAddress.city,
-                    color: finalColor,
-                    size: finalSize,
-                    price: finalPrice, // Pass price explicitly too
-                    guestUser: route.params?.guestUser || null
-                }
-            });
+        navigation.navigate('Orders', {
+            screen: 'OrdersScreen',
+            params: {
+                product: { ...product, image: finalColorImage, price: finalPrice },
+                qty: orderQty,
+                shippingAddress: {
+                    ...selectedAddress,
+                    phone: phoneNumber
+                },
+                location: selectedAddress.city,
+                color: finalColor,
+                size: finalSize,
+                price: finalPrice, // Pass price explicitly too
+                guestUser: route.params?.guestUser || null
+            }
+        });
 
-            // Clear local state after navigation is triggered
+        // Delay closing the modal and clearing state until the navigation transition starts
+        setTimeout(() => {
+            setOrderModalVisible(false);
             setSelectedAddress(null);
             setSelectedColor(null);
             setSelectedSize('');
             setPhoneNumber('');
             setOrderQty(1);
-        }, 150);
+        }, 500);
     };
 
     // refresh product when screen focused to reflect new reviews/ratings

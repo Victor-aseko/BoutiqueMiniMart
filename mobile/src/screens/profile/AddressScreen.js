@@ -264,8 +264,8 @@ const AddressScreen = ({ navigation, route }) => {
                             )}
 
                             <MyInput
-                                label="Street / Apartment / Landmarks"
-                                placeholder="123 Boutique St, Apt 4B"
+                                label="Street / Apartment"
+                                placeholder="123 Mt. View, Apt 4B"
                                 value={street}
                                 onChangeText={setStreet}
                             />
