@@ -108,6 +108,18 @@ const AddressScreen = ({ navigation, route }) => {
                     isFromCart: route.params?.isFromCart
                 }
             });
+        } else if (returnScreen === 'CartScreen') {
+            navigation.navigate('MainTabs', {
+                screen: route.params?.returnTab || 'CartTab',
+                params: {
+                    screen: 'CartScreen',
+                    params: {
+                        selectedAddress: address,
+                        guestUser: !user ? { name: address.name, email: address.email } : null,
+                        cartItems: route.params?.cartItems
+                    }
+                }
+            });
         } else if (returnScreen === 'ProductDetails') {
             navigation.navigate('MainTabs', {
                 screen: route.params?.returnTab || 'HomeTab',
