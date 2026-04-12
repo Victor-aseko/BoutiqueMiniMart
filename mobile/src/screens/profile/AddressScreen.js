@@ -109,15 +109,12 @@ const AddressScreen = ({ navigation, route }) => {
                 }
             });
         } else if (returnScreen === 'CartScreen') {
-            navigation.navigate('MainTabs', {
-                screen: route.params?.returnTab || 'CartTab',
+            navigation.navigate('Cart', {
+                screen: 'CartScreen',
                 params: {
-                    screen: 'CartScreen',
-                    params: {
-                        selectedAddress: address,
-                        guestUser: !user ? { name: address.name, email: address.email } : null,
-                        cartItems: route.params?.cartItems
-                    }
+                    selectedAddress: address,
+                    guestUser: !user ? { name: address.name, email: address.email } : null,
+                    cartItems: route.params?.cartItems
                 }
             });
         } else if (returnScreen === 'ProductDetails') {

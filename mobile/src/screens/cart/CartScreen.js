@@ -246,8 +246,24 @@ const CartScreen = ({ navigation, route }) => {
                                     <X size={24} color={COLORS.textLight} />
                                 </TouchableOpacity>
                             </View>
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                                <View style={{ marginBottom: 15 }}>
+                                    {cartItems.map((item, index) => (
+                                        <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, backgroundColor: COLORS.background, padding: 8, borderRadius: 12 }}>
+                                            <Image source={{ uri: item.image }} style={{ width: 50, height: 50, borderRadius: 8, marginRight: 10 }} />
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: COLORS.primary }} numberOfLines={1}>{item.name}</Text>
+                                                <Text style={{ fontSize: 12, color: COLORS.accent, fontWeight: 'bold' }}>Kshs {item.price}</Text>
+                                                <Text style={{ fontSize: 11, color: COLORS.textLight }}>
+                                                    Qty: {item.qty} 
+                                                    {item.color ? ` • ${typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')}` : ''}
+                                                    {item.size ? ` • ${typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')}` : ''}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
 
-                            <ScrollView showsVerticalScrollIndicator={false}>
                                 <View style={checkoutStyles.modalRow}>
                                     <Text style={checkoutStyles.modalLabel}>Shipping to:</Text>
                                     <View style={{ flex: 1, alignItems: 'flex-end' }}>
@@ -464,7 +480,8 @@ const checkoutStyles = StyleSheet.create({
     },
     modalContentWrapper: {
         width: '100%',
-        maxHeight: '80%',
+        maxHeight: '85%',
+        flexShrink: 1,
     },
     modalContent: {
         backgroundColor: COLORS.white,
@@ -472,6 +489,7 @@ const checkoutStyles = StyleSheet.create({
         borderTopRightRadius: 30,
         padding: 20,
         paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+        flexShrink: 1,
     },
     modalHeader: {
         flexDirection: 'row',
