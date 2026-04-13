@@ -240,9 +240,10 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                         const percentage = total > 0 ? ((item.count / total) * 100).toFixed(0) : 0;
                                         return {
                                             ...item,
-                                            // The 'name' is what appears on the slices/labels
+                                            // The 'name' property is used for the labels displayed next to the chart
                                             name: `Kshs ${item.count.toLocaleString()} (${percentage}%)`,
-                                            legendFontColor: '#333',
+                                            legendFontColor: '#555',
+                                            legendFontSize: 10,
                                         };
                                     })
                                 })()}
@@ -253,12 +254,12 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 }}
                                 accessor={"count"}
                                 backgroundColor={"transparent"}
-                                paddingLeft={"15"}
+                                paddingLeft={"5"} // Pushing chart to left to make room for labels
                                 absolute
-                                hasLegend={false} // Hide default legend to build custom key
+                                hasLegend={true} // Labels next to the chart
                             />
                             
-                            {/* Custom Key (Legend) */}
+                            {/* Key (Only Category Names) */}
                             <View style={styles.customLegend}>
                                 {analytics.categoryData.map((item, idx) => (
                                     <View key={idx} style={styles.legendItem}>
@@ -269,7 +270,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                             </View>
 
                             <View style={styles.pieSummary}>
-                                <Text style={styles.pieSummaryText}>Total Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
+                                <Text style={styles.pieSummaryText}>Total Lifetime Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
                             </View>
                         </View>
                     </View>
