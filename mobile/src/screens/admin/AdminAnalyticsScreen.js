@@ -130,15 +130,19 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Top Selling Products</Text>
                     </View>
                     <View style={styles.statsList}>
-                        {analytics?.topProductsBySales.map((item) => (
-                            <ProductStatItem 
-                                key={item._id} 
-                                item={item} 
-                                count={`${item.ordersCount} sold`} 
-                                icon={ShoppingBag} 
-                                iconColor={COLORS.accent}
-                            />
-                        ))}
+                        {analytics?.topProductsBySales?.length > 0 ? (
+                            analytics.topProductsBySales.map((item) => (
+                                <ProductStatItem 
+                                    key={item._id} 
+                                    item={item} 
+                                    count={`${item.ordersCount} sold`} 
+                                    icon={ShoppingBag} 
+                                    iconColor={COLORS.accent}
+                                />
+                            ))
+                        ) : (
+                            <Text style={styles.emptySmallText}>No sales recorded yet.</Text>
+                        )}
                     </View>
                 </View>
 
@@ -148,15 +152,19 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         <Text style={styles.sectionTitle}>Most Viewed Products</Text>
                     </View>
                     <View style={styles.statsList}>
-                        {analytics?.topProductsByViews.map((item) => (
-                            <ProductStatItem 
-                                key={item._id} 
-                                item={item} 
-                                count={`${item.views} views`} 
-                                icon={Eye} 
-                                iconColor={COLORS.primary}
-                            />
-                        ))}
+                        {analytics?.topProductsByViews?.length > 0 ? (
+                            analytics.topProductsByViews.map((item) => (
+                                <ProductStatItem 
+                                    key={item._id} 
+                                    item={item} 
+                                    count={`${item.views} views`} 
+                                    icon={Eye} 
+                                    iconColor={COLORS.primary}
+                                />
+                            ))
+                        ) : (
+                            <Text style={styles.emptySmallText}>No views recorded yet.</Text>
+                        )}
                     </View>
                 </View>
 
@@ -280,6 +288,13 @@ const styles = StyleSheet.create({
     recordDate: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
     recordUser: { fontSize: 12, color: COLORS.accent, fontWeight: '600', marginTop: 1 },
     recordAmount: { fontSize: 14, fontWeight: 'bold', color: COLORS.primary },
+    emptySmallText: {
+        fontSize: 14,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        paddingVertical: 10,
+        fontStyle: 'italic',
+    },
 });
 
 export default AdminAnalyticsScreen;

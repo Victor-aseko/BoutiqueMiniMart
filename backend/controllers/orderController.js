@@ -409,12 +409,13 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     const orders = await Order.find(query).populate('user', 'name email');
     
     const totalSales = orders.length;
-    const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
+    const totalRevenue = orders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
 
     // Get product stats
     const Product = require('../models/Product');
-    const topProductsBySales = await Product.find({}).sort('-ordersCount').limit(5);
-    const topProductsByViews = await Product.find({}).sort('-views').limit(5);
+    // Ensure existing products without the fields are treated as 0 and only return those with at least 1 count
+    const topProductsBySales = await Product.find({ ordersCount: { $gt: 0 } }).sort('-ordersCount').limit(5);
+    const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort('-views').limit(5);
 
     res.json({
         totalSales,
