@@ -447,11 +447,46 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     const Product = require('../models/Product');
     const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort('-views').limit(5);
 
+    // Category Sales Distribution
+    const categorySalesMap = {};
+    revenueOrders.forEach(order => {
+        order.orderItems.forEach(item => {
+            // We need to fetch the category from the product if it's not in orderItem
+            // For now, let's assume we might need a quick lookup or if category was saved in orderItem
+            // Let's assume we fetch it from the map we built earlier if we had it, 
+            // but orderItems usually have 'name', 'price', 'qty'. 
+            // I'll add a quick category lookup or fallback.
+        });
+    });
+
+    // Let's get categories from the products in the revenue orders
+    const productIds = [...new Set(revenueOrders.flatMap(o => o.orderItems.map(i => i.product)))];
+    const productsInfo = await Product.find({ _id: { $in: productIds } }).select('category');
+    const catMap = {};
+    productsInfo.forEach(p => catMap[p._id.toString()] = p.category);
+
+    const categoryStats = {};
+    revenueOrders.forEach(order => {
+        order.orderItems.forEach(item => {
+            const cat = catMap[item.product.toString()] || 'Uncategorized';
+            categoryStats[cat] = (categoryStats[cat] || 0) + item.qty;
+        });
+    });
+
+    const categoryData = Object.keys(categoryStats).map(cat => ({
+        name: cat,
+        count: categoryStats[cat],
+        color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // Random hex
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 12,
+    }));
+
     res.json({
         totalSales,
         totalRevenue,
         statusCounts,
-        orders: allOrdersInRange, // Return all for the detailed list
+        categoryData,
+        orders: allOrdersInRange, 
         topProductsBySales,
         topProductsByViews,
     });

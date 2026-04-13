@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter } from 'lucide-react-native';
+import { ChevronLeft, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter, Package, BarChart2, PieChart as PieChartIcon } from 'lucide-react-native';
+import { BarChart, PieChart } from 'react-native-chart-kit';
 import api from '../../services/api';
 import { COLORS } from '../../theme/theme';
 import MyInput from '../../components/MyInput';
+
+const screenWidth = Dimensions.get('window').width;
 
 const AdminAnalyticsScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
@@ -122,6 +125,67 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         color="#2196F3" 
                     />
                 </View>
+
+                {/* Summary Charts */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <BarChart2 size={20} color={COLORS.primary} />
+                        <Text style={styles.sectionTitle}>Order Distribution</Text>
+                    </View>
+                    <View style={styles.chartContainer}>
+                        <BarChart
+                            data={{
+                                labels: ["Processing", "Shipped", "Delivered"],
+                                datasets: [{
+                                    data: [
+                                        analytics?.statusCounts?.processing || 0,
+                                        analytics?.statusCounts?.shipped || 0,
+                                        analytics?.statusCounts?.delivered || 0
+                                    ]
+                                }]
+                            }}
+                            width={screenWidth - 32}
+                            height={220}
+                            chartConfig={{
+                                backgroundColor: COLORS.white,
+                                backgroundGradientFrom: COLORS.white,
+                                backgroundGradientTo: COLORS.white,
+                                decimalPlaces: 0,
+                                color: (opacity = 1) => `rgba(18, 18, 18, ${opacity})`,
+                                labelColor: (opacity = 1) => `rgba(18, 18, 18, ${opacity})`,
+                                style: { borderRadius: 16 },
+                                propsForDots: { r: "6", strokeWidth: "2", stroke: COLORS.accent }
+                            }}
+                            style={{ marginVertical: 8, borderRadius: 16 }}
+                            fromZero
+                            showValuesOnTopOfBars
+                        />
+                    </View>
+                </View>
+
+                {/* Pie Chart for Categories */}
+                {analytics?.categoryData?.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <PieChartIcon size={20} color={COLORS.accent} />
+                            <Text style={styles.sectionTitle}>Sales by Category</Text>
+                        </View>
+                        <View style={styles.chartContainer}>
+                            <PieChart
+                                data={analytics.categoryData}
+                                width={screenWidth - 32}
+                                height={220}
+                                chartConfig={{
+                                    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                }}
+                                accessor={"count"}
+                                backgroundColor={"transparent"}
+                                paddingLeft={"15"}
+                                absolute
+                            />
+                        </View>
+                    </View>
+                )}
 
                 {/* Fulfillment Status Row */}
                 <View style={styles.section}>
@@ -269,6 +333,14 @@ const styles = StyleSheet.create({
     statTextContainer: { flex: 1 },
     statTitle: { fontSize: 12, color: COLORS.textLight, marginBottom: 2 },
     statValue: { fontSize: 13, fontWeight: 'bold', color: COLORS.primary },
+    chartContainer: {
+        backgroundColor: COLORS.white,
+        padding: 10,
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        alignItems: 'center',
+    },
     statusRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
