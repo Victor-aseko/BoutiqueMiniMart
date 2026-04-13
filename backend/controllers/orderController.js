@@ -391,8 +391,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
-    // Fetch orders that are not Cancelled or Pending to get a full view of the pipeline
-    let query = { status: { $in: ['Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
+    // Fetch orders that are not Cancelled to get a full view of the pipeline
+    let query = { status: { $in: ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
@@ -414,8 +414,9 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     const totalSales = revenueOrders.length;
     const totalRevenue = revenueOrders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
 
-    // Status Counts for Fulfillment Row
+    // Total Status pipeline
     const statusCounts = {
+        pending: allOrdersInRange.filter(o => o.status === 'Pending').length,
         processing: allOrdersInRange.filter(o => o.status === 'Processing').length,
         shipped: allOrdersInRange.filter(o => o.status === 'Shipped').length,
         delivered: allOrdersInRange.filter(o => o.status === 'Delivered').length,

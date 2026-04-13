@@ -46,6 +46,8 @@ const AdminAnalyticsScreen = ({ navigation }) => {
             start = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
         } else if (type === 'month') {
             start = dayjs().startOf('month').format('YYYY-MM-DD');
+        } else if (type === 'year') {
+            start = dayjs().startOf('year').format('YYYY-MM-DD');
         }
 
         setStartDate(start);
@@ -103,20 +105,26 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         style={[styles.quickFilterBtn, startDate === dayjs().format('YYYY-MM-DD') && styles.activeQuickFilter]} 
                         onPress={() => setQuickFilter('today')}
                     >
-                        <Clock size={14} color={startDate === dayjs().format('YYYY-MM-DD') ? COLORS.white : COLORS.primary} />
+                        <Clock size={12} color={startDate === dayjs().format('YYYY-MM-DD') ? COLORS.white : COLORS.primary} />
                         <Text style={[styles.quickFilterText, startDate === dayjs().format('YYYY-MM-DD') && styles.activeQuickFilterText]}>Today</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={[styles.quickFilterBtn, startDate === dayjs().subtract(7, 'day').format('YYYY-MM-DD') && styles.activeQuickFilter]} 
                         onPress={() => setQuickFilter('week')}
                     >
-                        <Text style={[styles.quickFilterText, startDate === dayjs().subtract(7, 'day').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>This Week</Text>
+                        <Text style={[styles.quickFilterText, startDate === dayjs().subtract(7, 'day').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>Weekly</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={[styles.quickFilterBtn, startDate === dayjs().startOf('month').format('YYYY-MM-DD') && styles.activeQuickFilter]} 
                         onPress={() => setQuickFilter('month')}
                     >
-                        <Text style={[styles.quickFilterText, startDate === dayjs().startOf('month').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>This Month</Text>
+                        <Text style={[styles.quickFilterText, startDate === dayjs().startOf('month').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>Monthly</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.quickFilterBtn, startDate === dayjs().startOf('year').format('YYYY-MM-DD') && styles.activeQuickFilter]} 
+                        onPress={() => setQuickFilter('year')}
+                    >
+                        <Text style={[styles.quickFilterText, startDate === dayjs().startOf('year').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>Yearly</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -124,7 +132,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                 <View style={styles.filterSection}>
                     <View style={styles.filterHeader}>
                         <Filter size={18} color={COLORS.primary} />
-                        <Text style={styles.filterTitle}>Filter by Date Range</Text>
+                        <Text style={styles.filterTitle}>Custom Date Range</Text>
                     </View>
                     <View style={styles.filterRow}>
                         <View style={{ flex: 1, marginRight: 10 }}>
@@ -132,7 +140,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 placeholder="YYYY-MM-DD"
                                 value={startDate}
                                 onChangeText={setStartDate}
-                                label="Start Date"
+                                label="From"
                                 icon={Calendar}
                             />
                         </View>
@@ -141,13 +149,13 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 placeholder="YYYY-MM-DD"
                                 value={endDate}
                                 onChangeText={setEndDate}
-                                label="End Date"
+                                label="To"
                                 icon={Calendar}
                             />
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.applyBtn} onPress={fetchAnalytics}>
-                        <Text style={styles.applyBtnText}>Apply Filter</Text>
+                    <TouchableOpacity style={styles.applyBtn} onPress={() => fetchAnalytics()}>
+                        <Text style={styles.applyBtnText}>Apply Custom Filter</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -160,7 +168,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         color="#4CAF50" 
                     />
                     <StatCard 
-                        title="Confirmed Sales" 
+                        title="Confirmed Orders" 
                         value={analytics?.totalSales} 
                         icon={ShoppingBag} 
                         color="#2196F3" 
@@ -171,18 +179,19 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <BarChart2 size={20} color={COLORS.primary} />
-                        <Text style={styles.sectionTitle}>Order Distribution</Text>
+                        <Text style={styles.sectionTitle}>Order Pipeline Distribution</Text>
                     </View>
                     <View style={styles.chartContainer}>
                         <BarChart
                             data={{
-                                labels: ["Processing", "Shipped", "Delivered"],
+                                labels: ["Pending", "Processing", "Shipped", "Delivered"],
                                 datasets: [{
                                     data: [
+                                        analytics?.statusCounts?.pending || 0,
                                         analytics?.statusCounts?.processing || 0,
                                         analytics?.statusCounts?.shipped || 0,
                                         analytics?.statusCounts?.delivered || 0
-                                    ]
+                                    ],
                                 }]
                             }}
                             width={screenWidth - 32}
@@ -192,10 +201,11 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 backgroundGradientFrom: COLORS.white,
                                 backgroundGradientTo: COLORS.white,
                                 decimalPlaces: 0,
-                                color: (opacity = 1) => `rgba(18, 18, 18, ${opacity})`,
-                                labelColor: (opacity = 1) => `rgba(18, 18, 18, ${opacity})`,
+                                color: (opacity = 1) => COLORS.primary, // Default bar color
+                                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                                 style: { borderRadius: 16 },
-                                propsForDots: { r: "6", strokeWidth: "2", stroke: COLORS.accent }
+                                fillShadowGradient: COLORS.primary,
+                                fillShadowGradientOpacity: 1,
                             }}
                             style={{ marginVertical: 8, borderRadius: 16 }}
                             fromZero
@@ -209,7 +219,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <PieChartIcon size={20} color={COLORS.accent} />
-                            <Text style={styles.sectionTitle}>Sales by Category</Text>
+                            <Text style={styles.sectionTitle}>Revenue by Category</Text>
                         </View>
                         <View style={styles.chartContainer}>
                             <PieChart
@@ -232,19 +242,23 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Package size={20} color={COLORS.primary} />
-                        <Text style={styles.sectionTitle}>Fulfillment Pipeline</Text>
+                        <Text style={styles.sectionTitle}>Fulfillment Counts</Text>
                     </View>
                     <View style={styles.statusRow}>
                         <View style={styles.statusCountCard}>
-                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.processing || 0}</Text>
+                            <Text style={[styles.statusCountValue, { color: '#FF9800' }]}>{analytics?.statusCounts?.pending || 0}</Text>
+                            <Text style={styles.statusCountLabel}>Pending</Text>
+                        </View>
+                        <View style={styles.statusCountCard}>
+                            <Text style={[styles.statusCountValue, { color: '#3F51B5' }]}>{analytics?.statusCounts?.processing || 0}</Text>
                             <Text style={styles.statusCountLabel}>Processing</Text>
                         </View>
                         <View style={styles.statusCountCard}>
-                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.shipped || 0}</Text>
+                            <Text style={[styles.statusCountValue, { color: '#FF5722' }]}>{analytics?.statusCounts?.shipped || 0}</Text>
                             <Text style={styles.statusCountLabel}>Shipped</Text>
                         </View>
                         <View style={styles.statusCountCard}>
-                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.delivered || 0}</Text>
+                            <Text style={[styles.statusCountValue, { color: '#4CAF50' }]}>{analytics?.statusCounts?.delivered || 0}</Text>
                             <Text style={styles.statusCountLabel}>Delivered</Text>
                         </View>
                     </View>
