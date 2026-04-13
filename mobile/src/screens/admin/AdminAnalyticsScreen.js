@@ -224,8 +224,18 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         </View>
                         <View style={styles.chartContainer}>
                             <PieChart
-                                data={analytics.categoryData}
-                                width={screenWidth - 32}
+                                data={(() => {
+                                    const total = analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0);
+                                    return analytics.categoryData.map(item => {
+                                        const percentage = total > 0 ? ((item.count / total) * 100).toFixed(0) : 0;
+                                        return {
+                                            ...item,
+                                            name: `${item.name}: ${percentage}%`,
+                                            legendFontColor: item.color, // Matching legend color to pie slice
+                                        };
+                                    });
+                                })()}
+                                width={screenWidth - 20}
                                 height={220}
                                 chartConfig={{
                                     color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
@@ -235,6 +245,9 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 paddingLeft={"15"}
                                 absolute
                             />
+                            <View style={styles.pieSummary}>
+                                <Text style={styles.pieSummaryText}>Total Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
+                            </View>
                         </View>
                     </View>
                 )}
@@ -426,6 +439,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: COLORS.border,
         alignItems: 'center',
+    },
+    pieSummary: {
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.background,
+        width: '100%',
+        alignItems: 'center',
+    },
+    pieSummaryText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: COLORS.primary,
     },
     statusRow: {
         flexDirection: 'row',
