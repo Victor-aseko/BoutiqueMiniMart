@@ -391,7 +391,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
-    let query = { status: { $ne: 'Cancelled' } };
+    // Only count orders that have been officially confirmed or moved towards delivery
+    let query = { status: { $in: ['Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
