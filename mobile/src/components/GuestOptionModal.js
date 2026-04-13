@@ -71,13 +71,13 @@ const GuestOptionModal = ({ visible, onClose, onLogin, onGuest, title = "Account
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.55)', // Adjusted opacity
+        backgroundColor: 'rgba(0, 0, 0, 0.65)', // Adjusted opacity
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
         width: width * 0.88,
-        backgroundColor: 'rgba(255, 255, 255, 0.98)', // Subtle opacity to modal background
+        backgroundColor: 'rgba(255, 255, 255, 0.90)', // Subtle opacity to modal background
         borderRadius: 25,
         overflow: 'hidden',
         borderWidth: 1.5,

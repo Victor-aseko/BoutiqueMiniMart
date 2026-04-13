@@ -227,6 +227,7 @@ import OrderDetailsScreen from '../screens/admin/OrderDetailsScreen';
 import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
 import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
+import AdminAnalyticsScreen from '../screens/admin/AdminAnalyticsScreen';
 
 const ProfileStack = ({ navigation }) => (
     <Stack.Navigator
@@ -252,6 +253,11 @@ const ProfileStack = ({ navigation }) => (
             name="ProfileScreen"
             component={ProfileScreen}
             options={{ title: 'Profile' }}
+        />
+        <Stack.Screen
+            name="AdminAnalytics"
+            component={AdminAnalyticsScreen}
+            options={{ title: 'Sales Analytics' }}
         />
         <Stack.Screen
             name="RecentlyViewed"

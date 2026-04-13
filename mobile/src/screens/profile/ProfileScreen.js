@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../theme/theme';
-import { LogOut, User as UserIcon, Package, ShoppingCart, Heart, MapPin, ChevronRight, Settings } from 'lucide-react-native';
+import { LogOut, User as UserIcon, Package, ShoppingCart, Heart, MapPin, ChevronRight, Settings, TrendingUp } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 import { useCart } from '../../context/CartContext';
 
@@ -76,9 +76,9 @@ const ProfileScreen = ({ navigation }) => {
                                     onPress={() => navigation.navigate('AdminOrdersDashboard')}
                                 />
                                 <MenuLink
-                                    icon={ShoppingCart}
-                                    label="Manage Products"
-                                    onPress={() => navigation.navigate('AdminProducts')}
+                                    icon={TrendingUp}
+                                    label="Sales Analytics"
+                                    onPress={() => navigation.navigate('AdminAnalytics')}
                                 />
                             </>
                         )}

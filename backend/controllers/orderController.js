@@ -87,6 +87,21 @@ const addOrderItems = asyncHandler(async (req, res) => {
 
         const createdOrder = await order.save();
 
+        // Increment order stats for analytics (Background Process)
+        const updateProductStats = async () => {
+            try {
+                const Product = require('../models/Product');
+                for (const item of orderItems) {
+                    await Product.findByIdAndUpdate(item.product, {
+                        $inc: { ordersCount: item.qty }
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to update product order stats:', e);
+            }
+        };
+        updateProductStats();
+
         // Send response with order and potential auth data for automatic login
         res.status(201).json({
             ...createdOrder.toObject(),
@@ -370,6 +385,43 @@ const cancelOrder = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Get sales analytics
+// @route   GET /api/orders/analytics
+// @access  Private/Admin
+const getSalesAnalytics = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    
+    let query = {};
+    if (startDate && endDate) {
+        query.createdAt = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate),
+        };
+    } else if (startDate) {
+        query.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+        query.createdAt = { $lte: new Date(endDate) };
+    }
+
+    const orders = await Order.find(query).populate('user', 'name email');
+    
+    const totalSales = orders.length;
+    const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
+
+    // Get product stats
+    const Product = require('../models/Product');
+    const topProductsBySales = await Product.find({}).sort('-ordersCount').limit(5);
+    const topProductsByViews = await Product.find({}).sort('-views').limit(5);
+
+    res.json({
+        totalSales,
+        totalRevenue,
+        orders,
+        topProductsBySales,
+        topProductsByViews,
+    });
+});
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -379,4 +431,5 @@ module.exports = {
     getMyOrders,
     getOrders,
     cancelOrder,
+    getSalesAnalytics,
 };

@@ -114,6 +114,14 @@ const productSchema = mongoose.Schema(
             enum: ['In Stock', 'Out of Stock', 'Sold'],
             default: 'In Stock',
         },
+        views: {
+            type: Number,
+            default: 0
+        },
+        ordersCount: {
+            type: Number,
+            default: 0
+        }
     },
     {
         timestamps: true,
