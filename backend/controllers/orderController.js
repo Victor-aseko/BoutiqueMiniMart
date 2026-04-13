@@ -460,14 +460,14 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         });
     });
 
-    // Let's get categories from the products in the revenue orders
-    const productIds = [...new Set(revenueOrders.flatMap(o => o.orderItems.map(i => i.product)))];
+    // Category Sales Distribution (Include all valid orders in the range for better visibility)
+    const productIds = [...new Set(allOrdersInRange.flatMap(o => o.orderItems.map(i => i.product)))];
     const productsInfo = await Product.find({ _id: { $in: productIds } }).select('category');
     const catMap = {};
     productsInfo.forEach(p => catMap[p._id.toString()] = p.category);
 
     const categoryStats = {};
-    revenueOrders.forEach(order => {
+    allOrdersInRange.forEach(order => {
         order.orderItems.forEach(item => {
             const cat = catMap[item.product.toString()] || 'Uncategorized';
             const itemRevenue = (item.price || 0) * (item.qty || 0);
@@ -475,12 +475,11 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         });
     });
 
-    // Curated color palette for premium design
     const colors = ['#FF4081', '#3F51B5', '#009688', '#FF9800', '#795548', '#9C27B0', '#607D8B'];
     
     const categoryData = Object.keys(categoryStats).map((cat, index) => ({
         name: cat,
-        count: categoryStats[cat], // This is revenue amount, but 'count' is the accessor name in chart component
+        count: categoryStats[cat],
         color: colors[index % colors.length],
         legendFontColor: '#333',
         legendFontSize: 11,

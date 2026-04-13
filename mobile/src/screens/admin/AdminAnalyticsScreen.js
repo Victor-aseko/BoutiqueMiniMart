@@ -155,7 +155,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         </View>
                     </View>
                     <TouchableOpacity style={styles.applyBtn} onPress={() => fetchAnalytics()}>
-                        <Text style={styles.applyBtnText}>Apply Custom Filter</Text>
+                        <Text style={styles.applyBtnText}>Apply Filter</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -194,20 +194,21 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                     ],
                                 }]
                             }}
-                            width={screenWidth - 32}
-                            height={220}
+                            width={screenWidth - 20}
+                            height={250}
                             chartConfig={{
                                 backgroundColor: COLORS.white,
                                 backgroundGradientFrom: COLORS.white,
                                 backgroundGradientTo: COLORS.white,
                                 decimalPlaces: 0,
-                                color: (opacity = 1) => COLORS.primary, // Default bar color
-                                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                                color: (opacity = 1) => COLORS.primary,
+                                labelColor: (opacity = 1) => COLORS.text,
                                 style: { borderRadius: 16 },
                                 fillShadowGradient: COLORS.primary,
                                 fillShadowGradientOpacity: 1,
+                                barPercentage: 0.7,
                             }}
-                            style={{ marginVertical: 8, borderRadius: 16 }}
+                            style={{ marginVertical: 8, borderRadius: 16, paddingRight: 40 }}
                             fromZero
                             showValuesOnTopOfBars
                         />
