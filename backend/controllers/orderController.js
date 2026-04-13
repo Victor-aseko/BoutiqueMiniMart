@@ -442,11 +442,11 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
 
     const topProductsBySales = Object.values(productSalesMap)
         .sort((a, b) => b.ordersCount - a.ordersCount)
-        .slice(0, 5);
+        .slice(0, 10);
 
     // Global Product View Analytics
     const Product = require('../models/Product');
-    const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort('-views').limit(5);
+    const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort({ views: -1 }).limit(7);
 
     // Category Sales Distribution
     const categorySalesMap = {};
