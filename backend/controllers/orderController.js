@@ -391,8 +391,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
-    // Only count orders that have been officially confirmed or moved towards delivery
-    let query = { status: { $in: ['Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
+    // Only count orders that are either confirmed or fully delivered
+    let query = { status: { $in: ['Confirmed', 'Delivered'] } };
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
