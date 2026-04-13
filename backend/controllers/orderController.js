@@ -392,15 +392,18 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
     let query = {};
-    if (startDate && endDate) {
-        query.createdAt = {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate),
-        };
-    } else if (startDate) {
-        query.createdAt = { $gte: new Date(startDate) };
-    } else if (endDate) {
-        query.createdAt = { $lte: new Date(endDate) };
+    if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            query.createdAt.$gte = start;
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            query.createdAt.$lte = end;
+        }
     }
 
     const orders = await Order.find(query).populate('user', 'name email');
