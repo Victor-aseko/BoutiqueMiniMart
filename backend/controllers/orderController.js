@@ -411,10 +411,29 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     const totalSales = orders.length;
     const totalRevenue = orders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
 
-    // Get product stats
+    // Dynamic Product Sales Analytics (Top products based on orders in this date range)
+    const productSalesMap = {};
+    orders.forEach(order => {
+        order.orderItems.forEach(item => {
+            const id = item.product.toString();
+            if (!productSalesMap[id]) {
+                productSalesMap[id] = { 
+                    _id: item.product, 
+                    name: item.name, 
+                    image: item.image, 
+                    ordersCount: 0 
+                };
+            }
+            productSalesMap[id].ordersCount += item.qty;
+        });
+    });
+
+    const topProductsBySales = Object.values(productSalesMap)
+        .sort((a, b) => b.ordersCount - a.ordersCount)
+        .slice(0, 5);
+
+    // Global Product View Analytics (View history is cumulative)
     const Product = require('../models/Product');
-    // Ensure existing products without the fields are treated as 0 and only return those with at least 1 count
-    const topProductsBySales = await Product.find({ ordersCount: { $gt: 0 } }).sort('-ordersCount').limit(5);
     const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort('-views').limit(5);
 
     res.json({
