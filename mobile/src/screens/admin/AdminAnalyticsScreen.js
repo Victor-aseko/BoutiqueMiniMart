@@ -235,15 +235,13 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                         <View style={styles.chartContainer}>
                             <PieChart
                                 data={(() => {
-                                    const total = analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0);
                                     return analytics.categoryData.map(item => {
-                                        const percentage = total > 0 ? ((item.count / total) * 100).toFixed(0) : 0;
                                         return {
                                             ...item,
-                                            // The 'name' property is used for the labels displayed next to the chart
-                                            name: `Kshs ${item.count.toLocaleString()} (${percentage}%)`,
+                                            // Let the library append the (%) by using absolute={false}
+                                            name: `Kshs ${item.count.toLocaleString()}`,
                                             legendFontColor: '#555',
-                                            legendFontSize: 10,
+                                            legendFontSize: 11,
                                         };
                                     })
                                 })()}
@@ -254,9 +252,9 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 }}
                                 accessor={"count"}
                                 backgroundColor={"transparent"}
-                                paddingLeft={"5"} // Pushing chart to left to make room for labels
-                                absolute
-                                hasLegend={true} // Labels next to the chart
+                                paddingLeft={"5"}
+                                absolute={false} // This enables the percentage auto-display
+                                hasLegend={true}
                             />
                             
                             {/* Key (Only Category Names) */}
@@ -270,7 +268,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                             </View>
 
                             <View style={styles.pieSummary}>
-                                <Text style={styles.pieSummaryText}>Total Lifetime Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
+                                <Text style={styles.pieSummaryText}>Total Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
                             </View>
                         </View>
                     </View>
