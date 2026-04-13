@@ -391,7 +391,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
-    let query = {};
+    let query = { status: { $ne: 'Cancelled' } };
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
