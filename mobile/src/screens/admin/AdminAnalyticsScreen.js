@@ -184,7 +184,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                     <View style={styles.chartContainer}>
                         <BarChart
                             data={{
-                                labels: ["Pending", "Processing", "Shipped", "Delivered"],
+                                labels: ["Pndg", "Proc", "Ship", "Dlvd"],
                                 datasets: [{
                                     data: [
                                         analytics?.statusCounts?.pending || 0,
@@ -192,6 +192,12 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                         analytics?.statusCounts?.shipped || 0,
                                         analytics?.statusCounts?.delivered || 0
                                     ],
+                                    colors: [
+                                        (opacity = 1) => '#FF9800', // Pending
+                                        (opacity = 1) => '#3F51B5', // Processing
+                                        (opacity = 1) => '#FF5722', // Shipped
+                                        (opacity = 1) => '#4CAF50'  // Delivered
+                                    ]
                                 }]
                             }}
                             width={screenWidth - 20}
@@ -204,13 +210,17 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 color: (opacity = 1) => COLORS.primary,
                                 labelColor: (opacity = 1) => COLORS.text,
                                 style: { borderRadius: 16 },
-                                fillShadowGradient: COLORS.primary,
+                                fillShadowGradientFrom: COLORS.primary,
+                                fillShadowGradientTo: COLORS.accent,
                                 fillShadowGradientOpacity: 1,
                                 barPercentage: 0.7,
+                                propsForLabels: { fontSize: 10, fontWeight: 'bold' }
                             }}
                             style={{ marginVertical: 8, borderRadius: 16, paddingRight: 40 }}
                             fromZero
                             showValuesOnTopOfBars
+                            flatColor={true}
+                            withCustomBarColorFromData={true}
                         />
                     </View>
                 </View>

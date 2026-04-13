@@ -396,13 +396,13 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
-            const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0);
+            const [y, m, d] = startDate.split('-').map(Number);
+            const start = new Date(y, m - 1, d, 0, 0, 0, 0);
             query.createdAt.$gte = start;
         }
         if (endDate) {
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999);
+            const [y, m, d] = endDate.split('-').map(Number);
+            const end = new Date(y, m - 1, d, 23, 59, 59, 999);
             query.createdAt.$lte = end;
         }
     }
