@@ -80,6 +80,11 @@ const ProfileScreen = ({ navigation }) => {
                                     label="Sales Analytics"
                                     onPress={() => navigation.navigate('AdminAnalytics')}
                                 />
+                                <MenuLink
+                                    icon={ShoppingCart}
+                                    label="Manage Products"
+                                    onPress={() => navigation.navigate('AdminProducts')}
+                                />
                             </>
                         )}
                         <MenuLink
