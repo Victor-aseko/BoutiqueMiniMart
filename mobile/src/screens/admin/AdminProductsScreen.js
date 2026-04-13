@@ -14,7 +14,7 @@ import {
     Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload, Check, Briefcase, Eye, ShoppingBag } from 'lucide-react-native';
+import { ChevronLeft, Plus, Edit2, Trash2, X, Tag, DollarSign, Package, Image as LucideImage, Upload, Check, Briefcase } from 'lucide-react-native';
 import api, { BASE_URL } from '../../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../../theme/theme';
@@ -312,16 +312,6 @@ const AdminProductsScreen = ({ navigation }) => {
                 <Text style={[styles.stockStatus, { color: item.countInStock > 0 ? COLORS.success : COLORS.error }]}>
                     {item.countInStock > 0 ? `${item.countInStock} in stock` : 'Out of stock'}
                 </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
-                        <Eye size={12} color={COLORS.textLight} style={{ marginRight: 3 }} />
-                        <Text style={{ fontSize: 11, color: COLORS.textLight }}>{item.views || 0}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <ShoppingBag size={12} color={COLORS.textLight} style={{ marginRight: 3 }} />
-                        <Text style={{ fontSize: 11, color: COLORS.textLight }}>{item.ordersCount || 0}</Text>
-                    </View>
-                </View>
                 {item.status && item.status !== 'In Stock' && (
                     <View style={[
                         styles.statusBadge,
