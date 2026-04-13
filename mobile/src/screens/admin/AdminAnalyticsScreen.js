@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter, Package, BarChart2, PieChart as PieChartIcon } from 'lucide-react-native';
+import { ChevronLeft, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter, Package, BarChart2, PieChart as PieChartIcon, Clock } from 'lucide-react-native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
+import dayjs from 'dayjs';
 import api from '../../services/api';
 import { COLORS } from '../../theme/theme';
 import MyInput from '../../components/MyInput';
@@ -19,12 +20,12 @@ const AdminAnalyticsScreen = ({ navigation }) => {
         fetchAnalytics();
     }, []);
 
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = async (s = startDate, e = endDate) => {
         try {
             setLoading(true);
             const params = {};
-            if (startDate) params.startDate = startDate;
-            if (endDate) params.endDate = endDate;
+            if (s) params.startDate = s;
+            if (e) params.endDate = e;
 
             const { data } = await api.get('/orders/analytics', { params });
             setAnalytics(data);
@@ -33,6 +34,23 @@ const AdminAnalyticsScreen = ({ navigation }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const setQuickFilter = (type) => {
+        let start = '';
+        let end = dayjs().format('YYYY-MM-DD');
+
+        if (type === 'today') {
+            start = dayjs().format('YYYY-MM-DD');
+        } else if (type === 'week') {
+            start = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+        } else if (type === 'month') {
+            start = dayjs().startOf('month').format('YYYY-MM-DD');
+        }
+
+        setStartDate(start);
+        setEndDate(end);
+        fetchAnalytics(start, end);
     };
 
     const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -79,6 +97,29 @@ const AdminAnalyticsScreen = ({ navigation }) => {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                {/* Quick Filters */}
+                <View style={styles.quickFilterRow}>
+                    <TouchableOpacity 
+                        style={[styles.quickFilterBtn, startDate === dayjs().format('YYYY-MM-DD') && styles.activeQuickFilter]} 
+                        onPress={() => setQuickFilter('today')}
+                    >
+                        <Clock size={14} color={startDate === dayjs().format('YYYY-MM-DD') ? COLORS.white : COLORS.primary} />
+                        <Text style={[styles.quickFilterText, startDate === dayjs().format('YYYY-MM-DD') && styles.activeQuickFilterText]}>Today</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.quickFilterBtn, startDate === dayjs().subtract(7, 'day').format('YYYY-MM-DD') && styles.activeQuickFilter]} 
+                        onPress={() => setQuickFilter('week')}
+                    >
+                        <Text style={[styles.quickFilterText, startDate === dayjs().subtract(7, 'day').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>This Week</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.quickFilterBtn, startDate === dayjs().startOf('month').format('YYYY-MM-DD') && styles.activeQuickFilter]} 
+                        onPress={() => setQuickFilter('month')}
+                    >
+                        <Text style={[styles.quickFilterText, startDate === dayjs().startOf('month').format('YYYY-MM-DD') && styles.activeQuickFilterText]}>This Month</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Date Filter */}
                 <View style={styles.filterSection}>
                     <View style={styles.filterHeader}>
@@ -292,6 +333,36 @@ const styles = StyleSheet.create({
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.primary },
     scrollContent: { padding: 16 },
+    quickFilterRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 15,
+    },
+    quickFilterBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        justifyContent: 'center',
+        flex: 1,
+        marginHorizontal: 4,
+    },
+    activeQuickFilter: {
+        backgroundColor: COLORS.primary,
+    },
+    quickFilterText: {
+        fontSize: 11,
+        color: COLORS.primary,
+        fontWeight: 'bold',
+        marginLeft: 4,
+    },
+    activeQuickFilterText: {
+        color: COLORS.white,
+    },
     filterSection: {
         backgroundColor: COLORS.white,
         padding: 16,
