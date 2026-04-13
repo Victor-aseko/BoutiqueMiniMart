@@ -110,17 +110,39 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                 {/* Summary Stats */}
                 <View style={styles.statsRow}>
                     <StatCard 
-                        title="Total Revenue" 
+                        title="Revenue (Net)" 
                         value={`Kshs ${analytics?.totalRevenue.toLocaleString()}`} 
                         icon={DollarSign} 
                         color="#4CAF50" 
                     />
                     <StatCard 
-                        title="Total Orders" 
+                        title="Confirmed Sales" 
                         value={analytics?.totalSales} 
                         icon={ShoppingBag} 
                         color="#2196F3" 
                     />
+                </View>
+
+                {/* Fulfillment Status Row */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Package size={20} color={COLORS.primary} />
+                        <Text style={styles.sectionTitle}>Fulfillment Pipeline</Text>
+                    </View>
+                    <View style={styles.statusRow}>
+                        <View style={styles.statusCountCard}>
+                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.processing || 0}</Text>
+                            <Text style={styles.statusCountLabel}>Processing</Text>
+                        </View>
+                        <View style={styles.statusCountCard}>
+                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.shipped || 0}</Text>
+                            <Text style={styles.statusCountLabel}>Shipped</Text>
+                        </View>
+                        <View style={styles.statusCountCard}>
+                            <Text style={styles.statusCountValue}>{analytics?.statusCounts?.delivered || 0}</Text>
+                            <Text style={styles.statusCountLabel}>Delivered</Text>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Top Products Sections */}
@@ -247,6 +269,31 @@ const styles = StyleSheet.create({
     statTextContainer: { flex: 1 },
     statTitle: { fontSize: 12, color: COLORS.textLight, marginBottom: 2 },
     statValue: { fontSize: 13, fontWeight: 'bold', color: COLORS.primary },
+    statusRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: COLORS.white,
+        padding: 15,
+        borderRadius: 15,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    statusCountCard: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statusCountValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 2,
+    },
+    statusCountLabel: {
+        fontSize: 10,
+        color: COLORS.textLight,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
     section: { marginBottom: 25 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
     sectionTitle: { marginLeft: 8, fontSize: 16, fontWeight: 'bold', color: COLORS.primary },

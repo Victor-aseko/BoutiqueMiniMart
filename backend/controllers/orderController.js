@@ -391,8 +391,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
     
-    // Only count orders that are either confirmed or fully delivered
-    let query = { status: { $in: ['Confirmed', 'Delivered'] } };
+    // Fetch orders that are not Cancelled or Pending to get a full view of the pipeline
+    let query = { status: { $in: ['Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
     if (startDate || endDate) {
         query.createdAt = {};
         if (startDate) {
@@ -407,14 +407,24 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         }
     }
 
-    const orders = await Order.find(query).populate('user', 'name email');
+    const allOrdersInRange = await Order.find(query).populate('user', 'name email');
     
-    const totalSales = orders.length;
-    const totalRevenue = orders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
+    // Revenue is strictly Confirmed and Delivered
+    const revenueOrders = allOrdersInRange.filter(o => ['Confirmed', 'Delivered'].includes(o.status));
+    const totalSales = revenueOrders.length;
+    const totalRevenue = revenueOrders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
 
-    // Dynamic Product Sales Analytics (Top products based on orders in this date range)
+    // Status Counts for Fulfillment Row
+    const statusCounts = {
+        processing: allOrdersInRange.filter(o => o.status === 'Processing').length,
+        shipped: allOrdersInRange.filter(o => o.status === 'Shipped').length,
+        delivered: allOrdersInRange.filter(o => o.status === 'Delivered').length,
+    };
+
+    // Dynamic Product Sales Analytics (From revenue orders only or all success orders?)
+    // User wants to manage sales, so usually successful/confirmed ones
     const productSalesMap = {};
-    orders.forEach(order => {
+    revenueOrders.forEach(order => {
         order.orderItems.forEach(item => {
             const id = item.product.toString();
             if (!productSalesMap[id]) {
@@ -433,14 +443,15 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         .sort((a, b) => b.ordersCount - a.ordersCount)
         .slice(0, 5);
 
-    // Global Product View Analytics (View history is cumulative)
+    // Global Product View Analytics
     const Product = require('../models/Product');
     const topProductsByViews = await Product.find({ views: { $gt: 0 } }).sort('-views').limit(5);
 
     res.json({
         totalSales,
         totalRevenue,
-        orders,
+        statusCounts,
+        orders: allOrdersInRange, // Return all for the detailed list
         topProductsBySales,
         topProductsByViews,
     });
