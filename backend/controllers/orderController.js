@@ -460,14 +460,14 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         });
     });
 
-    // Category Sales Distribution (Include all valid orders in the range for better visibility)
-    const productIds = [...new Set(allOrdersInRange.flatMap(o => o.orderItems.map(i => i.product)))];
+    // Category Sales Distribution (Strictly Confirmed and Delivered as requested)
+    const productIds = [...new Set(revenueOrders.flatMap(o => o.orderItems.map(i => i.product)))];
     const productsInfo = await Product.find({ _id: { $in: productIds } }).select('category');
     const catMap = {};
     productsInfo.forEach(p => catMap[p._id.toString()] = p.category);
 
     const categoryStats = {};
-    allOrdersInRange.forEach(order => {
+    revenueOrders.forEach(order => {
         order.orderItems.forEach(item => {
             const cat = catMap[item.product.toString()] || 'Uncategorized';
             const itemRevenue = (item.price || 0) * (item.qty || 0);
