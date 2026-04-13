@@ -240,10 +240,11 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                         const percentage = total > 0 ? ((item.count / total) * 100).toFixed(0) : 0;
                                         return {
                                             ...item,
-                                            name: `${item.name}: ${percentage}%`,
-                                            legendFontColor: item.color, // Matching legend color to pie slice
+                                            // The 'name' is what appears on the slices/labels
+                                            name: `Kshs ${item.count.toLocaleString()} (${percentage}%)`,
+                                            legendFontColor: '#333',
                                         };
-                                    });
+                                    })
                                 })()}
                                 width={screenWidth - 20}
                                 height={220}
@@ -254,7 +255,19 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                                 backgroundColor={"transparent"}
                                 paddingLeft={"15"}
                                 absolute
+                                hasLegend={false} // Hide default legend to build custom key
                             />
+                            
+                            {/* Custom Key (Legend) */}
+                            <View style={styles.customLegend}>
+                                {analytics.categoryData.map((item, idx) => (
+                                    <View key={idx} style={styles.legendItem}>
+                                        <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                                        <Text style={styles.legendText}>{item.name}</Text>
+                                    </View>
+                                ))}
+                            </View>
+
                             <View style={styles.pieSummary}>
                                 <Text style={styles.pieSummaryText}>Total Category Revenue: Kshs {analytics.categoryData.reduce((acc, curr) => acc + curr.count, 0).toLocaleString()}</Text>
                             </View>
@@ -462,6 +475,30 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
         color: COLORS.primary,
+    },
+    customLegend: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        marginTop: 5,
+    },
+    legendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 8,
+        marginVertical: 4,
+    },
+    legendColor: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginRight: 5,
+    },
+    legendText: {
+        fontSize: 11,
+        color: COLORS.text,
+        fontWeight: '600',
     },
     statusRow: {
         flexDirection: 'row',
