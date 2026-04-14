@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter, Package, BarChart2, PieChart as PieChartIcon, Clock } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Calendar, TrendingUp, DollarSign, ShoppingBag, Eye, Filter, Package, BarChart2, PieChart as PieChartIcon, Clock } from 'lucide-react-native';
 import { BarChart, PieChart } from 'react-native-chart-kit';
 import dayjs from 'dayjs';
 import api from '../../services/api';
@@ -15,15 +15,16 @@ const AdminAnalyticsScreen = ({ navigation }) => {
     const [analytics, setAnalytics] = useState(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         fetchAnalytics();
     }, []);
 
-    const fetchAnalytics = async (s = startDate, e = endDate) => {
+    const fetchAnalytics = async (s = startDate, e = endDate, p = page) => {
         try {
             setLoading(true);
-            const params = {};
+            const params = { page: p, limit: 10 };
             if (s) params.startDate = s;
             if (e) params.endDate = e;
 
@@ -34,6 +35,11 @@ const AdminAnalyticsScreen = ({ navigation }) => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handlePageChange = (newPage) => {
+        setPage(newPage);
+        fetchAnalytics(startDate, endDate, newPage);
     };
 
     const setQuickFilter = (type) => {
@@ -52,7 +58,8 @@ const AdminAnalyticsScreen = ({ navigation }) => {
 
         setStartDate(start);
         setEndDate(end);
-        fetchAnalytics(start, end);
+        setPage(1); // Reset page on filter change
+        fetchAnalytics(start, end, 1);
     };
 
     const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -347,7 +354,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
 
                 {/* Sales Records */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Sales Record ({analytics?.orders.length})</Text>
+                    <Text style={styles.sectionTitle}>Sales Record ({analytics?.totalOrders || 0})</Text>
                     <View style={styles.recordList}>
                         {analytics?.orders.map((order) => (
                             <View key={order._id} style={styles.recordItem}>
@@ -360,6 +367,31 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                             </View>
                         ))}
                     </View>
+
+                    {/* Pagination Controls */}
+                    {analytics?.totalOrders > 10 && (
+                        <View style={styles.paginationRow}>
+                            <TouchableOpacity 
+                                style={[styles.pageBtn, page === 1 && styles.pageBtnDisabled]} 
+                                onPress={() => page > 1 && handlePageChange(page - 1)}
+                                disabled={page === 1}
+                            >
+                                <ChevronLeft size={20} color={page === 1 ? COLORS.textLight : COLORS.primary} />
+                                <Text style={[styles.pageBtnText, page === 1 && styles.pageBtnTextDisabled]}>Prev</Text>
+                            </TouchableOpacity>
+                            
+                            <Text style={styles.pageIndicator}>Page {page} of {Math.ceil(analytics.totalOrders / 10)}</Text>
+                            
+                            <TouchableOpacity 
+                                style={[styles.pageBtn, page >= Math.ceil(analytics.totalOrders / 10) && styles.pageBtnDisabled]} 
+                                onPress={() => page < Math.ceil(analytics.totalOrders / 10) && handlePageChange(page + 1)}
+                                disabled={page >= Math.ceil(analytics.totalOrders / 10)}
+                            >
+                                <Text style={[styles.pageBtnText, page >= Math.ceil(analytics.totalOrders / 10) && styles.pageBtnTextDisabled]}>Next</Text>
+                                <ChevronRight size={20} color={page >= Math.ceil(analytics.totalOrders / 10) ? COLORS.textLight : COLORS.primary} />
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
                 
                 <View style={{ height: 40 }} />
@@ -565,6 +597,41 @@ const styles = StyleSheet.create({
     recordDate: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
     recordUser: { fontSize: 12, color: COLORS.accent, fontWeight: '600', marginTop: 1 },
     recordAmount: { fontSize: 14, fontWeight: 'bold', color: COLORS.primary },
+    paginationRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 15,
+        paddingHorizontal: 5,
+    },
+    pageBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        backgroundColor: COLORS.white,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    pageBtnDisabled: {
+        borderColor: COLORS.background,
+        opacity: 0.5,
+    },
+    pageBtnText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginHorizontal: 5,
+    },
+    pageBtnTextDisabled: {
+        color: COLORS.textLight,
+    },
+    pageIndicator: {
+        fontSize: 13,
+        color: COLORS.textLight,
+        fontWeight: '600',
+    },
     emptySmallText: {
         fontSize: 14,
         color: COLORS.textLight,

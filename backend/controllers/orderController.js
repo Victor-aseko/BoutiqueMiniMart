@@ -409,12 +409,25 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
 
     const allOrdersInRange = await Order.find(query).populate('user', 'name email');
     
-    // Revenue is strictly Confirmed and Delivered
+    // Fetch orders for the record list with pagination
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const ordersForCurrentPage = await Order.find(query)
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    const totalOrderCount = await Order.countDocuments(query);
+
+    // Filtered Revenue Stats for the selected period
     const revenueOrders = allOrdersInRange.filter(o => ['Confirmed', 'Delivered'].includes(o.status));
     const totalSales = revenueOrders.length;
     const totalRevenue = revenueOrders.reduce((acc, order) => acc + (order.itemsPrice || 0), 0);
 
-    // Total Status pipeline
+    // Total Status pipeline (Global for the selected range)
     const statusCounts = {
         pending: allOrdersInRange.filter(o => o.status === 'Pending').length,
         processing: allOrdersInRange.filter(o => o.status === 'Processing').length,
@@ -490,7 +503,9 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         totalRevenue,
         statusCounts,
         categoryData,
-        orders: allOrdersInRange, 
+        orders: ordersForCurrentPage, 
+        totalOrders: totalOrderCount,
+        currentPage: page,
         topProductsBySales,
         topProductsByViews,
     });
