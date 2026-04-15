@@ -22,21 +22,21 @@ const initScheduler = () => {
 
 const cleanupOldOrders = async () => {
     try {
-        console.log('Running scheduled task: Deleting orders older than 7 days...');
+        console.log('Running scheduled task: Deleting orders older than 12 months...');
 
-        // Calculate the date 7 days ago
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // Calculate the date 12 months ago
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-        // Delete orders where createdAt is less than sevenDaysAgo
+        // Delete orders where createdAt is less than twelveMonthsAgo
         const result = await Order.deleteMany({
-            createdAt: { $lt: sevenDaysAgo }
+            createdAt: { $lt: twelveMonthsAgo }
         });
 
         if (result.deletedCount > 0) {
             console.log(`Success: Deleted ${result.deletedCount} old orders.`);
         } else {
-            console.log('No orders older than 7 days found.');
+            console.log('No orders older than 12 months found.');
         }
     } catch (error) {
         console.error('Error during scheduled order cleanup:', error);
