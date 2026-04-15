@@ -351,6 +351,14 @@ const DrawerNavigator = () => {
                     title: 'My Profile',
                     drawerIcon: ({ color, size }) => <User color={color} size={size} />
                 }}
+                listeners={({ navigation }) => ({
+                    drawerItemPress: (e) => {
+                        // Prevent default action
+                        e.preventDefault();
+                        // Reset the stack by navigating directly to the ProfileScreen
+                        navigation.navigate('Profile', { screen: 'ProfileScreen' });
+                    },
+                })}
             />
             <Drawer.Screen
                 name="Support"

@@ -7,6 +7,10 @@ import dayjs from 'dayjs';
 import api from '../../services/api';
 import { COLORS } from '../../theme/theme';
 import MyInput from '../../components/MyInput';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import { Download, FileText } from 'lucide-react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -16,6 +20,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [page, setPage] = useState(1);
+    const [exportLoading, setExportLoading] = useState(false);
 
     useEffect(() => {
         fetchAnalytics();
@@ -34,6 +39,133 @@ const AdminAnalyticsScreen = ({ navigation }) => {
             console.error('Fetch analytics error:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const generatePDF = async () => {
+        try {
+            setExportLoading(true);
+            const { data } = await api.get('/orders/export', { 
+                params: { startDate, endDate } 
+            });
+
+            const orders = data.orders;
+            const totalRevenue = orders.reduce((acc, o) => acc + (o.totalPrice || 0), 0);
+
+            const htmlContent = `
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
+                        .header { text-align: center; border-bottom: 2px solid #E91E63; padding-bottom: 10px; margin-bottom: 20px; }
+                        .title { font-size: 24px; font-weight: bold; color: #E91E63; }
+                        .subtitle { font-size: 14px; color: #666; margin-top: 5px; }
+                        .summary { display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+                        .summary-item { text-align: center; }
+                        .summary-label { font-size: 12px; color: #666; }
+                        .summary-value { font-size: 18px; font-weight: bold; color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th { background-color: #E91E63; color: white; padding: 10px; text-align: left; }
+                        td { border-bottom: 1px solid #ddd; padding: 10px; }
+                        tr:nth-child(even) { background-color: #f2f2f2; }
+                        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">Boutique Mini Mart - Sales Report</div>
+                        <div class="subtitle">Range: ${startDate || 'All Time'} to ${endDate || dayjs().format('YYYY-MM-DD')}</div>
+                        <div class="subtitle">Generated on: ${new Date().toLocaleString()}</div>
+                    </div>
+                    
+                    <div class="summary">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Orders</div>
+                            <div class="summary-value">${orders.length}</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Revenue</div>
+                            <div class="summary-value">Kshs ${totalRevenue.toLocaleString()}</div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${orders.map(order => `
+                                <tr>
+                                    <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+                                    <td>#${order._id.slice(-6).toUpperCase()}</td>
+                                    <td>${order.user?.name || 'Customer'}</td>
+                                    <td>${order.shippingAddress?.phone || 'N/A'}</td>
+                                    <td>${order.status}</td>
+                                    <td>Kshs ${order.totalPrice.toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div class="footer">
+                        © ${new Date().getFullYear()} Boutique Mini Mart. All rights reserved.
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+            await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            alert('Failed to generate PDF report');
+        } finally {
+            setExportLoading(false);
+        }
+    };
+
+    const generateExcel = async () => {
+        try {
+            setExportLoading(true);
+            const { data } = await api.get('/orders/export', { 
+                params: { startDate, endDate } 
+            });
+
+            const orders = data.orders;
+            
+            // Generate CSV content
+            let csvContent = 'Date,Order ID,Customer,Email,Phone,Status,Amount (Kshs)\n';
+            
+            orders.forEach(order => {
+                const date = new Date(order.createdAt).toLocaleDateString();
+                const id = `#${order._id.slice(-6).toUpperCase()}`;
+                const user = order.user?.name || 'Customer';
+                const email = order.user?.email || 'N/A';
+                const phone = order.shippingAddress?.phone || 'N/A';
+                const status = order.status;
+                const amount = order.totalPrice;
+                
+                csvContent += `"${date}","${id}","${user}","${email}","${phone}","${status}","${amount}"\n`;
+            });
+
+            const fileName = `Sales_Report_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
+            const fileUri = FileSystem.cacheDirectory + fileName;
+            
+            await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+            await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Share Sales Report' });
+
+        } catch (error) {
+            console.error('Excel Generation Error:', error);
+            alert('Failed to generate CSV report');
+        } finally {
+            setExportLoading(false);
         }
     };
 
@@ -164,6 +296,35 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                     <TouchableOpacity style={styles.applyBtn} onPress={() => fetchAnalytics()}>
                         <Text style={styles.applyBtnText}>Apply Filter</Text>
                     </TouchableOpacity>
+                </View>
+
+                {/* Export Options */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Download size={20} color={COLORS.primary} />
+                        <Text style={styles.sectionTitle}>Generate Reports</Text>
+                    </View>
+                    <View style={styles.exportRow}>
+                        <TouchableOpacity 
+                            style={[styles.exportBtn, styles.pdfBtn, exportLoading && styles.exportBtnDisabled]} 
+                            onPress={generatePDF}
+                            disabled={exportLoading}
+                        >
+                            <Download size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+                            <Text style={styles.exportBtnText}>Export PDF</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.exportBtn, styles.excelBtn, exportLoading && styles.exportBtnDisabled]} 
+                            onPress={generateExcel}
+                            disabled={exportLoading}
+                        >
+                            <FileText size={18} color={COLORS.white} style={{ marginRight: 8 }} />
+                            <Text style={styles.exportBtnText}>Export Excel</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {exportLoading && (
+                        <ActivityIndicator color={COLORS.primary} style={{ marginTop: 10 }} />
+                    )}
                 </View>
 
                 {/* Summary Stats */}
@@ -597,6 +758,39 @@ const styles = StyleSheet.create({
     recordDate: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
     recordUser: { fontSize: 12, color: COLORS.accent, fontWeight: '600', marginTop: 1 },
     recordAmount: { fontSize: 14, fontWeight: 'bold', color: COLORS.primary },
+    exportRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 5,
+    },
+    exportBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginHorizontal: 5,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    pdfBtn: {
+        backgroundColor: '#E91E63', // PDF Red/Pink
+    },
+    excelBtn: {
+        backgroundColor: '#4CAF50', // Excel Green
+    },
+    exportBtnDisabled: {
+        opacity: 0.6,
+    },
+    exportBtnText: {
+        color: COLORS.white,
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
     paginationRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

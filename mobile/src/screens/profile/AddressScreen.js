@@ -50,16 +50,28 @@ const AddressScreen = ({ navigation, route }) => {
             return;
         }
 
+        setLoading(true);
         if (!user) {
             // Guest mode: Local state
-            const newAddress = { street, city, postalCode, country, phone, name: guestName, email: guestEmail };
+            const newAddress = { 
+                street, 
+                city, 
+                postalCode, 
+                country, 
+                phone, 
+                name: guestName, 
+                email: guestEmail 
+            };
             setGuestAddresses(prev => [...prev, newAddress]);
             
+            setLoading(false);
             Alert.alert('Success', 'Address added successfully');
             setModalVisible(false);
             setStreet('');
             setCity('');
             setPhone('');
+            setGuestName('');
+            setGuestEmail('');
             return;
         }
 
@@ -162,7 +174,16 @@ const AddressScreen = ({ navigation, route }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity 
+                    onPress={() => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            navigation.navigate('ProfileScreen');
+                        }
+                    }} 
+                    style={styles.backBtn}
+                >
                     <ChevronLeft color={COLORS.primary} size={28} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Addresses</Text>
@@ -195,7 +216,8 @@ const AddressScreen = ({ navigation, route }) => {
                                 </TouchableOpacity>
                             </TouchableOpacity>
                         ))}
-                        {guestAddresses.map((address, index) => (
+                        {/* Only show guest addresses if NOT logged in to avoid duplicates */}
+                        {!user && guestAddresses.map((address, index) => (
                             <TouchableOpacity
                                 key={`guest-${index}`}
                                 style={styles.addressCard}

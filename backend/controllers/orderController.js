@@ -511,6 +511,42 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Get all sales data for export
+// @route   GET /api/orders/export
+// @access  Private/Admin
+const getSalesExport = asyncHandler(async (req, res) => {
+    const { startDate, endDate } = req.query;
+    
+    // Only export finalized sales as requested
+    let query = { status: { $in: ['Confirmed', 'Delivered'] } };
+    if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) {
+            const [y, m, d] = startDate.split('-').map(Number);
+            const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+            query.createdAt.$gte = start;
+        }
+        if (endDate) {
+            const [y, m, d] = endDate.split('-').map(Number);
+            const end = new Date(y, m - 1, d, 23, 59, 59, 999);
+            query.createdAt.$lte = end;
+        }
+    }
+
+    const orders = await Order.find(query)
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
+
+    res.json({
+        orders,
+        reportRange: {
+            start: startDate || 'All Time',
+            end: endDate || dayjs().format('YYYY-MM-DD')
+        },
+        generatedAt: new Date()
+    });
+});
+
 module.exports = {
     addOrderItems,
     getOrderById,
@@ -521,4 +557,5 @@ module.exports = {
     getOrders,
     cancelOrder,
     getSalesAnalytics,
+    getSalesExport,
 };

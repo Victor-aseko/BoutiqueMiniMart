@@ -167,6 +167,8 @@ const OrdersScreen = ({ navigation, route }) => {
 
             if (isDifferentProduct) {
                 console.log('Initializing pending order from product param');
+                const initialAddress = route.params.shippingAddress || (user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null);
+                
                 setPendingOrder({
                     items: [{
                         product: route.params.product,
@@ -178,8 +180,8 @@ const OrdersScreen = ({ navigation, route }) => {
                         image: route.params.product.image,
                         colors: route.params.product.colors || []
                     }],
-                    location: route.params.location || 'Nairobi',
-                    shippingAddress: route.params.shippingAddress || null
+                    location: route.params.location || initialAddress?.city || 'Nairobi',
+                    shippingAddress: initialAddress
                 });
                 setIsFromCart(false);
 
@@ -194,6 +196,8 @@ const OrdersScreen = ({ navigation, route }) => {
         // 3. Handle initial order creation from Cart
         if (route.params?.cartItems) {
             console.log('Initializing pending order from cartItems param');
+            const initialAddress = route.params.shippingAddress || (user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null);
+            
             setPendingOrder({
                 items: route.params.cartItems.map(item => ({
                     product: item.product?._id || item.product,
@@ -205,8 +209,8 @@ const OrdersScreen = ({ navigation, route }) => {
                     image: item.image,
                     colors: item.product?.colors || []
                 })),
-                location: user?.addresses?.find(a => a.isDefault)?.city || 'Nairobi',
-                shippingAddress: user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null
+                location: initialAddress?.city || route.params.location || 'Nairobi',
+                shippingAddress: initialAddress
             });
             // Clear the cartItems param
             setIsFromCart(true);
@@ -272,17 +276,19 @@ const OrdersScreen = ({ navigation, route }) => {
 
             const data = response.data;
 
-            // Handle Silent Account Creation / Automatic Login
-            if (!user && data.auth) {
-                console.log('Silent account created. Logging in guest...');
-                await loginQuietly(data.auth);
-            }
-
             // Clear cart if this order came from the cart
+            // CRITICAL: Call clearCart BEFORE loginQuietly for guests
+            // This prevents CartContext from syncing guest items to the new account
             if (isFromCart) {
                 console.log('Clearing cart after successful order');
                 clearCart();
                 setIsFromCart(false);
+            }
+
+            // Handle Silent Account Creation / Automatic Login
+            if (!user && data.auth) {
+                console.log('Silent account created. Logging in guest...');
+                await loginQuietly(data.auth);
             }
 
             Alert.alert('Success', 'Order placed successfully!', [
