@@ -9,7 +9,7 @@ import { COLORS } from '../../theme/theme';
 import MyInput from '../../components/MyInput';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import { cacheDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import { Download, FileText } from 'lucide-react-native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -73,7 +73,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                 </head>
                 <body>
                     <div class="header">
-                        <div class="title">Boutique Mini Mart - Sales Report</div>
+                        <div class="title">MiniBoutique - Sales Report</div>
                         <div class="subtitle">Range: ${startDate || 'All Time'} to ${endDate || dayjs().format('YYYY-MM-DD')}</div>
                         <div class="subtitle">Generated on: ${new Date().toLocaleString()}</div>
                     </div>
@@ -115,7 +115,7 @@ const AdminAnalyticsScreen = ({ navigation }) => {
                     </table>
 
                     <div class="footer">
-                        © ${new Date().getFullYear()} Boutique Mini Mart. All rights reserved.
+                        © ${new Date().getFullYear()} MiniBoutique. All rights reserved.
                     </div>
                 </body>
                 </html>
@@ -156,9 +156,9 @@ const AdminAnalyticsScreen = ({ navigation }) => {
             });
 
             const fileName = `Sales_Report_${dayjs().format('YYYYMMDD_HHmmss')}.csv`;
-            const fileUri = FileSystem.cacheDirectory + fileName;
+            const fileUri = cacheDirectory + fileName;
             
-            await FileSystem.writeAsStringAsync(fileUri, csvContent, { encoding: FileSystem.EncodingType.UTF8 });
+            await writeAsStringAsync(fileUri, csvContent, { encoding: 'utf8' });
             await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Share Sales Report' });
 
         } catch (error) {

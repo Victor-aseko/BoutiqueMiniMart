@@ -541,7 +541,7 @@ const getSalesExport = asyncHandler(async (req, res) => {
         orders,
         reportRange: {
             start: startDate || 'All Time',
-            end: endDate || dayjs().format('YYYY-MM-DD')
+            end: endDate || new Date().toISOString().split('T')[0]
         },
         generatedAt: new Date()
     });
