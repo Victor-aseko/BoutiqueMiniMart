@@ -85,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
             // Helper to find image for a specific query
             const findImage = (catLabel, query = '') => {
                 const normTarget = catLabel.toLowerCase();
-                
+
                 // 1. Try to find the specific recommended item first if query provided
                 if (query) {
                     const specific = products.find(p => {
@@ -551,9 +551,9 @@ const HomeScreen = ({ navigation }) => {
                                     <Search size={8} color="#555" strokeWidth={3} />
                                 </View>
                             </View>
-                            <AnimatedSearchPlaceholder 
+                            <AnimatedSearchPlaceholder
                                 onTextChange={handlePlaceholderChange}
-                                items={searchPlaceholderItems} 
+                                items={searchPlaceholderItems}
                             />
                             <View style={styles.searchIconContainer}>
                                 <Search size={18} color={COLORS.white} />
