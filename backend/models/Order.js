@@ -59,6 +59,16 @@ const orderSchema = mongoose.Schema(
             required: true,
             default: 0.0,
         },
+        depositAmount: {
+            type: Number,
+            required: true,
+            default: 0.0,
+        },
+        isDepositPaid: {
+            type: Boolean,
+            required: true,
+            default: false,
+        },
         isPaid: {
             type: Boolean,
             required: true,

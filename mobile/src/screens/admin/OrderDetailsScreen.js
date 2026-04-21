@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, MapPin, Phone, Mail, CreditCard, Package, CheckCircle, Truck, XCircle } from 'lucide-react-native';
+import { ChevronLeft, MapPin, Phone, Mail, CreditCard, Package, CheckCircle, Truck, XCircle, Printer } from 'lucide-react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import api from '../../services/api';
 import { COLORS, SIZES } from '../../theme/theme';
 import MyButton from '../../components/MyButton';
@@ -138,6 +140,108 @@ const OrderDetailsScreen = ({ navigation, route }) => {
         );
     };
 
+    const handlePrintReceipt = async () => {
+        try {
+            const html = `
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                        .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+                        .subtitle { font-size: 14px; color: #666; }
+                        .order-info { margin-bottom: 20px; display: flex; justify-content: space-between; }
+                        .order-id { font-weight: bold; color: #e67e22; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                        th { background-color: #f8f9fa; border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+                        td { border-bottom: 1px solid #eee; padding: 10px; }
+                        .total-section { float: right; width: 250px; }
+                        .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
+                        .grand-total { border-top: 1px solid #333; margin-top: 5px; padding-top: 5px; font-weight: bold; font-size: 18px; color: #e67e22; }
+                        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">MiniBoutique Shop</div>
+                        <div class="subtitle">Official Order Receipt</div>
+                    </div>
+                    
+                    <div class="order-info">
+                        <div>
+                            <p><strong>Customer:</strong> ${order.user?.name || 'Guest'}</p>
+                            <p><strong>Phone:</strong> ${order.shippingAddress?.phone || 'N/A'}</p>
+                            <p><strong>Address:</strong> ${order.shippingAddress?.address}, ${order.shippingAddress?.city}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p><strong>Order #:</strong> <span class="order-id">${order._id.toString().toUpperCase()}</span></p>
+                            <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+                            <p><strong>Status:</strong> ${order.status}</p>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Price</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.orderItems.map(item => `
+                                <tr>
+                                    <td>${item.name} ${item.color ? `(${item.color})` : ''}</td>
+                                    <td style="text-align: center;">${item.qty}</td>
+                                    <td style="text-align: right;">Kshs ${(item.price || 0).toFixed(2)}</td>
+                                    <td style="text-align: right;">Kshs ${(item.qty * (item.price || 0)).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div class="total-section">
+                        <div class="total-row">
+                            <span>Subtotal:</span>
+                            <span>Kshs ${(order.itemsPrice || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Shipping:</span>
+                            <span>Kshs ${(order.shippingPrice || 0).toFixed(2)}</span>
+                        </div>
+                        ${order.depositAmount ? `
+                            <div class="total-row">
+                                <span>Deposit Paid:</span>
+                                <span>- Kshs ${order.depositAmount.toFixed(2)}</span>
+                            </div>
+                        ` : ''}
+                        <div class="total-row grand-total">
+                            <span>Total Amount:</span>
+                            <span>Kshs ${(order.totalPrice || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div style="clear: both;"></div>
+
+                    <div class="footer">
+                        <p>Thank you for shopping with MiniBoutique Shop!</p>
+                        <p>For any inquiries, contact us at +254 759 108 018 or +254 723 281 004</p>
+                        <p>&copy; 2024 MiniBoutique Shop. All rights reserved.</p>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const { uri } = await Print.printToFileAsync({ html });
+            console.log('File has been saved to:', uri);
+            await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+            console.error('Print Error:', error);
+            Alert.alert('Error', 'Could not generate receipt');
+        }
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Delivered': return COLORS.success;
@@ -176,11 +280,18 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     <ChevronLeft color={COLORS.primary} size={24} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Order Details</Text>
-                {isFromAdmin ? (
-                    <TouchableOpacity onPress={() => setStatusModalVisible(true)}>
-                        <Text style={styles.editBtn}>Edit Status</Text>
-                    </TouchableOpacity>
-                ) : <View style={{ width: 24 }} />}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {(order.isPaid || order.status === 'Confirmed' || order.status === 'Delivered') && (
+                        <TouchableOpacity onPress={handlePrintReceipt} style={{ marginRight: 15 }}>
+                            <Printer size={22} color={COLORS.accent} />
+                        </TouchableOpacity>
+                    )}
+                    {isFromAdmin && (
+                        <TouchableOpacity onPress={() => setStatusModalVisible(true)}>
+                            <Text style={styles.editBtn}>Edit</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>

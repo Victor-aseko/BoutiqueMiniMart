@@ -17,6 +17,8 @@ const addOrderItems = asyncHandler(async (req, res) => {
         taxPrice,
         shippingPrice,
         totalPrice,
+        depositAmount,
+        isDepositPaid,
         guestUser
     } = req.body;
 
@@ -83,6 +85,8 @@ const addOrderItems = asyncHandler(async (req, res) => {
             taxPrice,
             shippingPrice,
             totalPrice,
+            depositAmount,
+            isDepositPaid: isDepositPaid || false,
         });
 
         const createdOrder = await order.save();
