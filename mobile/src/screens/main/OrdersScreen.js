@@ -77,10 +77,15 @@ const OrdersScreen = ({ navigation, route }) => {
 
     useEffect(() => {
         if (pendingOrder) {
-            const itemsPrice = pendingOrder.items.reduce((acc, item) => acc + (Number(item.price || 0) * Number(item.qty || 1)), 0);
+            const itemsPrice = pendingOrder.items.reduce((acc, item) => {
+                const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+                const qty = typeof item.qty === 'number' ? item.qty : parseInt(item.qty) || 1;
+                return acc + (price * qty);
+            }, 0);
+            
             const city = pendingOrder.shippingAddress?.city || pendingOrder.location;
             const fee = getShippingFee(city, itemsPrice);
-            setShippingPrice(fee);
+            setShippingPrice(Number(fee) || 0);
 
             // Calculate Deposit
             let deposit = 0;
@@ -89,9 +94,18 @@ const OrdersScreen = ({ navigation, route }) => {
             } else {
                 deposit = itemsPrice * 0.2;
             }
-            setDepositAmount(Math.round(deposit));
+            setDepositAmount(Math.round(deposit) || 0);
         }
     }, [pendingOrder]);
+
+    const getPendingItemsPrice = () => {
+        if (!pendingOrder) return 0;
+        return pendingOrder.items.reduce((acc, item) => {
+            const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+            const qty = typeof item.qty === 'number' ? item.qty : parseInt(item.qty) || 1;
+            return acc + (price * qty);
+        }, 0);
+    };
 
     const handleAddressSelection = () => {
         navigation.navigate('Profile', {
@@ -635,11 +649,11 @@ const OrdersScreen = ({ navigation, route }) => {
                         <View style={styles.depositInfoBox}>
                             <View style={styles.depositRow}>
                                 <Text style={styles.depositLabel}>Deposit Amount:</Text>
-                                <Text style={styles.depositValue}>Kshs {depositAmount.toFixed(2)}</Text>
+                                <Text style={styles.depositValue}>Kshs {(depositAmount || 0).toFixed(2)}</Text>
                             </View>
                             <View style={styles.depositRow}>
                                 <Text style={styles.depositLabel}>Remaining Balance:</Text>
-                                <Text style={styles.depositValue}>Kshs {(pendingOrder?.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0) + shippingPrice - depositAmount).toFixed(2)}</Text>
+                                <Text style={styles.depositValue}>Kshs {(getPendingItemsPrice() + (shippingPrice || 0) - (depositAmount || 0)).toFixed(2)}</Text>
                             </View>
                         </View>
 
@@ -661,6 +675,12 @@ const OrdersScreen = ({ navigation, route }) => {
                                 • Full refund if order is cancelled before shipping.{"\n"}
                                 • Returns accepted within 7 days if items are in original condition.{"\n"}
                                 • Remaining balance or full payment MUST be done on delivery.
+                            </Text>
+                        </View>
+
+                        <View style={{ flexWrap: 'nowrap', marginBottom: 20 }}>
+                            <Text style={{ fontSize: 12, color: COLORS.accent, fontStyle: 'italic', textAlign: 'center' }}>
+                                * Admin will verify your payment before processing the order.
                             </Text>
                         </View>
 

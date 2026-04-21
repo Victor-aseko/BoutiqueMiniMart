@@ -59,10 +59,25 @@ const OrderDetailsScreen = ({ navigation, route }) => {
             const newPaidStatus = !order.isPaid;
             const response = await api.put(`/orders/${orderId}/status`, { isPaid: newPaidStatus });
             setOrder(response.data);
-            Alert.alert('Success', `Order marked as ${newPaidStatus ? 'PAID' : 'NOT PAID'}`);
+            Alert.alert('Success', `Order marked as ${newPaidStatus ? 'FULLY PAID' : 'NOT FULLY PAID'}`);
         } catch (error) {
             console.error(error);
             Alert.alert('Error', 'Failed to update payment status');
+        } finally {
+            setStatusUpdating(false);
+        }
+    };
+
+    const toggleDepositStatus = async () => {
+        setStatusUpdating(true);
+        try {
+            const newStatus = !order.isDepositPaid;
+            const response = await api.put(`/orders/${orderId}/status`, { isDepositPaid: newStatus });
+            setOrder(response.data);
+            Alert.alert('Success', `Deposit marked as ${newStatus ? 'RECEIVED' : 'NOT RECEIVED'}`);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Failed to update deposit status');
         } finally {
             setStatusUpdating(false);
         }
@@ -211,15 +226,20 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                             <span>Kshs ${(order.shippingPrice || 0).toFixed(2)}</span>
                         </div>
                         ${order.depositAmount ? `
-                            <div class="total-row">
-                                <span>Deposit Paid:</span>
-                                <span>- Kshs ${order.depositAmount.toFixed(2)}</span>
+                            <div class="total-row" style="color: ${order.isDepositPaid ? '#27ae60' : '#c0392b'}; font-weight: bold;">
+                                <span>Deposit ${order.isDepositPaid ? 'Received' : 'Required'}:</span>
+                                <span>${order.isDepositPaid ? '-' : ''} Kshs ${order.depositAmount.toFixed(2)}</span>
                             </div>
-                        ` : ''}
-                        <div class="total-row grand-total">
-                            <span>Total Amount:</span>
-                            <span>Kshs ${(order.totalPrice || 0).toFixed(2)}</span>
-                        </div>
+                            <div class="total-row">
+                                <span>${order.isDepositPaid ? 'Balance' : 'Total'} Due on Delivery:</span>
+                                <span>Kshs ${(order.totalPrice - (order.isDepositPaid ? order.depositAmount : 0)).toFixed(2)}</span>
+                            </div>
+                        ` : `
+                            <div class="total-row grand-total">
+                                <span>Total Amount:</span>
+                                <span>Kshs ${(order.totalPrice || 0).toFixed(2)}</span>
+                            </div>
+                        `}
                     </div>
 
                     <div style="clear: both;"></div>
@@ -393,21 +413,39 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                         <Text style={styles.sectionTitleNoMargin}>Payment</Text>
                         {isFromAdmin && (
-                            <TouchableOpacity
-                                style={[styles.miniBtn, { backgroundColor: order.isPaid ? COLORS.error : COLORS.success }]}
-                                onPress={() => {
-                                    Alert.alert(
-                                        'Update Payment',
-                                        `Mark this order as ${order.isPaid ? 'UNPAID' : 'PAID'}?`,
-                                        [
-                                            { text: 'Cancel', style: 'cancel' },
-                                            { text: 'Yes, Update', onPress: togglePaidStatus }
-                                        ]
-                                    );
-                                }}
-                            >
-                                <Text style={styles.miniBtnText}>{order.isPaid ? 'Mark Unpaid' : 'Mark Paid'}</Text>
-                            </TouchableOpacity>
+                            <View style={{ flexDirection: 'row' }}>
+                                <TouchableOpacity
+                                    style={[styles.miniBtn, { backgroundColor: order.isDepositPaid ? COLORS.success : COLORS.error, marginRight: 8 }]}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Update Deposit',
+                                            `Mark deposit as ${order.isDepositPaid ? 'NOT RECEIVED' : 'RECEIVED'}?`,
+                                            [
+                                                { text: 'Cancel', style: 'cancel' },
+                                                { text: 'Yes, Update', onPress: toggleDepositStatus }
+                                            ]
+                                        );
+                                    }}
+                                >
+                                    <Text style={styles.miniBtnText}>{order.isDepositPaid ? 'Deposit ✅' : 'Mark Deposit'}</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity
+                                    style={[styles.miniBtn, { backgroundColor: order.isPaid ? COLORS.success : COLORS.error }]}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Update Full Payment',
+                                            `Mark as ${order.isPaid ? 'UNPAID' : 'FULLY PAID'}?`,
+                                            [
+                                                { text: 'Cancel', style: 'cancel' },
+                                                { text: 'Yes, Update', onPress: togglePaidStatus }
+                                            ]
+                                        );
+                                    }}
+                                >
+                                    <Text style={styles.miniBtnText}>{order.isPaid ? 'Fully Paid ✅' : 'Mark Paid'}</Text>
+                                </TouchableOpacity>
+                            </View>
                         )}
                     </View>
                     <View style={styles.iconRow}>
@@ -415,11 +453,16 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <Text style={styles.iconText}>{order.paymentMethod}</Text>
                     </View>
                     <View style={[styles.iconRow, { marginTop: 4 }]}>
-                        <Text style={[styles.label, { color: order.isPaid ? COLORS.success : COLORS.error, fontWeight: 'bold' }]}>
-                            {order.isPaid ? 'PAID' : 'NOT PAID'}
-                        </Text>
+                        <View style={{ flexDirection: 'column' }}>
+                            <Text style={[styles.label, { color: order.isDepositPaid ? COLORS.success : COLORS.error, fontWeight: 'bold' }]}>
+                                DEPOSIT: {order.isDepositPaid ? 'RECEIVED' : 'NOT RECEIVED'} (Kshs {order.depositAmount || 0})
+                            </Text>
+                            <Text style={[styles.label, { color: order.isPaid ? COLORS.success : COLORS.error, fontWeight: 'bold', marginTop: 4 }]}>
+                                FULL PAYMENT: {order.isPaid ? 'PAID' : 'NOT PAID'}
+                            </Text>
+                        </View>
                         {order.paidAt && (
-                            <Text style={[styles.iconText, { fontSize: 12, color: COLORS.textLight }]}>
+                            <Text style={[styles.iconText, { fontSize: 12, color: COLORS.textLight, alignSelf: 'flex-end' }]}>
                                 Paid on: {new Date(order.paidAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                             </Text>
                         )}

@@ -271,11 +271,50 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
             order.statusUpdatedAt = Date.now();
         }
 
-        // Handle manual payment status toggle by admin
-        if (req.body.isPaid !== undefined) {
+        let paymentNotification = null;
+        if (req.body.isPaid !== undefined && req.body.isPaid !== order.isPaid) {
             order.isPaid = req.body.isPaid;
-            if (order.isPaid && !order.paidAt) {
+            if (order.isPaid) {
                 order.paidAt = Date.now();
+                paymentNotification = {
+                    title: 'Full Payment Received! ✅',
+                    message: `We've confirmed full payment for Order #${order._id.toString().slice(-6).toUpperCase()}. Thank you!`
+                };
+            }
+        }
+
+        if (req.body.isDepositPaid !== undefined && req.body.isDepositPaid !== order.isDepositPaid) {
+            order.isDepositPaid = req.body.isDepositPaid;
+            if (order.isDepositPaid) {
+                paymentNotification = {
+                    title: 'Deposit Received! 🎉',
+                    message: `We've received your deposit for Order #${order._id.toString().slice(-6).toUpperCase()}. We are now processing your order!`
+                };
+            }
+        }
+
+        if (paymentNotification) {
+            try {
+                await Notification.create({
+                    user: order.user,
+                    ...paymentNotification,
+                    type: 'ORDER_STATUS_UPDATE',
+                    orderId: order._id
+                });
+                
+                // Also send push notification
+                const targetUser = await User.findById(order.user);
+                if (targetUser && targetUser.pushToken) {
+                    const sendPushNotification = require('../utils/pushNotifications');
+                    await sendPushNotification(
+                        [targetUser.pushToken],
+                        paymentNotification.title,
+                        paymentNotification.message,
+                        { screen: 'Orders', orderId: order._id }
+                    );
+                }
+            } catch (e) {
+                console.error('Failed to send payment notification:', e);
             }
         }
 
