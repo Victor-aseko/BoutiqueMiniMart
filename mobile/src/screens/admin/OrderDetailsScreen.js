@@ -391,7 +391,10 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     {isFromAdmin && (
                         <View style={styles.row}>
                             <Text style={styles.label}>Customer:</Text>
-                            <Text style={styles.value}>{order.user?.name} ({order.user?.email})</Text>
+                            <Text style={styles.value}>
+                                {order.user?.name || order.guestUser?.name || 'Guest User'} 
+                                {order.user?.email ? ` (${order.user.email})` : ''}
+                            </Text>
                         </View>
                     )}
                 </View>

@@ -79,6 +79,7 @@ const addOrderItems = asyncHandler(async (req, res) => {
         const order = new Order({
             orderItems,
             user: user._id,
+            guestUser: !req.user ? guestUser : null, // Save guest info if not logged in
             shippingAddress: normalizedShippingAddress,
             paymentMethod,
             itemsPrice,
@@ -194,6 +195,7 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
         };
 
         const updatedOrder = await order.save();
+        await updatedOrder.populate('user', 'name email');
 
         res.json(updatedOrder);
     } else {
@@ -224,6 +226,7 @@ const updateOrderToDelivered = asyncHandler(async (req, res) => {
         order.statusUpdatedAt = Date.now();
 
         const updatedOrder = await order.save();
+        await updatedOrder.populate('user', 'name email');
 
         // Notify admins if user marked as delivered
         if (isOwner && !isAdmin) {
@@ -342,6 +345,9 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         }
 
         const updatedOrder = await order.save();
+        
+        // Re-populate user details so the admin UI doesn't lose the name
+        await updatedOrder.populate('user', 'name email');
 
         // Create In-App Notification for User
         try {
