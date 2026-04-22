@@ -304,7 +304,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
                     type: 'ORDER_STATUS_UPDATE',
                     orderId: order._id
                 });
-                
+
                 // Also send push notification
                 const targetUser = await User.findById(order.user);
                 if (targetUser && targetUser.pushToken) {
@@ -345,7 +345,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         }
 
         const updatedOrder = await order.save();
-        
+
         // Re-populate user details so the admin UI doesn't lose the name
         await updatedOrder.populate('user', 'name email');
 
@@ -439,7 +439,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getSalesAnalytics = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-    
+
     // Fetch orders that are not Cancelled to get a full view of the pipeline
     let query = { status: { $in: ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered'] } };
     if (startDate || endDate) {
@@ -457,7 +457,7 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     }
 
     const allOrdersInRange = await Order.find(query).populate('user', 'name email');
-    
+
     // Fetch orders for the record list with pagination
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -491,11 +491,11 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         order.orderItems.forEach(item => {
             const id = item.product.toString();
             if (!productSalesMap[id]) {
-                productSalesMap[id] = { 
-                    _id: item.product, 
-                    name: item.name, 
-                    image: item.image, 
-                    ordersCount: 0 
+                productSalesMap[id] = {
+                    _id: item.product,
+                    name: item.name,
+                    image: item.image,
+                    ordersCount: 0
                 };
             }
             productSalesMap[id].ordersCount += item.qty;
@@ -538,7 +538,7 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
     });
 
     const colors = ['#FF4081', '#3F51B5', '#009688', '#FF9800', '#795548', '#9C27B0', '#607D8B'];
-    
+
     const categoryData = Object.keys(categoryStats).map((cat, index) => ({
         name: cat,
         count: categoryStats[cat],
@@ -552,7 +552,7 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
         totalRevenue,
         statusCounts,
         categoryData,
-        orders: ordersForCurrentPage, 
+        orders: ordersForCurrentPage,
         totalOrders: totalOrderCount,
         currentPage: page,
         topProductsBySales,
@@ -565,7 +565,7 @@ const getSalesAnalytics = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getSalesExport = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-    
+
     // Only export finalized sales as requested
     let query = { status: { $in: ['Confirmed', 'Delivered'] } };
     if (startDate || endDate) {

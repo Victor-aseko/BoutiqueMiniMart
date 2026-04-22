@@ -261,7 +261,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                 </head>
                 <body>
                     <div class="header">
-                        <h1 class="shop-name">Boutique Mini Mart</h1>
+                        <h1 class="shop-name">MiniBoutique</h1>
                         <div class="shop-info">
                             Premium Fashion & Essentials<br>
                             Tel: +254 759 108 018 / +254 723 281 004
@@ -342,9 +342,9 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     </div>
 
                     <div class="footer">
-                        <p><strong>Thank you for shopping at Boutique Mini Mart!</strong></p>
+                        <p><strong>Thank you for shopping at NiniBoutique Shop!</strong></p>
                         <p>Goods returned within 2 days are eligible for exchange.</p>
-                        <p>www.boutiqueminimart.co.ke</p>
+                        <p>www.miniboutique.co.ke</p>
                     </div>
                 </body>
                 </html>
@@ -486,7 +486,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <View style={styles.row}>
                             <Text style={styles.label}>Customer:</Text>
                             <Text style={styles.value}>
-                                {order.user?.name || order.guestUser?.name || 'Guest User'} 
+                                {order.user?.name || order.guestUser?.name || 'Guest User'}
                                 {order.user?.email ? ` (${order.user.email})` : ''}
                             </Text>
                         </View>
@@ -529,7 +529,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                                 >
                                     <Text style={styles.miniBtnText}>{order.isDepositPaid ? 'Deposit ✅' : 'Mark Deposit'}</Text>
                                 </TouchableOpacity>
-                                
+
                                 <TouchableOpacity
                                     style={[styles.miniBtn, { backgroundColor: order.isPaid ? COLORS.success : COLORS.error }]}
                                     onPress={() => {
@@ -558,7 +558,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                                 <Text style={styles.label}>Order Total:</Text>
                                 <Text style={[styles.label, { fontWeight: 'bold' }]}>Kshs {Number(order.totalPrice || 0).toFixed(2)}</Text>
                             </View>
-                            
+
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                                 <Text style={[styles.label, { color: order.isDepositPaid ? COLORS.success : COLORS.error }]}>
                                     Deposit ({order.isDepositPaid ? 'Paid' : 'Required'}):
