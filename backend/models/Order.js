@@ -4,8 +4,12 @@ const orderSchema = mongoose.Schema(
     {
         user: {
             type: mongoose.Schema.Types.ObjectId,
-            required: true,
+            required: false, // Optional for guest orders
             ref: 'User',
+        },
+        guestUser: {
+            name: { type: String },
+            phone: { type: String },
         },
         orderItems: [
             {

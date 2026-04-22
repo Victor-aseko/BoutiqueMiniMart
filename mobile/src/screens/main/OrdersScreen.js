@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
@@ -32,37 +32,27 @@ const OrdersScreen = ({ navigation, route }) => {
     const [pendingOrder, setPendingOrder] = useState(null);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('Cash (Pay on Delivery)');
-    const [shippingPrice, setShippingPrice] = useState(0);
     const [isFromCart, setIsFromCart] = useState(false);
+    const [shippingPrice, setShippingPrice] = useState(0);
+    const [depositAmount, setDepositAmount] = useState(0);
     const [exitModalVisible, setExitModalVisible] = useState(false);
     const [guestUser, setGuestUser] = useState(null);
     const { loginQuietly } = useAuth();
     const { unreadCount } = useNotifications();
     const [depositModalVisible, setDepositModalVisible] = useState(false);
-    const [depositAmount, setDepositAmount] = useState(0);
 
-    const getShippingFee = (city, itemsPrice) => {
+    const getShippingFee = useCallback((city, itemsPrice) => {
         if (!city) return 0;
         const c = city.toString().trim().toLowerCase();
-        let distance = 250; // default
+        let distance = 250; 
 
         const distances = {
-            'nairobi': 0,
-            'thika': 45,
-            'kiambu': 15,
-            'machakos': 65,
-            'kajiado': 80,
-            'naivasha': 90,
-            'nakuru': 160,
-            'nyeri': 150,
-            'eldoret': 310,
-            'kisumu': 345,
-            'mombasa': 485,
+            'nairobi': 0, 'thika': 45, 'kiambu': 15, 'machakos': 65,
+            'kajiado': 80, 'naivasha': 90, 'nakuru': 160, 'nyeri': 150,
+            'eldoret': 310, 'kisumu': 345, 'mombasa': 485,
         };
 
-        if (distances[c] !== undefined) {
-            distance = distances[c];
-        }
+        if (distances[c] !== undefined) distance = distances[c];
 
         let baseFee = 0;
         if (distance === 0) baseFee = 50;
@@ -70,42 +60,48 @@ const OrdersScreen = ({ navigation, route }) => {
         else if (distance < 300) baseFee = 250;
         else baseFee = 320;
 
-        // Add 1% of item price for handling/insurance
         const handling = itemsPrice * 0.01;
         return Math.ceil(baseFee + handling);
-    };
+    }, []);
+
+    const orderTotals = useMemo(() => {
+        if (!pendingOrder) return { itemsPrice: 0, shipping: 0, deposit: 0, total: 0 };
+        
+        const itemsPrice = pendingOrder.items.reduce((acc, item) => {
+            // Aggressive price cleaning
+            let priceVal = item.price;
+            if (typeof priceVal === 'string') {
+                priceVal = priceVal.replace(/[^\d.]/g, ''); // Remove anything that isn't a digit or dot
+            }
+            const price = parseFloat(priceVal) || 0;
+            const qty = parseInt(item.qty) || 1;
+            return acc + (price * qty);
+        }, 0);
+
+        const city = pendingOrder.shippingAddress?.city || pendingOrder.location;
+        const shipping = Number(getShippingFee(city, itemsPrice)) || 0;
+        
+        let deposit = 0;
+        if (itemsPrice <= 1000) {
+            deposit = itemsPrice * 0.4;
+        } else {
+            deposit = itemsPrice * 0.2;
+        }
+
+        return {
+            itemsPrice,
+            shipping,
+            deposit: Math.round(deposit),
+            total: itemsPrice + shipping
+        };
+    }, [pendingOrder, getShippingFee]);
 
     useEffect(() => {
         if (pendingOrder) {
-            const itemsPrice = pendingOrder.items.reduce((acc, item) => {
-                const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-                const qty = typeof item.qty === 'number' ? item.qty : parseInt(item.qty) || 1;
-                return acc + (price * qty);
-            }, 0);
-            
-            const city = pendingOrder.shippingAddress?.city || pendingOrder.location;
-            const fee = getShippingFee(city, itemsPrice);
-            setShippingPrice(Number(fee) || 0);
-
-            // Calculate Deposit
-            let deposit = 0;
-            if (itemsPrice <= 1000) {
-                deposit = itemsPrice * 0.4;
-            } else {
-                deposit = itemsPrice * 0.2;
-            }
-            setDepositAmount(Math.round(deposit) || 0);
+            setShippingPrice(orderTotals.shipping);
+            setDepositAmount(orderTotals.deposit);
         }
-    }, [pendingOrder]);
-
-    const getPendingItemsPrice = () => {
-        if (!pendingOrder) return 0;
-        return pendingOrder.items.reduce((acc, item) => {
-            const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-            const qty = typeof item.qty === 'number' ? item.qty : parseInt(item.qty) || 1;
-            return acc + (price * qty);
-        }, 0);
-    };
+    }, [orderTotals.shipping, orderTotals.deposit, pendingOrder]);
 
     const handleAddressSelection = () => {
         navigation.navigate('Profile', {
@@ -260,6 +256,10 @@ const OrdersScreen = ({ navigation, route }) => {
     };
 
     const proceedWithOrder = async () => {
+        if (!pendingOrder) {
+            Alert.alert('Error', 'Order information is missing. Please try again.');
+            return;
+        }
         setPlacingOrder(true);
         try {
             const sa = pendingOrder.shippingAddress || {};
@@ -293,45 +293,39 @@ const OrdersScreen = ({ navigation, route }) => {
                 paymentMethod: paymentMethod,
                 itemsPrice,
                 taxPrice: 0,
-                shippingPrice,
-                totalPrice: itemsPrice + shippingPrice,
+                shippingPrice: orderTotals.shipping,
+                totalPrice: orderTotals.total,
             };
 
             console.log('Placing order with api.post...');
             const response = await api.post('/orders', {
                 ...orderData,
-                depositAmount,
+                depositAmount: orderTotals.deposit,
                 isDepositPaid: false,
                 guestUser: !user ? guestUser : null
             });
 
             const data = response.data;
 
-            // Clear cart if this order came from the cart
-            // CRITICAL: Call clearCart BEFORE loginQuietly for guests
-            // This prevents CartContext from syncing guest items to the new account
+            // Close modal immediately and reset state to transition the UI
+            setDepositModalVisible(false);
+            setPendingOrder(null);
+            navigation.setParams({ product: null, cartItems: null });
+
             if (isFromCart) {
-                console.log('Clearing cart after successful order');
                 clearCart();
                 setIsFromCart(false);
             }
 
-            // Handle Silent Account Creation / Automatic Login
             if (!user && data.auth) {
-                console.log('Silent account created. Logging in guest...');
                 await loginQuietly(data.auth);
             }
 
-            Alert.alert('Success', 'Order placed successfully!', [
-                {
-                    text: 'OK', onPress: () => {
-                        setPendingOrder(null);
-                        navigation.setParams({ product: null, cartItems: null });
-                        // Refresh orders
-                        fetchOrders();
-                        setIsRefreshing(true);
-                    }
-                }
+            fetchOrders();
+            setIsRefreshing(true);
+
+            Alert.alert('Success', 'Order placed successfully! 📦', [
+                { text: 'View My Orders' }
             ]);
         } catch (error) {
             console.error('Order placement error:', error);
@@ -498,15 +492,15 @@ const OrdersScreen = ({ navigation, route }) => {
                         <View style={styles.summaryBox}>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Items Price:</Text>
-                                <Text style={styles.summaryValue}>Kshs {pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0).toFixed(2)}</Text>
+                                <Text style={styles.summaryValue}>Kshs {orderTotals.itemsPrice.toFixed(2)}</Text>
                             </View>
                             <View style={styles.summaryRow}>
                                 <Text style={styles.summaryLabel}>Shipping:</Text>
-                                <Text style={styles.summaryValue}>Kshs {shippingPrice.toFixed(2)}</Text>
+                                <Text style={styles.summaryValue}>Kshs {orderTotals.shipping.toFixed(2)}</Text>
                             </View>
                             <View style={[styles.summaryRow, styles.totalRow]}>
-                                <Text style={styles.totalLabel}>Total:</Text>
-                                <Text style={styles.totalValue}>Kshs {(pendingOrder.items.reduce((acc, i) => acc + (Number(i.price) * Number(i.qty)), 0) + shippingPrice).toFixed(2)}</Text>
+                                <Text style={styles.totalLabel}>Grand Total:</Text>
+                                <Text style={styles.totalValue}>Kshs {orderTotals.total.toFixed(2)}</Text>
                             </View>
                         </View>
 
@@ -633,70 +627,76 @@ const OrdersScreen = ({ navigation, route }) => {
             <Modal
                 visible={depositModalVisible}
                 transparent={true}
-                animationType="fade"
+                animationType="slide"
                 onRequestClose={() => setDepositModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { width: '90%', backgroundColor: COLORS.white, paddingVertical: 30 }]}>
-                        <View style={styles.depositIconContainer}>
-                            <Sparkles size={40} color={COLORS.accent} />
-                        </View>
-                        <Text style={styles.depositTitle}>Secure Your Order! ✨</Text>
-                        <Text style={styles.depositSubtitle}>
-                            A commitment goes a long way. Please pay the deposit amount below to confirm your order.
-                        </Text>
-                        
-                        <View style={styles.depositInfoBox}>
-                            <View style={styles.depositRow}>
-                                <Text style={styles.depositLabel}>Deposit Amount:</Text>
-                                <Text style={styles.depositValue}>Kshs {(depositAmount || 0).toFixed(2)}</Text>
+                    <View style={styles.compactModalContent}>
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
+                            <View style={styles.depositIconContainerMini}>
+                                <Sparkles size={32} color={COLORS.accent} />
                             </View>
-                            <View style={styles.depositRow}>
-                                <Text style={styles.depositLabel}>Remaining Balance:</Text>
-                                <Text style={styles.depositValue}>Kshs {(getPendingItemsPrice() + (shippingPrice || 0) - (depositAmount || 0)).toFixed(2)}</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.paymentBox}>
-                            <Text style={styles.paymentTitle}>Pay via M-Pesa Number/Till:</Text>
-                            <View style={styles.numberRow}>
-                                <Text style={styles.paymentNumber}>0759 108 018</Text>
-                                <Phone size={18} color={COLORS.accent} style={{ marginLeft: 10 }} />
-                            </View>
-                            <Text style={styles.paymentHelper}>Show payment message on delivery</Text>
-                        </View>
-
-                        <View style={styles.returnPolicyBox}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                                <RotateCcw size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
-                                <Text style={styles.policyTitle}>Return & Cancellation Policy:</Text>
-                            </View>
-                            <Text style={styles.policyText}>
-                                • Full refund if order is cancelled before shipping.{"\n"}
-                                • Returns accepted within 7 days if items are in original condition.{"\n"}
-                                • Remaining balance or full payment MUST be done on delivery.
+                            <Text style={styles.depositTitleMini}>Secure Your Order! ✨</Text>
+                            <Text style={styles.depositSubtitleMini}>
+                                A commitment goes a long way. Please pay the deposit amount below to confirm your order.
                             </Text>
-                        </View>
+                            
+                            <View style={styles.depositInfoBox}>
+                                <View style={styles.depositRow}>
+                                    <Text style={styles.depositLabel}>Grand Total:</Text>
+                                    <Text style={styles.depositValueSmall}>Kshs {orderTotals.total.toFixed(2)}</Text>
+                                </View>
+                                <View style={styles.depositRow}>
+                                    <Text style={styles.depositLabel}>Required Deposit:</Text>
+                                    <Text style={styles.depositValueBig}>Kshs {orderTotals.deposit.toFixed(2)}</Text>
+                                </View>
+                                <View style={[styles.depositRow, { borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 8, marginTop: 4 }]}>
+                                    <Text style={[styles.depositLabel, { fontWeight: 'bold' }]}>Due on Delivery:</Text>
+                                    <Text style={[styles.depositValueBig, { color: COLORS.primary }]}>Kshs {(orderTotals.total - orderTotals.deposit).toFixed(2)}</Text>
+                                </View>
+                            </View>
 
-                        <View style={{ flexWrap: 'nowrap', marginBottom: 20 }}>
-                            <Text style={{ fontSize: 12, color: COLORS.accent, fontStyle: 'italic', textAlign: 'center' }}>
-                                * Admin will verify your payment before processing the order.
-                            </Text>
-                        </View>
+                            <View style={styles.paymentBox}>
+                                <Text style={styles.paymentTitle}>Pay via M-Pesa Number/Till:</Text>
+                                <View style={styles.numberRow}>
+                                    <Text style={styles.paymentNumber}>0759 108 018</Text>
+                                    <Phone size={18} color={COLORS.accent} style={{ marginLeft: 10 }} />
+                                </View>
+                                <Text style={styles.paymentHelper}>Admin will verify payment after placement</Text>
+                            </View>
 
-                        <TouchableOpacity
-                            style={[styles.modalBtn, { backgroundColor: COLORS.accent, marginTop: 10 }]}
-                            onPress={proceedWithOrder}
-                        >
-                            <Text style={[styles.modalBtnText, { color: COLORS.white }]}>Order Now & Pay Deposit</Text>
-                        </TouchableOpacity>
+                            <View style={styles.returnPolicyBox}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                                    <RotateCcw size={16} color={COLORS.primary} style={{ marginRight: 8 }} />
+                                    <Text style={styles.policyTitle}>Return & Cancellation Policy:</Text>
+                                </View>
+                                <Text style={styles.policyText}>
+                                    • Full refund if order is cancelled before shipping.{"\n"}
+                                    • Returns accepted within 2 days if items are in original condition.{"\n"}
+                                    • Remaining balance must be settled on delivery.
+                                </Text>
+                            </View>
 
-                        <TouchableOpacity
-                            style={{ marginTop: 15 }}
-                            onPress={() => setDepositModalVisible(false)}
-                        >
-                            <Text style={{ color: COLORS.textLight, fontSize: 13 }}>Review Selection</Text>
-                        </TouchableOpacity>
+                            <View style={{ marginBottom: 15 }}>
+                                <Text style={{ fontSize: 11, color: COLORS.accent, fontStyle: 'italic', textAlign: 'center' }}>
+                                    * Order will be placed as 'Pending' until deposit is verified.
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.modalBtn, { backgroundColor: COLORS.accent }]}
+                                onPress={proceedWithOrder}
+                            >
+                                <Text style={[styles.modalBtnText, { color: COLORS.white }]}>Pay Deposit & Continue</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={{ marginTop: 12, marginBottom: 10 }}
+                                onPress={() => setDepositModalVisible(false)}
+                            >
+                                <Text style={{ color: COLORS.textLight, fontSize: 13 }}>Review Selection</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -1102,6 +1102,47 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         textDecorationLine: 'underline',
+    },
+    depositIconContainerMini: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: 'rgba(255, 126, 33, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    compactModalContent: {
+        backgroundColor: COLORS.white,
+        borderRadius: 24,
+        padding: 20,
+        width: '90%',
+        maxHeight: '85%',
+    },
+    depositTitleMini: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 6,
+        textAlign: 'center',
+    },
+    depositSubtitleMini: {
+        fontSize: 13,
+        color: COLORS.textLight,
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 18,
+        paddingHorizontal: 10,
+    },
+    depositValueBig: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: COLORS.accent,
+    },
+    depositValueSmall: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.primary,
     },
     depositIconContainer: {
         width: 80,

@@ -184,9 +184,9 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     
                     <div class="order-info">
                         <div>
-                            <p><strong>Customer:</strong> ${order.user?.name || 'Guest'}</p>
-                            <p><strong>Phone:</strong> ${order.shippingAddress?.phone || 'N/A'}</p>
-                            <p><strong>Address:</strong> ${order.shippingAddress?.address}, ${order.shippingAddress?.city}</p>
+                            <p><strong>Customer:</strong> ${order.user?.name || order.guestUser?.name || 'Guest User'}</p>
+                            <p><strong>Phone:</strong> ${order.shippingAddress?.phone || order.guestUser?.phone || 'N/A'}</p>
+                            <p><strong>Address:</strong> ${order.shippingAddress?.address || 'N/A'}, ${order.shippingAddress?.city || 'N/A'}</p>
                         </div>
                         <div style="text-align: right;">
                             <p><strong>Order #:</strong> <span class="order-id">${order._id.toString().toUpperCase()}</span></p>
@@ -227,12 +227,14 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         </div>
                         ${order.depositAmount ? `
                             <div class="total-row" style="color: ${order.isDepositPaid ? '#27ae60' : '#c0392b'}; font-weight: bold;">
-                                <span>Deposit ${order.isDepositPaid ? 'Received' : 'Required'}:</span>
+                                <span>Deposit ${order.isDepositPaid ? 'Paid' : 'Required'}:</span>
                                 <span>${order.isDepositPaid ? '-' : ''} Kshs ${order.depositAmount.toFixed(2)}</span>
                             </div>
-                            <div class="total-row">
-                                <span>${order.isDepositPaid ? 'Balance' : 'Total'} Due on Delivery:</span>
-                                <span>Kshs ${(order.totalPrice - (order.isDepositPaid ? order.depositAmount : 0)).toFixed(2)}</span>
+                            <div class="total-row" style="border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
+                                <span style="font-size: 18px; font-weight: bold;">${order.isPaid ? 'PAID IN FULL:' : (order.isDepositPaid ? 'Balance Due on Delivery:' : 'Total Due on Delivery:')}</span>
+                                <span style="font-size: 18px; font-weight: bold; color: ${order.isPaid ? '#27ae60' : '#333'};">
+                                    Kshs ${order.isPaid ? Number(order.totalPrice).toFixed(2) : (order.totalPrice - (order.isDepositPaid ? order.depositAmount : 0)).toFixed(2)}
+                                </span>
                             </div>
                         ` : `
                             <div class="total-row grand-total">
@@ -245,6 +247,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     <div style="clear: both;"></div>
 
                     <div class="footer">
+                        <p><strong>Return Policy:</strong> Returns accepted within 2 days in original condition.</p>
                         <p>Thank you for shopping with MiniBoutique Shop!</p>
                         <p>For any inquiries, contact us at +254 759 108 018 or +254 723 281 004</p>
                         <p>&copy; 2024 MiniBoutique Shop. All rights reserved.</p>
@@ -301,7 +304,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Order Details</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {(order.isPaid || order.status === 'Confirmed' || order.status === 'Delivered') && (
+                    {(order.isDepositPaid || order.isPaid || ['Confirmed', 'Processing', 'Shipped', 'Delivered'].includes(order.status)) && (
                         <TouchableOpacity onPress={handlePrintReceipt} style={{ marginRight: 15 }}>
                             <Printer size={22} color={COLORS.accent} />
                         </TouchableOpacity>
@@ -453,19 +456,30 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <Text style={styles.iconText}>{order.paymentMethod}</Text>
                     </View>
                     <View style={[styles.iconRow, { marginTop: 4 }]}>
-                        <View style={{ flexDirection: 'column' }}>
-                            <Text style={[styles.label, { color: order.isDepositPaid ? COLORS.success : COLORS.error, fontWeight: 'bold' }]}>
-                                DEPOSIT: {order.isDepositPaid ? 'RECEIVED' : 'NOT RECEIVED'} (Kshs {order.depositAmount || 0})
-                            </Text>
-                            <Text style={[styles.label, { color: order.isPaid ? COLORS.success : COLORS.error, fontWeight: 'bold', marginTop: 4 }]}>
-                                FULL PAYMENT: {order.isPaid ? 'PAID' : 'NOT PAID'}
-                            </Text>
+                        <View style={{ flexDirection: 'column', width: '100%' }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <Text style={styles.label}>Order Total:</Text>
+                                <Text style={[styles.label, { fontWeight: 'bold' }]}>Kshs {Number(order.totalPrice || 0).toFixed(2)}</Text>
+                            </View>
+                            
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <Text style={[styles.label, { color: order.isDepositPaid ? COLORS.success : COLORS.error }]}>
+                                    Deposit ({order.isDepositPaid ? 'Paid' : 'Required'}):
+                                </Text>
+                                <Text style={[styles.label, { color: order.isDepositPaid ? COLORS.success : COLORS.error, fontWeight: 'bold' }]}>
+                                    {order.isDepositPaid ? '-' : ''} Kshs {Number(order.depositAmount || 0).toFixed(2)}
+                                </Text>
+                            </View>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#eee', paddingTop: 4, marginTop: 4 }}>
+                                <Text style={[styles.label, { fontWeight: 'bold', color: order.isPaid ? COLORS.success : COLORS.primary }]}>
+                                    {order.isPaid ? 'Paid in Full:' : 'Balance Due on Delivery:'}
+                                </Text>
+                                <Text style={[styles.label, { fontWeight: 'bold', color: order.isPaid ? COLORS.success : COLORS.primary, fontSize: 16 }]}>
+                                    Kshs {order.isPaid ? Number(order.totalPrice || 0).toFixed(2) : (Number(order.totalPrice || 0) - (order.isDepositPaid ? Number(order.depositAmount || 0) : 0)).toFixed(2)}
+                                </Text>
+                            </View>
                         </View>
-                        {order.paidAt && (
-                            <Text style={[styles.iconText, { fontSize: 12, color: COLORS.textLight, alignSelf: 'flex-end' }]}>
-                                Paid on: {new Date(order.paidAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                            </Text>
-                        )}
                     </View>
                 </View>
 
