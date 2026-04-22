@@ -161,36 +161,126 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                 <html>
                 <head>
                     <style>
-                        body { font-family: 'Helvetica', sans-serif; padding: 20px; color: #333; }
-                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-                        .title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-                        .subtitle { font-size: 14px; color: #666; }
-                        .order-info { margin-bottom: 20px; display: flex; justify-content: space-between; }
-                        .order-id { font-weight: bold; color: #e67e22; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                        th { background-color: #f8f9fa; border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-                        td { border-bottom: 1px solid #eee; padding: 10px; }
-                        .total-section { float: right; width: 250px; }
-                        .total-row { display: flex; justify-content: space-between; padding: 5px 0; }
-                        .grand-total { border-top: 1px solid #333; margin-top: 5px; padding-top: 5px; font-weight: bold; font-size: 18px; color: #e67e22; }
-                        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+                        body { 
+                            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                            padding: 20px; 
+                            color: #333; 
+                            max-width: 600px;
+                            margin: 0 auto;
+                        }
+                        .header { 
+                            text-align: center; 
+                            border-bottom: 2px solid #2C3E50; 
+                            padding-bottom: 15px; 
+                            margin-bottom: 20px;
+                        }
+                        .shop-name { 
+                            font-size: 28px; 
+                            font-weight: bold; 
+                            color: #2C3E50; 
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            margin: 0;
+                        }
+                        .shop-info { font-size: 13px; color: #7f8c8d; margin-top: 5px; }
+                        
+                        .receipt-title {
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin: 20px 0;
+                            text-align: center;
+                            text-decoration: underline;
+                        }
+
+                        .info-grid { 
+                            display: flex; 
+                            justify-content: space-between; 
+                            margin-bottom: 25px;
+                            background: #fdfdfd;
+                            padding: 15px;
+                            border: 1px solid #eee;
+                            border-radius: 8px;
+                        }
+                        .info-col p { margin: 4px 0; font-size: 14px; }
+                        .order-id { color: #e67e22; font-weight: bold; }
+
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+                        th { 
+                            text-align: left; 
+                            border-bottom: 2px solid #eee; 
+                            padding: 10px 5px; 
+                            font-size: 12px; 
+                            color: #95a5a6;
+                            text-transform: uppercase;
+                        }
+                        td { padding: 12px 5px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+                        .item-name { font-weight: 600; color: #2c3e50; }
+                        .item-meta { font-size: 11px; color: #95a5a6; display: block; margin-top: 2px; }
+
+                        .totals-container { 
+                            margin-left: auto; 
+                            width: 60%; 
+                            border-top: 1px dashed #ddd;
+                            padding-top: 15px;
+                        }
+                        .total-row { 
+                            display: flex; 
+                            justify-content: space-between; 
+                            padding: 5px 0; 
+                            font-size: 14px; 
+                        }
+                        .grand-total-row { 
+                            margin-top: 10px;
+                            padding: 12px 0;
+                            border-top: 2px solid #2c3e50;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        .paid-label { color: #27ae60; text-transform: uppercase; }
+                        .due-label { color: #c0392b; text-transform: uppercase; }
+
+                        .footer { 
+                            text-align: center; 
+                            margin-top: 40px; 
+                            padding-top: 20px;
+                            border-top: 1px solid #eee;
+                            font-size: 12px; 
+                            color: #95a5a6; 
+                        }
+                        .footer p { margin: 5px 0; }
+                        .signature {
+                             margin-top: 30px;
+                             border-top: 1px solid #ddd;
+                             width: 150px;
+                             text-align: center;
+                             font-style: italic;
+                             font-size: 12px;
+                             padding-top: 5px;
+                        }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <div class="title">MiniBoutique Shop</div>
-                        <div class="subtitle">Official Order Receipt</div>
-                    </div>
-                    
-                    <div class="order-info">
-                        <div>
-                            <p><strong>Customer:</strong> ${order.user?.name || order.guestUser?.name || 'Guest User'}</p>
-                            <p><strong>Phone:</strong> ${order.shippingAddress?.phone || order.guestUser?.phone || 'N/A'}</p>
-                            <p><strong>Address:</strong> ${order.shippingAddress?.address || 'N/A'}, ${order.shippingAddress?.city || 'N/A'}</p>
+                        <h1 class="shop-name">Boutique Mini Mart</h1>
+                        <div class="shop-info">
+                            Premium Fashion & Essentials<br>
+                            Tel: +254 759 108 018 / +254 723 281 004
                         </div>
-                        <div style="text-align: right;">
-                            <p><strong>Order #:</strong> <span class="order-id">${order._id.toString().toUpperCase()}</span></p>
+                    </div>
+
+                    <div class="receipt-title">OFFICIAL INVOICE / RECEIPT</div>
+
+                    <div class="info-grid">
+                        <div class="info-col">
+                            <p><strong>Billed To:</strong></p>
+                            <p>${order.user?.name || order.guestUser?.name || 'Valued Customer'}</p>
+                            <p>${order.shippingAddress?.phone || order.guestUser?.phone || 'N/A'}</p>
+                            <p>${order.shippingAddress?.address || 'N/A'}, ${order.shippingAddress?.city || 'N/A'}</p>
+                        </div>
+                        <div class="info-col" style="text-align: right;">
+                            <p><strong>Order ID:</strong> <span class="order-id">#${order._id.toString().toUpperCase()}</span></p>
                             <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+                            <p><strong>Method:</strong> ${order.paymentMethod}</p>
                             <p><strong>Status:</strong> ${order.status}</p>
                         </div>
                     </div>
@@ -198,7 +288,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     <table>
                         <thead>
                             <tr>
-                                <th>Item</th>
+                                <th>Item Description</th>
                                 <th style="text-align: center;">Qty</th>
                                 <th style="text-align: right;">Price</th>
                                 <th style="text-align: right;">Total</th>
@@ -207,50 +297,54 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         <tbody>
                             ${order.orderItems.map(item => `
                                 <tr>
-                                    <td>${item.name} ${item.color ? `(${item.color})` : ''}</td>
+                                    <td>
+                                        <span class="item-name">${item.name}</span>
+                                        <span class="item-meta">Color: ${item.color || 'Default'} | Size: ${item.size || 'Default'}</span>
+                                    </td>
                                     <td style="text-align: center;">${item.qty}</td>
-                                    <td style="text-align: right;">Kshs ${(item.price || 0).toFixed(2)}</td>
-                                    <td style="text-align: right;">Kshs ${(item.qty * (item.price || 0)).toFixed(2)}</td>
+                                    <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                    <td style="text-align: right;">${(item.qty * item.price).toFixed(2)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
 
-                    <div class="total-section">
+                    <div class="totals-container">
                         <div class="total-row">
                             <span>Subtotal:</span>
-                            <span>Kshs ${(order.itemsPrice || 0).toFixed(2)}</span>
+                            <span>Kshs ${order.itemsPrice.toFixed(2)}</span>
                         </div>
                         <div class="total-row">
-                            <span>Shipping:</span>
-                            <span>Kshs ${(order.shippingPrice || 0).toFixed(2)}</span>
+                            <span>Shipping Fee:</span>
+                            <span>Kshs ${order.shippingPrice.toFixed(2)}</span>
                         </div>
+                        
                         ${order.depositAmount ? `
-                            <div class="total-row" style="color: ${order.isDepositPaid ? '#27ae60' : '#c0392b'}; font-weight: bold;">
-                                <span>Deposit ${order.isDepositPaid ? 'Paid' : 'Required'}:</span>
+                            <div class="total-row" style="color: ${order.isDepositPaid ? '#27ae60' : '#e67e22'}">
+                                <span>Deposit ${order.isDepositPaid ? 'Paid ✅' : 'Required'}:</span>
                                 <span>${order.isDepositPaid ? '-' : ''} Kshs ${order.depositAmount.toFixed(2)}</span>
                             </div>
-                            <div class="total-row" style="border-top: 2px solid #333; margin-top: 10px; padding-top: 10px;">
-                                <span style="font-size: 18px; font-weight: bold;">${order.isPaid ? 'PAID IN FULL:' : (order.isDepositPaid ? 'Balance Due on Delivery:' : 'Total Due on Delivery:')}</span>
-                                <span style="font-size: 18px; font-weight: bold; color: ${order.isPaid ? '#27ae60' : '#333'};">
-                                    Kshs ${order.isPaid ? Number(order.totalPrice).toFixed(2) : (order.totalPrice - (order.isDepositPaid ? order.depositAmount : 0)).toFixed(2)}
-                                </span>
-                            </div>
-                        ` : `
-                            <div class="total-row grand-total">
-                                <span>Total Amount:</span>
-                                <span>Kshs ${(order.totalPrice || 0).toFixed(2)}</span>
-                            </div>
-                        `}
+                        ` : ''}
+
+                        <div class="grand-total-row">
+                            <span class="${order.isPaid ? 'paid-label' : 'due-label'}">
+                                ${order.isPaid ? 'PAID IN FULL' : (order.isDepositPaid ? 'BALANCE DUE' : 'TOTAL DUE')}
+                            </span>
+                            <span>Kshs ${order.isPaid ? order.totalPrice.toFixed(2) : (order.totalPrice - (order.isDepositPaid ? order.depositAmount : 0)).toFixed(2)}</span>
+                        </div>
                     </div>
 
-                    <div style="clear: both;"></div>
+                    <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+                        <div class="signature">Authorized Signature</div>
+                        <div style="font-size: 10px; color: #95a5a6; vertical-align: bottom;">
+                            ${order.isPaid ? 'Payment Verified: ' + new Date(order.paidAt || Date.now()).toLocaleDateString() : ''}
+                        </div>
+                    </div>
 
                     <div class="footer">
-                        <p><strong>Return Policy:</strong> Returns accepted within 2 days in original condition.</p>
-                        <p>Thank you for shopping with MiniBoutique Shop!</p>
-                        <p>For any inquiries, contact us at +254 759 108 018 or +254 723 281 004</p>
-                        <p>&copy; 2024 MiniBoutique Shop. All rights reserved.</p>
+                        <p><strong>Thank you for shopping at Boutique Mini Mart!</strong></p>
+                        <p>Goods returned within 2 days are eligible for exchange.</p>
+                        <p>www.boutiqueminimart.co.ke</p>
                     </div>
                 </body>
                 </html>
