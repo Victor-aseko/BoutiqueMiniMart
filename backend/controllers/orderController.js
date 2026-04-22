@@ -289,6 +289,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         if (req.body.isDepositPaid !== undefined && req.body.isDepositPaid !== order.isDepositPaid) {
             order.isDepositPaid = req.body.isDepositPaid;
             if (order.isDepositPaid) {
+                order.depositPaidAt = Date.now();
                 paymentNotification = {
                     title: 'Deposit Received! 🎉',
                     message: `We've received your deposit for Order #${order._id.toString().slice(-6).toUpperCase()}. We are now processing your order!`

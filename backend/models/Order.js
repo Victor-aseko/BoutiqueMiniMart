@@ -73,6 +73,9 @@ const orderSchema = mongoose.Schema(
             required: true,
             default: false,
         },
+        depositPaidAt: {
+            type: Date,
+        },
         isPaid: {
             type: Boolean,
             required: true,
