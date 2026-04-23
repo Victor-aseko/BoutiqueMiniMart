@@ -44,7 +44,7 @@ const OrdersScreen = ({ navigation, route }) => {
     const getShippingFee = useCallback((city, itemsPrice) => {
         if (!city) return 0;
         const c = city.toString().trim().toLowerCase();
-        let distance = 250; 
+        let distance = 250;
 
         const distances = {
             'nairobi': 0, 'thika': 45, 'kiambu': 15, 'machakos': 65,
@@ -66,7 +66,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
     const orderTotals = useMemo(() => {
         if (!pendingOrder) return { itemsPrice: 0, shipping: 0, deposit: 0, total: 0 };
-        
+
         const itemsPrice = pendingOrder.items.reduce((acc, item) => {
             // Aggressive price cleaning
             let priceVal = item.price;
@@ -80,7 +80,7 @@ const OrdersScreen = ({ navigation, route }) => {
 
         const city = pendingOrder.shippingAddress?.city || pendingOrder.location;
         const shipping = Number(getShippingFee(city, itemsPrice)) || 0;
-        
+
         let deposit = 0;
         if (itemsPrice <= 1000) {
             deposit = itemsPrice * 0.4;
@@ -189,7 +189,7 @@ const OrdersScreen = ({ navigation, route }) => {
             if (isDifferentProduct) {
                 console.log('Initializing pending order from product param');
                 const initialAddress = route.params.shippingAddress || (user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null);
-                
+
                 setPendingOrder({
                     items: [{
                         product: route.params.product,
@@ -218,7 +218,7 @@ const OrdersScreen = ({ navigation, route }) => {
         if (route.params?.cartItems) {
             console.log('Initializing pending order from cartItems param');
             const initialAddress = route.params.shippingAddress || (user?.addresses?.find(a => a.isDefault) || user?.addresses?.[0] || null);
-            
+
             setPendingOrder({
                 items: route.params.cartItems.map(item => ({
                     product: item.product?._id || item.product,
@@ -640,7 +640,7 @@ const OrdersScreen = ({ navigation, route }) => {
                             <Text style={styles.depositSubtitleMini}>
                                 A commitment goes a long way. Please pay the deposit amount below to confirm your order.
                             </Text>
-                            
+
                             <View style={styles.depositInfoBox}>
                                 <View style={styles.depositRow}>
                                     <Text style={styles.depositLabel}>Grand Total:</Text>

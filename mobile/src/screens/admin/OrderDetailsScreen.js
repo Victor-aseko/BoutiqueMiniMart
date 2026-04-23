@@ -334,10 +334,9 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-size: 11px; color: #7f8c8d;">
-                        <p style="margin: 0 0 5px 0; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 3px;">PAYMENT TIMELINE:</p>
-                        ${order.depositPaidAt ? `<p style="margin: 2px 0;">• Deposit Received: ${new Date(order.depositPaidAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>` : ''}
-                        ${order.paidAt ? `<p style="margin: 2px 0;">• Balance Cleared: ${new Date(order.paidAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>` : ''}
+                    <div style="margin-top: 20px; padding: 10px; background: #f9f9f9; border-radius: 5px; font-size: 11px; color: #7f8c8d;">                        
+                        ${order.depositPaidAt ? `<p style="margin: 2px 0;">• Deposit Paid On: ${new Date(order.depositPaidAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>` : ''}
+                        ${order.paidAt ? `<p style="margin: 2px 0;">• Balance Cleared On: ${new Date(order.paidAt).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</p>` : ''}
                     </div>
 
                     <div style="margin-top: 30px; display: flex; justify-content: space-between;">
