@@ -53,17 +53,17 @@ const AddressScreen = ({ navigation, route }) => {
         setLoading(true);
         if (!user) {
             // Guest mode: Local state
-            const newAddress = { 
-                street, 
-                city, 
-                postalCode, 
-                country, 
-                phone, 
-                name: guestName, 
-                email: guestEmail 
+            const newAddress = {
+                street,
+                city,
+                postalCode,
+                country,
+                phone,
+                name: guestName,
+                email: guestEmail
             };
             setGuestAddresses(prev => [...prev, newAddress]);
-            
+
             setLoading(false);
             Alert.alert('Success', 'Address added successfully');
             setModalVisible(false);
@@ -174,14 +174,14 @@ const AddressScreen = ({ navigation, route }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => {
                         if (navigation.canGoBack()) {
                             navigation.goBack();
                         } else {
                             navigation.navigate('ProfileScreen');
                         }
-                    }} 
+                    }}
                     style={styles.backBtn}
                 >
                     <ChevronLeft color={COLORS.primary} size={28} />

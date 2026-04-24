@@ -649,7 +649,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </KeyboardAvoidingView>
                 </View>
             </Modal>
-            
+
             <GuestOptionModal
                 visible={guestModalVisible}
                 onClose={() => setGuestModalVisible(false)}

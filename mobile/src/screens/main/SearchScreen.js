@@ -52,9 +52,9 @@ const SearchScreen = ({ navigation, route }) => {
             setFilteredProducts([]);
         } else {
             // Remove common possessives (matching "men's" as "men")
-            const cleanQuery = trimmed.replace(/'s/g, ''); 
+            const cleanQuery = trimmed.replace(/'s/g, '');
             const searchWords = cleanQuery.split(/\s+/).filter(word => word.length >= 3);
-            
+
             const filtered = products.filter(p => {
                 const name = p.name.toLowerCase();
                 const category = p.category.toLowerCase();

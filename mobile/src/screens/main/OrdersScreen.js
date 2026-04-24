@@ -324,7 +324,7 @@ const OrdersScreen = ({ navigation, route }) => {
             fetchOrders();
             setIsRefreshing(true);
 
-            Alert.alert('Success', 'Order placed successfully! 📦', [
+            Alert.alert('Success', 'Order placed successfully!', [
                 { text: 'View My Orders' }
             ]);
         } catch (error) {
@@ -636,7 +636,7 @@ const OrdersScreen = ({ navigation, route }) => {
                             <View style={styles.depositIconContainerMini}>
                                 <Sparkles size={32} color={COLORS.accent} />
                             </View>
-                            <Text style={styles.depositTitleMini}>Secure Your Order! ✨</Text>
+                            <Text style={styles.depositTitleMini}>Secure Your Order! </Text>
                             <Text style={styles.depositSubtitleMini}>
                                 A commitment goes a long way. Please pay the deposit amount below to confirm your order.
                             </Text>
@@ -657,10 +657,11 @@ const OrdersScreen = ({ navigation, route }) => {
                             </View>
 
                             <View style={styles.paymentBox}>
-                                <Text style={styles.paymentTitle}>Pay via M-Pesa Number/Till:</Text>
+                                <Text style={styles.paymentTitle}>Pay via M-Pesa(Send):</Text>
                                 <View style={styles.numberRow}>
-                                    <Text style={styles.paymentNumber}>0759 108 018</Text>
                                     <Phone size={18} color={COLORS.accent} style={{ marginLeft: 10 }} />
+
+                                    <Text style={styles.paymentNumber}>0723281004</Text>
                                 </View>
                                 <Text style={styles.paymentHelper}>Admin will verify payment after placement</Text>
                             </View>
@@ -673,7 +674,7 @@ const OrdersScreen = ({ navigation, route }) => {
                                 <Text style={styles.policyText}>
                                     • Full refund if order is cancelled before shipping.{"\n"}
                                     • Returns accepted within 2 days if items are in original condition.{"\n"}
-                                    • Remaining balance must be settled on delivery.
+                                    • Remaining balance must be settled before/on delivery.
                                 </Text>
                             </View>
 

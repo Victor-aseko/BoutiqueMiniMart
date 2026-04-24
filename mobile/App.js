@@ -10,6 +10,7 @@ import { RecentlyViewedProvider } from './src/context/RecentlyViewedContext';
 import { WishlistProvider } from './src/context/WishlistContext';
 import { NotificationProvider } from './src/context/NotificationContext';
 import { ChatProvider } from './src/context/ChatContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -46,20 +47,22 @@ export default function App() {
         <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
           <SafeAreaProvider>
             <AuthProvider>
-              <CartProvider>
-                <RecentlyViewedProvider>
-                  <WishlistProvider>
-                    <NotificationProvider>
-                      <ChatProvider>
-                        <StatusBar style="light" backgroundColor={COLORS.accent} />
-                        <OfflineNotice />
+              <ThemeProvider>
+                <CartProvider>
+                  <RecentlyViewedProvider>
+                    <WishlistProvider>
+                      <NotificationProvider>
+                        <ChatProvider>
+                          <StatusBar style="light" backgroundColor={COLORS.accent} />
+                          <OfflineNotice />
 
-                        <AppNavigator linking={linking} />
-                      </ChatProvider>
-                    </NotificationProvider>
-                  </WishlistProvider>
-                </RecentlyViewedProvider>
-              </CartProvider>
+                          <AppNavigator linking={linking} />
+                        </ChatProvider>
+                      </NotificationProvider>
+                    </WishlistProvider>
+                  </RecentlyViewedProvider>
+                </CartProvider>
+              </ThemeProvider>
             </AuthProvider>
           </SafeAreaProvider>
         </ClerkProvider>

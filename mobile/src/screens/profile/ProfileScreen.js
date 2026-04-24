@@ -60,7 +60,10 @@ const ProfileScreen = ({ navigation }) => {
                             <Text style={styles.email}>{user?.email}</Text>
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.settingsBtn}>
+                    <TouchableOpacity
+                        style={styles.settingsBtn}
+                        onPress={() => navigation.navigate('Settings')}
+                    >
                         <Settings size={24} color={COLORS.primary} />
                     </TouchableOpacity>
                 </View>

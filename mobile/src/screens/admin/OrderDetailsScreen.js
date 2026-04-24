@@ -321,7 +321,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                         
                         ${order.depositAmount ? `
                             <div class="total-row" style="color: ${order.isDepositPaid ? '#27ae60' : '#e67e22'}">
-                                <span>Deposit ${order.isDepositPaid ? 'Paid ✅' : 'Required'}:</span>
+                                <span>Deposit ${order.isDepositPaid ? 'Paid' : 'Required'}:</span>
                                 <span>${order.isDepositPaid ? '-' : ''} Kshs ${order.depositAmount.toFixed(2)}</span>
                             </div>
                         ` : ''}
@@ -347,7 +347,7 @@ const OrderDetailsScreen = ({ navigation, route }) => {
                     </div>
 
                     <div class="footer">
-                        <p><strong>Thank you for shopping at NiniBoutique Shop!</strong></p>
+                        <p><strong>Thank you for shopping at MiniBoutique Shop!</strong></p>
                         <p>Goods returned within 2 days are eligible for exchange.</p>
                         <p>www.miniboutique.co.ke</p>
                     </div>

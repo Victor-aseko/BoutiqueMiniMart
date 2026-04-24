@@ -232,7 +232,7 @@ const CartScreen = ({ navigation, route }) => {
                 onRequestClose={() => setCheckoutModalVisible(false)}
             >
                 <View style={checkoutStyles.modalContainer}>
-                    <KeyboardAvoidingView 
+                    <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                         style={checkoutStyles.modalContentWrapper}
                     >
@@ -252,7 +252,7 @@ const CartScreen = ({ navigation, route }) => {
                                                 <Text style={{ fontSize: 13, fontWeight: 'bold', color: COLORS.primary }} numberOfLines={1}>{item.name}</Text>
                                                 <Text style={{ fontSize: 12, color: COLORS.accent, fontWeight: 'bold' }}>Kshs {item.price}</Text>
                                                 <Text style={{ fontSize: 11, color: COLORS.textLight }}>
-                                                    Qty: {item.qty} 
+                                                    Qty: {item.qty}
                                                     {item.color ? ` • ${typeof item.color === 'string' ? item.color : (item.color?.name || 'Default')}` : ''}
                                                     {item.size ? ` • ${typeof item.size === 'string' ? item.size : (item.size?.name || 'Default')}` : ''}
                                                 </Text>

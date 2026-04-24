@@ -228,6 +228,8 @@ import AdminProductsScreen from '../screens/admin/AdminProductsScreen';
 import AddReviewScreen from '../screens/product/AddReviewScreen';
 import ProductDetailsScreen from '../screens/product/ProductDetailsScreen';
 import AdminAnalyticsScreen from '../screens/admin/AdminAnalyticsScreen';
+import SettingsScreen from '../screens/profile/SettingsScreen';
+import AboutUsScreen from '../screens/main/AboutUsScreen';
 
 const ProfileStack = ({ navigation }) => (
     <Stack.Navigator
@@ -253,6 +255,11 @@ const ProfileStack = ({ navigation }) => (
             name="ProfileScreen"
             component={ProfileScreen}
             options={{ title: 'Profile' }}
+        />
+        <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ headerShown: false, title: 'Settings' }}
         />
         <Stack.Screen
             name="AdminAnalytics"
@@ -303,6 +310,11 @@ const ProfileStack = ({ navigation }) => (
             name="ProductDetails"
             component={ProductDetailsScreen}
             options={{ title: 'Product Details' }}
+        />
+        <Stack.Screen
+            name="AboutUsScreen"
+            component={AboutUsScreen}
+            options={{ title: 'About Us' }}
         />
     </Stack.Navigator>
 );
