@@ -32,6 +32,7 @@ import { COLORS } from '../../theme/theme';
 import AddToCartModal from '../../components/AddToCartModal';
 import SpecialOfferSlider from '../../components/SpecialOfferSlider';
 import AnimatedSearchPlaceholder from '../../components/AnimatedSearchPlaceholder';
+import AnimatedAdverts from '../../components/AnimatedAdverts';
 
 const whatsappIcon = require('../../../assets/icons/whatsapp.png');
 const facebookIcon = require('../../../assets/icons/facebook.png');
@@ -634,6 +635,9 @@ const HomeScreen = ({ navigation }) => {
                         </ScrollView>
                     </View>
                 </View>
+
+                {/* Animated Adverts Section */}
+                <AnimatedAdverts />
 
                 {/* Hot Deals & Trends Section */}
                 {renderHotDealsAndTrends()}
