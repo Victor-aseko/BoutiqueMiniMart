@@ -146,7 +146,6 @@ const AnimatedAdverts = () => {
 
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.sectionTitle}>Why Choose Us!</Text>
       <Animated.FlatList
         ref={flatListRef}
         data={adverts}
@@ -174,14 +173,6 @@ const AnimatedAdverts = () => {
 const styles = StyleSheet.create({
   wrapper: {
     marginVertical: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginLeft: 15,
-    marginBottom: 8,
-    color: '#333',
-    letterSpacing: 0.5,
   },
   cardContainer: {
     width: width, // ENTIRE screen width
