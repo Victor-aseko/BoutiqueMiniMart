@@ -33,6 +33,8 @@ const LoginScreen = ({ navigation, route }) => {
     const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const { login, authLoading, error, setError, clearError } = useAuth();
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
     useEffect(() => {
         // Clear errors when navigating to this screen
@@ -42,20 +44,33 @@ const LoginScreen = ({ navigation, route }) => {
     const handleEmailChange = (text) => {
         setEmail(text);
         if (error) clearError();
+        
+        if (!text.trim()) setEmailError('Email is required');
+        else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(text.trim())) setEmailError('Enter a valid email address');
+            else setEmailError('');
+        }
     };
 
     const handlePasswordChange = (text) => {
         setPassword(text);
         if (error) clearError();
+        
+        if (!text) setPasswordError('Password is required');
+        else setPasswordError('');
     };
 
     const handleLogin = async () => {
-        try {
-            if (!email || !password) {
-                setError('Please enter both email and password to continue.');
-                return;
-            }
+        let hasError = false;
+        if (!email.trim()) { setEmailError('Email is required'); hasError = true; }
+        if (!password) { setPasswordError('Password is required'); hasError = true; }
 
+        if (hasError) {
+            setError('Please fill in all fields.');
+            return;
+        }
+        try {
             const success = await login(email, password);
             if (success) {
                 // If a redirect destination was provided, navigate there
@@ -245,7 +260,7 @@ const LoginScreen = ({ navigation, route }) => {
                             keyboardType="email-address"
                             autoCapitalize="none"
                             icon={Mail}
-                            error={error && email === '' ? 'Email is required' : null}
+                            error={emailError}
                         />
                         <MyInput
                             label="Password"
@@ -254,7 +269,7 @@ const LoginScreen = ({ navigation, route }) => {
                             onChangeText={handlePasswordChange}
                             secureTextEntry
                             icon={Lock}
-                            error={error && password === '' ? 'Password is required' : null}
+                            error={passwordError}
                         />
 
                         <TouchableOpacity

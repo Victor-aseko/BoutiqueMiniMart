@@ -43,6 +43,7 @@ const AdminProductsScreen = ({ navigation }) => {
     const [colors, setColors] = useState([]); // [{ name, image }]
     const [sizes, setSizes] = useState([]); // [string]
     const [newSize, setNewSize] = useState('');
+    const [newSizeColor, setNewSizeColor] = useState('All');
 
     const [newColorName, setNewColorName] = useState('');
     const [newColorImage, setNewColorImage] = useState('');
@@ -670,6 +671,26 @@ const AdminProductsScreen = ({ navigation }) => {
                             {/* Sizes Management */}
                             <Text style={styles.sectionLabel}>Available Sizes</Text>
                             <View style={styles.variantsBox}>
+                                <View style={{ marginBottom: 10 }}>
+                                    <Text style={{ fontSize: 12, color: COLORS.textLight, marginBottom: 5 }}>Apply to Color (Optional):</Text>
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+                                        <TouchableOpacity 
+                                            onPress={() => setNewSizeColor('All')}
+                                            style={[styles.smallChip, newSizeColor === 'All' && styles.smallChipActive]}
+                                        >
+                                            <Text style={[styles.smallChipText, newSizeColor === 'All' && styles.smallChipTextActive]}>All Colors</Text>
+                                        </TouchableOpacity>
+                                        {colors.map((c, idx) => (
+                                            <TouchableOpacity 
+                                                key={idx}
+                                                onPress={() => setNewSizeColor(c.name)}
+                                                style={[styles.smallChip, newSizeColor === c.name && styles.smallChipActive]}
+                                            >
+                                                <Text style={[styles.smallChipText, newSizeColor === c.name && styles.smallChipTextActive]}>{c.name}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
                                 <View style={styles.variantInputRow}>
                                     <View style={{ flex: 1 }}>
                                         <MyInput
@@ -683,7 +704,11 @@ const AdminProductsScreen = ({ navigation }) => {
                                         style={styles.addVariantBtn}
                                         onPress={() => {
                                             if (newSize) {
-                                                setSizes([...sizes, { name: newSize, status: 'In Stock' }]);
+                                                setSizes([...sizes, { 
+                                                    name: newSize, 
+                                                    status: 'In Stock',
+                                                    color: newSizeColor === 'All' ? null : newSizeColor 
+                                                }]);
                                                 setNewSize('');
                                             }
                                         }}
@@ -707,11 +732,13 @@ const AdminProductsScreen = ({ navigation }) => {
                                                     const currentIdx = statuses.indexOf(sizeStatus);
                                                     const nextIdx = (currentIdx + 1) % statuses.length;
                                                     const newSizes = [...sizes];
-                                                    newSizes[i] = { name: sizeName, status: statuses[nextIdx] };
+                                                    newSizes[i] = { ...s, name: sizeName, status: statuses[nextIdx] };
                                                     setSizes(newSizes);
                                                 }}
                                             >
-                                                <Text style={styles.sizeTagText}>{sizeName} {sizeStatus !== 'In Stock' ? `(${sizeStatus})` : ''}</Text>
+                                                <Text style={styles.sizeTagText}>
+                                                    {sizeName} {s.color ? `(${s.color})` : ''} {sizeStatus !== 'In Stock' ? `[${sizeStatus}]` : ''}
+                                                </Text>
                                                 <TouchableOpacity onPress={(e) => {
                                                     e.stopPropagation();
                                                     setSizes(sizes.filter((_, idx) => idx !== i));
@@ -1004,6 +1031,27 @@ const styles = StyleSheet.create({
     },
     statusOptionTextActive: {
         color: COLORS.white,
+    },
+    smallChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: COLORS.background,
+        marginRight: 8,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    smallChipActive: {
+        backgroundColor: COLORS.accent,
+        borderColor: COLORS.accent,
+    },
+    smallChipText: {
+        fontSize: 12,
+        color: COLORS.text,
+    },
+    smallChipTextActive: {
+        color: COLORS.white,
+        fontWeight: 'bold',
     },
 });
 

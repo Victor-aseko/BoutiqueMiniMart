@@ -206,7 +206,7 @@ const ContactScreen = () => {
                         </View>
 
                         <View style={styles.footerBottom}>
-                            <Text style={styles.footerCopyright}>© 2025 MiniBoutique. All rights reserved.</Text>
+                            <Text style={styles.footerCopyright}>© 2026 MiniBoutique. All rights reserved.</Text>
                             <View style={styles.footerPolicies}>
                                 <TouchableOpacity onPress={() => Linking.openURL('https://www.blueberiboutique.com/pages/privacy-policy?')}>
                                     <Text style={styles.policyText}>Privacy Policy</Text>

@@ -82,7 +82,7 @@ const AnimatedAdverts = () => {
         index,
         animated: true,
       });
-    }, 5500);
+    }, 7000);
 
     return () => clearInterval(timer);
   }, []);
@@ -172,7 +172,7 @@ const AnimatedAdverts = () => {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginVertical: 10,
+    marginVertical: 8,
   },
   cardContainer: {
     width: width, // ENTIRE screen width

@@ -49,6 +49,7 @@ const productSchema = mongoose.Schema(
         sizes: [
             {
                 name: { type: String, required: true },
+                color: { type: String }, // Link to a specific color name
                 status: {
                     type: String,
                     required: true,

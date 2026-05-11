@@ -127,9 +127,16 @@ const HomeScreen = ({ navigation }) => {
         }
     }, [products]);
 
+    // Helper to check if an offer is still valid based on its end date
+    const isOfferActive = (product) => {
+        if (!product.isOffer) return false;
+        if (!product.offerEndDate) return true; // Assume permanent if no date set
+        return new Date(product.offerEndDate) > new Date();
+    };
+
     // Derived state for filtered products - only show in-stock items
-    const specialOffers = products.filter(p => p.isOffer && p.countInStock > 0);
-    const newArrivals = products.filter(p => !p.isOffer && p.countInStock > 0);
+    const specialOffers = products.filter(p => isOfferActive(p) && p.countInStock > 0);
+    const newArrivals = products.filter(p => !isOfferActive(p) && p.countInStock > 0);
     const hotDeals = products.filter(p => p.isHotDeal && p.countInStock > 0);
     const trendingProducts = products.filter(p => p.isTrending && p.countInStock > 0);
     const hotDealsAndTrends = products.filter(p => (p.isHotDeal || p.isTrending) && p.countInStock > 0);
@@ -321,7 +328,7 @@ const HomeScreen = ({ navigation }) => {
     const renderHotDealsAndTrends = () => {
         if (hotDealsAndTrends.length === 0) return null;
         return (
-            <View style={styles.sectionContainer}>
+            <View style={[styles.sectionContainer, styles.hotDealsSection]}>
                 {renderSectionHeader('🔥 Hot Deals & Trends', () => navigation.navigate('HotDealsTrends'), 'Explore All')}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
                     {hotDealsAndTrends.map((item) => (
@@ -507,7 +514,7 @@ const HomeScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.footerBottom}>
-                    <Text style={styles.footerCopyright}>© 2025 MiniBoutique. All rights reserved.</Text>
+                                            <Text style={styles.footerCopyright}>© 2026 MiniBoutique. All rights reserved.</Text>
                     <View style={styles.footerPolicies}>
                         <TouchableOpacity onPress={() => Linking.openURL('https://www.blueberiboutique.com/pages/privacy-policy?')}>
                             <Text style={styles.policyText}>Privacy Policy</Text>
@@ -666,7 +673,7 @@ const HomeScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.footerBottom}>
-                        <Text style={styles.footerCopyright}>© 2025 MiniBoutique. All rights reserved.</Text>
+                                                <Text style={styles.footerCopyright}>© 2026 MiniBoutique. All rights reserved.</Text>
                         <View style={styles.footerPolicies}>
                             <TouchableOpacity onPress={() => Linking.openURL('https://www.blueberiboutique.com/pages/privacy-policy?')}>
                                 <Text style={styles.policyText}>Privacy Policy</Text>
@@ -791,14 +798,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     sectionContainer: {
-        paddingTop: 10,
-        paddingBottom: 10,
+        paddingTop: 8,
+        paddingBottom: 5,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 10,
         paddingHorizontal: 15,
     },
     centeredSectionHeader: {
@@ -817,6 +824,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: COLORS.primary,
+        letterSpacing: 1.5,
     },
     seeAll: {
         fontSize: 14,
@@ -825,9 +833,9 @@ const styles = StyleSheet.create({
     },
     newArrivalsContainer: {
         paddingLeft: 10,
-        marginBottom: 20,
+        marginBottom: 8,
         backgroundColor: COLORS.white,
-        paddingBottom: 20,
+        paddingBottom: 2,
     },
     productsGrid: {
         flexDirection: 'row',
@@ -835,8 +843,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     offersSection: {
-        marginBottom: 10,
+        marginBottom: 8,
         marginTop: 5,
+    },
+    hotDealsSection: {
+        marginTop: 15,
+        marginBottom: 10,
     },
     offersContainer: {
         paddingHorizontal: 0,
@@ -861,7 +873,7 @@ const styles = StyleSheet.create({
         paddingVertical: 25,
         paddingHorizontal: 20,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 5,
     },
     footerBrand: {
         fontSize: 18,
@@ -946,7 +958,7 @@ const styles = StyleSheet.create({
         height: 480, // Reduced slightly to accommodate overlay without being too massive
         width: '100%',
         marginHorizontal: 0,
-        marginBottom: 20,
+        marginBottom: 15,
         justifyContent: 'flex-end',
     },
     heroOverlay: {

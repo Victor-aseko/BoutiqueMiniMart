@@ -21,27 +21,65 @@ const RegisterScreen = ({ navigation, route }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const { register, authLoading, error, setError, clearError } = useAuth();
+    const [nameError, setNameError] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
     useEffect(() => {
         clearError();
     }, []);
 
-    const handleInputChange = (setter) => (text) => {
+    const handleInputChange = (field, setter) => (text) => {
         setter(text);
         if (error) clearError();
+
+        // Real-time validation
+        if (field === 'name') {
+            if (!text.trim()) setNameError('Full Name is required');
+            else setNameError('');
+        }
+
+        if (field === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!text.trim()) setEmailError('Email is required');
+            else if (!emailRegex.test(text.trim())) setEmailError('Enter a valid email address');
+            else setEmailError('');
+        }
+
+        if (field === 'password') {
+            if (!text) setPasswordError('Password is required');
+            else if (text.length < 8) setPasswordError('Min 8 characters required');
+            else setPasswordError('');
+
+            // Also re-validate confirm password if it's already filled
+            if (confirmPassword && text !== confirmPassword) setConfirmPasswordError('Passwords do not match');
+            else if (confirmPassword && text === confirmPassword) setConfirmPasswordError('');
+        }
+
+        if (field === 'confirmPassword') {
+            if (!text) setConfirmPasswordError('Please confirm your password');
+            else if (text !== password) setConfirmPasswordError('Passwords do not match');
+            else setConfirmPasswordError('');
+        }
     };
 
     const handleRegister = async () => {
-        if (!name || !email || !password) {
-            setError('Please fill in all fields to create your account.');
-            return;
-        }
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters long.');
-            return;
-        }
-        if (password !== confirmPassword) {
-            setError("Passwords do not match. Please check and try again.");
+        // Final validation check
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        let hasError = false;
+        if (!name.trim()) { setNameError('Full Name is required'); hasError = true; }
+        if (!email.trim()) { setEmailError('Email is required'); hasError = true; }
+        else if (!emailRegex.test(email.trim())) { setEmailError('Enter a valid email address'); hasError = true; }
+        
+        if (!password) { setPasswordError('Password is required'); hasError = true; }
+        else if (password.length < 8) { setPasswordError('Password must be at least 8 characters long'); hasError = true; }
+        
+        if (password !== confirmPassword) { setConfirmPasswordError("Passwords do not match"); hasError = true; }
+
+        if (hasError) {
+            setError('Please correct the errors in the form.');
             return;
         }
         try {
@@ -134,33 +172,37 @@ const RegisterScreen = ({ navigation, route }) => {
                             label="Full Name"
                             placeholder="mini Boutique"
                             value={name}
-                            onChangeText={handleInputChange(setName)}
+                            onChangeText={handleInputChange('name', setName)}
                             icon={User}
+                            error={nameError}
                         />
                         <MyInput
                             label="Email"
                             placeholder="miniboutique043@gmail.com"
                             value={email}
-                            onChangeText={handleInputChange(setEmail)}
+                            onChangeText={handleInputChange('email', setEmail)}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             icon={Mail}
+                            error={emailError}
                         />
                         <MyInput
                             label="Password"
-                            placeholder="Min 6 characters"
+                            placeholder="Min 8 characters"
                             value={password}
-                            onChangeText={handleInputChange(setPassword)}
+                            onChangeText={handleInputChange('password', setPassword)}
                             secureTextEntry
                             icon={Lock}
+                            error={passwordError}
                         />
                         <MyInput
                             label="Confirm Password"
                             placeholder="Re-enter password"
                             value={confirmPassword}
-                            onChangeText={handleInputChange(setConfirmPassword)}
+                            onChangeText={handleInputChange('confirmPassword', setConfirmPassword)}
                             secureTextEntry
                             icon={Lock}
+                            error={confirmPasswordError}
                         />
 
                         <MyButton

@@ -42,7 +42,14 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
         }
     }, [hasVariants]);
 
-    const onSale = product.isOffer || isOffer;
+    // Check if offer is still valid based on date
+    const isOfferActive = (p) => {
+        if (!p.isOffer) return false;
+        if (!p.offerEndDate) return true;
+        return new Date(p.offerEndDate) > new Date();
+    };
+
+    const onSale = isOfferActive(product) || isOffer;
     const itemPrice = Math.floor(product.price);
     const oldPrice = (onSale && product.originalPrice && product.originalPrice > product.price)
         ? Math.floor(product.originalPrice)
@@ -96,16 +103,16 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                 {(() => {
                     const baseStatus = (product.colors && product.colors.length > 0) ? product.colors[0].status : null;
                     const variantStatus = selectedVariant?.status || baseStatus;
-                    const statusToShow = (variantStatus && variantStatus !== 'In Stock') 
-                        ? variantStatus 
+                    const statusToShow = (variantStatus && variantStatus !== 'In Stock')
+                        ? variantStatus
                         : (product.status && product.status !== 'In Stock' ? product.status : null);
-                    
+
                     if (!statusToShow) return null;
 
                     return (
                         <View style={[
-                            styles.statusBadge, 
-                            statusToShow === 'Sold' ? styles.soldBadge : styles.outOfStockBadge, 
+                            styles.statusBadge,
+                            statusToShow === 'Sold' ? styles.soldBadge : styles.outOfStockBadge,
                             { top: 40 }
                         ]}>
                             <Text style={styles.statusBadgeText}>{statusToShow.toUpperCase()}</Text>
@@ -160,23 +167,20 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
                 <Text style={styles.name} numberOfLines={1}>{product.name}</Text>
 
                 {/* Show saved color and size if they exist */}
-                {(product.selectedColorForWishlist || product.selectedSizeForWishlist) && (
-                    <Text style={{ fontSize: 11, color: COLORS.textLight, marginBottom: 4 }} numberOfLines={1}>
-                        {product.selectedColorForWishlist?.name ? `Color: ${product.selectedColorForWishlist.name}` : ''}
-                        {product.selectedColorForWishlist?.name && product.selectedSizeForWishlist ? ' | ' : ''}
-                        {product.selectedSizeForWishlist ? `Size: ${typeof product.selectedSizeForWishlist === 'string' ? product.selectedSizeForWishlist : (product.selectedSizeForWishlist.name || 'Default')}` : ''}
-                    </Text>
-                )}
+                <Text style={[{ fontSize: 11, color: COLORS.textLight, marginBottom: 2 }, !(product.selectedColorForWishlist || product.selectedSizeForWishlist) && { opacity: 0 }]} numberOfLines={1}>
+                    {product.selectedColorForWishlist?.name ? `Color: ${product.selectedColorForWishlist.name}` : ''}
+                    {product.selectedColorForWishlist?.name && product.selectedSizeForWishlist ? ' | ' : ''}
+                    {product.selectedSizeForWishlist ? `Size: ${typeof product.selectedSizeForWishlist === 'string' ? product.selectedSizeForWishlist : (product.selectedSizeForWishlist.name || 'Default')}` : ''}
+                    {!(product.selectedColorForWishlist || product.selectedSizeForWishlist) && 'Placeholder'}
+                </Text>
 
                 <View style={styles.row}>
-                    {onSale ? (
-                        <View style={styles.priceColumn}>
-                            <Text style={styles.offerOldPrice}>Kshs {oldPrice.toLocaleString()}</Text>
-                            <Text style={styles.price}>Kshs {itemPrice.toLocaleString()}</Text>
-                        </View>
-                    ) : (
+                    <View style={styles.priceColumn}>
+                        <Text style={[styles.offerOldPrice, !onSale && { opacity: 0 }]}>
+                            {onSale ? `Kshs ${oldPrice.toLocaleString()}` : 'Placeholder'}
+                        </Text>
                         <Text style={styles.price}>Kshs {itemPrice.toLocaleString()}</Text>
-                    )}
+                    </View>
                     <Rating rating={product.rating} size={10} />
                 </View>
 
@@ -226,7 +230,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: SIZES.radius,
         width: '100%',
-        marginBottom: 10,
+        marginBottom: 1,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: COLORS.border,
@@ -248,11 +252,11 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '100%',
-        height: 240, // More height for premium vertical look
+        height: 230, // Reduced height
         backgroundColor: '#f9f9f9',
     },
     info: {
-        padding: 10,
+        padding: 8, // Reduced from 10
     },
     category: {
         fontSize: 10,
@@ -261,10 +265,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     name: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
         color: COLORS.text,
-        marginVertical: 4,
+        marginVertical: 0, // Reduced from 4
     },
     footer: {
         flexDirection: 'row',
@@ -285,6 +289,8 @@ const styles = StyleSheet.create({
     },
     priceColumn: {
         flexDirection: 'column',
+        justifyContent: 'center',
+        minHeight: 22, // Tighter price area
     },
     oldPrice: {
         fontSize: 10,
@@ -347,9 +353,9 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 10,
         left: 10,
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 6,
         zIndex: 10,
     },
     hotBadge: {
@@ -368,7 +374,7 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: 10,
         fontWeight: 'bold',
-        letterSpacing: 0.5,
+        letterSpacing: 1.2,
     },
     disabledBtn: {
         backgroundColor: '#BDC3C7',
