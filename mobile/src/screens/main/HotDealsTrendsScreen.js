@@ -26,7 +26,7 @@ const HotDealsTrendsScreen = ({ navigation }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    
+
     // Cart Modal State
     const [selectedProductForCart, setSelectedProductForCart] = useState(null);
     const [selectedColorForCart, setSelectedColorForCart] = useState(null);
@@ -77,10 +77,10 @@ const HotDealsTrendsScreen = ({ navigation }) => {
 
     const filteredProducts = useMemo(() => {
         if (!searchQuery.trim()) return products;
-        
+
         const query = searchQuery.toLowerCase().trim();
-        return products.filter(p => 
-            p.name.toLowerCase().includes(query) || 
+        return products.filter(p =>
+            p.name.toLowerCase().includes(query) ||
             p.category.toLowerCase().includes(query) ||
             (p.brand && p.brand.toLowerCase().includes(query))
         );
@@ -117,7 +117,7 @@ const HotDealsTrendsScreen = ({ navigation }) => {
                     <ChevronLeft size={24} color={COLORS.primary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Hot Deals & Trends</Text>
-                <View style={{ width: 40 }} /> 
+                <View style={{ width: 40 }} />
             </View>
 
             {/* Inline Search Bar */}
@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
     },
     row: {
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 5,
     },
     productWrapper: {
         width: '48%',
-        marginBottom: 5,
+        marginBottom: 10,
     },
     empty: {
         alignItems: 'center',

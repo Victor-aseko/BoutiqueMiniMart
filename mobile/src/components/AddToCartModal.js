@@ -47,7 +47,11 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
     if (!product) return null;
 
     const handleConfirm = () => {
-        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        // Find color-specific size first, then global
+        let currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+        if (!currentSizeObj) {
+            currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+        }
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
         const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
         
@@ -171,28 +175,30 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                                 <View style={styles.section}>
                                     <Text style={styles.sectionTitle}>Select Size: <Text style={styles.selectedVal}>{selectedSize}</Text></Text>
                                     <View style={styles.optionsRow}>
-                                        {product.sizes.map((s, i) => {
-                                            const sizeName = typeof s === 'string' ? s : s.name;
-                                            const isSold = typeof s === 'object' && s.status === 'Sold';
-                                            const isOut = typeof s === 'object' && s.status === 'Out of Stock';
-                                            return (
-                                                <TouchableOpacity
-                                                    key={i}
-                                                    style={[
-                                                        styles.sizeOption,
-                                                        selectedSize === sizeName && styles.selectedOption,
-                                                        (isSold || isOut) && { opacity: 0.5, borderColor: isSold ? COLORS.error : COLORS.secondary }
-                                                    ]}
-                                                    onPress={() => setSelectedSize(sizeName)}
-                                                >
-                                                    <Text style={[
-                                                        styles.sizeText,
-                                                        selectedSize === sizeName && styles.selectedSizeText,
-                                                        isSold && { color: COLORS.error }
-                                                    ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
+                                        {product.sizes
+                                            .filter(s => !s.color || s.color === (selectedColor?.name || product.colors?.[0]?.name))
+                                            .map((s, i) => {
+                                                const sizeName = typeof s === 'string' ? s : s.name;
+                                                const isSold = typeof s === 'object' && s.status === 'Sold';
+                                                const isOut = typeof s === 'object' && s.status === 'Out of Stock';
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={i}
+                                                        style={[
+                                                            styles.sizeOption,
+                                                            selectedSize === sizeName && styles.selectedOption,
+                                                            (isSold || isOut) && { opacity: 0.5, borderColor: isSold ? COLORS.error : COLORS.secondary }
+                                                        ]}
+                                                        onPress={() => setSelectedSize(sizeName)}
+                                                    >
+                                                        <Text style={[
+                                                            styles.sizeText,
+                                                            selectedSize === sizeName && styles.selectedSizeText,
+                                                            isSold && { color: COLORS.error }
+                                                        ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
                                     </View>
                                 </View>
                             )}
@@ -223,7 +229,10 @@ const AddToCartModal = ({ visible, onClose, product, onAddToCart, initialColor }
                         </ScrollView>
 
                         {(() => {
-                            const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                            let currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+                            if (!currentSize) {
+                                currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+                            }
                             const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
                             const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
                             

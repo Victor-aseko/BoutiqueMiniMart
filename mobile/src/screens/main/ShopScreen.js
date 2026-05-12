@@ -658,11 +658,11 @@ const styles = StyleSheet.create({
     },
     row: {
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 5,
     },
     productWrapper: {
         width: '48%',
-        marginBottom: 15,
+        marginBottom: 10,
     },
     empty: {
         alignItems: 'center',

@@ -396,7 +396,7 @@ const HomeScreen = ({ navigation }) => {
                         removeClippedSubviews={true}
                         contentContainerStyle={styles.modalContentContainer}
                         renderItem={({ item }) => (
-                            <View style={{ width: '48%', marginBottom: 15 }}>
+                            <View style={{ width: '48%', marginBottom: 10 }}>
                                 <ProductCard
                                     product={item}
                                     onPress={(p, color) => {
@@ -441,7 +441,7 @@ const HomeScreen = ({ navigation }) => {
                         removeClippedSubviews={true}
                         contentContainerStyle={styles.modalContentContainer}
                         renderItem={({ item }) => (
-                            <View style={{ width: '48%', marginBottom: 15 }}>
+                            <View style={{ width: '48%', marginBottom: 10 }}>
                                 <ProductCard
                                     product={item}
                                     onPress={(p, color) => {
@@ -574,7 +574,7 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: -10 }}
+                contentContainerStyle={{ paddingBottom: 0 }}
             >
 
 
@@ -1006,7 +1006,12 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     modalContentContainer: {
-        padding: 15,
+        padding: 10,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 5,
     },
     categoryCard: {
         width: 200,

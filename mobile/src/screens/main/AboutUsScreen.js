@@ -43,7 +43,7 @@ const AboutUsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 10 }}>
                 {/* Section 1: Header & Intro */}
                 <View style={styles.headerSection}>
                     <View style={styles.overlay}>
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.1)',
         paddingTop: 20,
-        paddingBottom: 30,
+        paddingBottom: 10,
         alignItems: 'center',
         marginTop: 10,
     },

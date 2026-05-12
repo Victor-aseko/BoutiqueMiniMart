@@ -50,7 +50,9 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
     };
 
     const onSale = isOfferActive(product) || isOffer;
-    const itemPrice = Math.floor(product.price);
+    const itemPrice = onSale 
+        ? Math.floor(product.price) 
+        : (product.originalPrice ? Math.floor(product.originalPrice) : Math.floor(product.price));
     const oldPrice = (onSale && product.originalPrice && product.originalPrice > product.price)
         ? Math.floor(product.originalPrice)
         : itemPrice;
@@ -228,7 +230,7 @@ const ProductCard = ({ product, onPress, onAddToCart, onRemove, style, isOffer =
 const styles = StyleSheet.create({
     container: {
         backgroundColor: COLORS.white,
-        borderRadius: SIZES.radius,
+        borderRadius: 20,
         width: '100%',
         marginBottom: 1,
         overflow: 'hidden',
@@ -318,7 +320,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 8,
-        borderRadius: 8,
+        borderRadius: 20,
         marginTop: 10,
     },
     addToCartText: {
@@ -331,6 +333,9 @@ const styles = StyleSheet.create({
         position: 'relative',
         width: '100%',
         height: 240,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        overflow: 'hidden',
     },
     arrowBtn: {
         position: 'absolute',
@@ -355,7 +360,7 @@ const styles = StyleSheet.create({
         left: 10,
         paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 6,
+        borderRadius: 12,
         zIndex: 10,
     },
     hotBadge: {

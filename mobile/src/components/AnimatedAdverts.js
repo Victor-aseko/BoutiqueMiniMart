@@ -8,9 +8,9 @@ const { width } = Dimensions.get('window');
 const adverts = [
   {
     id: '1',
-    title: "SHOP SMARTER. ORDER FASTER.",
-    subtitle: "Experience luxury fashion shopping strictly tailored for your device.",
-    action: "DISCOVER NOW",
+    title: "MAMBO NI DIGITAL! Shop Smarter, Order Faster",
+    subtitle: "Agiza bidhaa zako kwa urahisi na uharaka kupitia simu yako. Karibu MiniBoutique!",
+    action: "Discover Now",
     image: require('../../assets/UserCard.png'),
     bgColors: ['#0F2027', '#203A43', '#2C5364'], // Sleek Dark Slate
     highlightColor: '#56CCF2', // Bright Blue
@@ -32,7 +32,7 @@ const adverts = [
     title: "PREMIUM EXCLUSIVE ACCESS",
     subtitle: " Shop Smart with MiniBoutique and Deliver Fast",
     action: "SHOP NOW",
-    image: require('../../assets/User 5.png'),
+    image: require('../../assets/User_5.png'),
     bgColors: ['#2F0743', '#41295A'], // Deep Luxury Purple
     highlightColor: '#F8CBA6', // Rose Gold
     imageMode: 'cover'
@@ -246,8 +246,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    right: 0,
   }
 });
 

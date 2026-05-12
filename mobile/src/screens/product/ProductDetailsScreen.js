@@ -76,7 +76,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }, [route.params?.selectedColor, route.params?.selectedSize, product._id]);
 
     const handleAddToCart = async () => {
-        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        // Find color-specific size first, then global
+        let currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+        if (!currentSizeObj) {
+            currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+        }
+
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
         const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
 
@@ -98,14 +103,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             : product.size;
         const finalSize = (selectedSize || defaultSize || 'Default').toString();
 
-        const finalPrice = (route.params?.isOffer || isOfferActive(product))
+        const currentPrice = (route.params?.isOffer || isOfferActive(product))
             ? Math.floor(Number(product.price))
-            : Number(product.price);
+            : (product.originalPrice ? Math.floor(Number(product.originalPrice)) : Math.floor(Number(product.price)));
 
         const productToAdd = {
             ...product,
             image: finalColorImage,
-            price: finalPrice,
+            price: currentPrice,
             size: finalSize, // Ensure string
             color: finalColor // Ensure string
         };
@@ -130,6 +135,19 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             console.log(error.message);
         }
     };
+
+    // Sync size when color changes to ensure the selected size is valid for the new color
+    useEffect(() => {
+        if (!product || !selectedColor) return;
+
+        const filteredSizes = product.sizes?.filter(s => !s.color || s.color === selectedColor.name) || [];
+        const isCurrentSizeValid = filteredSizes.some(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+
+        if (!isCurrentSizeValid && filteredSizes.length > 0) {
+            const firstValidSize = typeof filteredSizes[0] === 'string' ? filteredSizes[0] : filteredSizes[0].name;
+            setSelectedSize(firstValidSize);
+        }
+    }, [selectedColor?.name, product.sizes]);
 
     // Add to recently viewed on mount/focus
     useEffect(() => {
@@ -157,7 +175,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     };
 
     const handleOrderNow = () => {
-        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+        // Find color-specific size first, then global
+        let currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+        if (!currentSizeObj) {
+            currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+        }
+
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
         const isSizeOut = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Out of Stock';
 
@@ -195,7 +218,11 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         // Check for sold status before confirming
         const isGlobalSold = product.status === 'Sold';
         const isColorSold = selectedColor?.status === 'Sold';
-        const currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+
+        let currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+        if (!currentSizeObj) {
+            currentSizeObj = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+        }
         const isSizeSold = typeof currentSizeObj === 'object' && currentSizeObj.status === 'Sold';
 
         if (isGlobalSold || isColorSold || isSizeSold) {
@@ -205,16 +232,16 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         const finalColor = (selectedColor?.name || (product.colors && product.colors.length > 0 ? product.colors[0].name : product.color) || 'Default').toString();
         const finalSize = (selectedSize || (product.sizes && product.sizes.length > 0 ? (typeof product.sizes[0] === 'string' ? product.sizes[0] : product.sizes[0].name) : product.size) || 'Default').toString();
 
-        const finalPrice = (route.params?.isOffer || isOfferActive(product))
+        const currentPrice = (route.params?.isOffer || isOfferActive(product))
             ? Math.floor(Number(product.price))
-            : Number(product.price);
+            : (product.originalPrice ? Math.floor(Number(product.originalPrice)) : Math.floor(Number(product.price)));
 
         const finalColorImage = selectedColor?.image || (product.colors && product.colors.length > 0 ? product.colors[0].image : product.image);
 
         navigation.navigate('Orders', {
             screen: 'OrdersScreen',
             params: {
-                product: { ...product, image: finalColorImage, price: finalPrice },
+                product: { ...product, image: finalColorImage, price: currentPrice },
                 qty: orderQty,
                 shippingAddress: {
                     ...selectedAddress,
@@ -223,7 +250,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 location: selectedAddress.city,
                 color: finalColor,
                 size: finalSize,
-                price: finalPrice, // Pass price explicitly too
+                price: currentPrice, // Pass price explicitly too
                 guestUser: route.params?.guestUser || null
             }
         });
@@ -282,26 +309,25 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
                     <ChevronLeft color={COLORS.primary} size={24} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Product Details</Text>
                 <View style={styles.headerIcons}>
-                    <TouchableOpacity onPress={handleShare} style={styles.iconBtn}>
-                        <ShareIcon color={COLORS.primary} size={22} />
+                    <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+                        <ShareIcon color={COLORS.primary} size={20} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={toggleFavorite} style={styles.iconBtn}>
-                        <Heart color={isFavorite ? COLORS.error : COLORS.primary} size={22} fill={isFavorite ? COLORS.error : 'transparent'} />
+                    <TouchableOpacity onPress={toggleFavorite} style={[styles.headerBtn, { marginLeft: 10 }]}>
+                        <Heart color={isFavorite ? COLORS.error : COLORS.primary} size={20} fill={isFavorite ? COLORS.error : 'transparent'} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 130 }}
+                contentContainerStyle={{ paddingBottom: 100 }}
             >
                 <View style={styles.imageContainer}>
-                    <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} resizeMode="cover" />
+                    <Image source={{ uri: selectedColor?.image || product.image }} style={styles.image} resizeMode="contain" />
                     {(() => {
                         const currentStatus = selectedColor?.status && selectedColor?.status !== 'In Stock'
                             ? selectedColor.status
@@ -318,16 +344,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 </View>
 
                 <View style={styles.content}>
-                    <View style={styles.metaRow}>
+                    <View style={styles.topRow}>
                         <Text style={styles.category}>{product.category}</Text>
-                        <View style={styles.ratingBox}>
+                        <TouchableOpacity style={styles.ratingBox} onPress={() => navigation.navigate('AddReview', { product })}>
                             <Rating rating={product.rating} size={14} />
-                            <Text style={styles.ratingText}>({product.numReviews} reviews)</Text>
-                        </View>
+                            <Text style={styles.ratingText}>{product.rating || 0} ({product.numReviews} Reviews)</Text>
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.reviewLink} onPress={() => navigation.navigate('AddReview', { product })}>
-                        <Text style={styles.reviewLinkText}>Write a review</Text>
-                    </TouchableOpacity>
 
                     <Text style={styles.name}>{product.name}</Text>
                     <View style={styles.brandRow}>
@@ -343,7 +366,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                     <Text style={styles.price}>Kshs {Math.floor(Number(product.price))} <Text style={styles.offTxt}>({product.offerPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)</Text></Text>
                                 </>
                             ) : (
-                                <Text style={styles.price}>Kshs {Math.floor(Number(product.price))}</Text>
+                                <Text style={styles.price}>Kshs {product.originalPrice ? Math.floor(Number(product.originalPrice)) : Math.floor(Number(product.price))}</Text>
                             )}
                         </View>
                         {product.status && product.status !== 'In Stock' && (
@@ -371,93 +394,85 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     </View>
 
                     {/* Color and Size Selection Row */}
-                    {(product.colors?.length > 0 || product.sizes?.length > 0) && (
-                        <View style={styles.variantsRow}>
-                            {/* Color Selection */}
-                            {product.colors && product.colors.length > 0 && (
-                                <View style={styles.variantSection}>
-                                    <Text style={styles.sectionTitle}>Color Variant</Text>
-                                    <View style={styles.optionsRow}>
-                                        {product.colors.map((c, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.colorOptionBtn,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected,
-                                                    (c.status === 'Sold' || c.status === 'Out of Stock') && { opacity: 0.6 }
-                                                ]}
-                                                onPress={() => setSelectedColor(c)}
-                                            >
-                                                <Image source={{ uri: c.image }} style={styles.colorOptionImg} />
-                                                <Text style={[
-                                                    styles.optionText,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected,
-                                                    c.status === 'Sold' && { color: COLORS.error }
-                                                ]}>{c.name}{c.status === 'Sold' ? ' (Sold)' : ''}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </View>
-                            )}
+                    {/* Variant Selections */}
+                    <View style={styles.variantsContainer}>
+                        {product.colors && product.colors.length > 0 && (
+                            <View style={styles.variantSection}>
+                                <Text style={styles.sectionTitle}>Color</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll}>
+                                    {product.colors.map((c, i) => (
+                                        <TouchableOpacity
+                                            key={i}
+                                            style={[
+                                                styles.colorChip,
+                                                (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorChipSelected,
+                                                (c.status === 'Sold' || c.status === 'Out of Stock') && { opacity: 0.5 }
+                                            ]}
+                                            onPress={() => setSelectedColor(c)}
+                                        >
+                                            <Image source={{ uri: c.image }} style={styles.colorChipImg} />
+                                            <Text style={[
+                                                styles.chipText,
+                                                (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.chipTextSelected
+                                            ]}>{c.name}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        )}
 
-                            {/* Size Selection */}
-                            {product.sizes && product.sizes.length > 0 && (
-                                <View style={styles.variantSection}>
-                                    <Text style={styles.sectionTitle}>Select Size</Text>
-                                    <View style={styles.optionsRow}>
-                                        {product.sizes
-                                            .filter(s => !s.color || s.color === (selectedColor?.name || product.colors?.[0]?.name))
-                                            .map((s, i) => {
-                                                const sizeName = typeof s === 'string' ? s : s.name;
-                                                const isSold = typeof s === 'object' && s.status === 'Sold';
-                                                const isOut = typeof s === 'object' && s.status === 'Out of Stock';
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={i}
-                                                        style={[
-                                                            styles.optionBtn,
-                                                            selectedSize === sizeName && styles.optionBtnSelected,
-                                                            (isSold || isOut) && { opacity: 0.6, borderColor: isSold ? COLORS.error : COLORS.secondary }
-                                                        ]}
-                                                        onPress={() => setSelectedSize(sizeName)}
-                                                    >
-                                                        <Text style={[
-                                                            styles.optionText,
-                                                            selectedSize === sizeName && styles.optionTextSelected,
-                                                            isSold && { color: COLORS.error }
-                                                        ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
-                                                    </TouchableOpacity>
-                                                )
-                                            })}
-                                    </View>
-                                </View>
-                            )}
-                        </View>
-                    )}
+                        {product.sizes && product.sizes.length > 0 && (
+                            <View style={styles.variantSection}>
+                                <Text style={styles.sectionTitle}>Size</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.optionsScroll}>
+                                    {product.sizes
+                                        .filter(s => !s.color || s.color === (selectedColor?.name || product.colors?.[0]?.name))
+                                        .map((s, i) => {
+                                            const sizeName = typeof s === 'string' ? s : s.name;
+                                            const isSold = typeof s === 'object' && s.status === 'Sold';
+                                            return (
+                                                <TouchableOpacity
+                                                    key={i}
+                                                    style={[
+                                                        styles.sizeChip,
+                                                        selectedSize === sizeName && styles.sizeChipSelected,
+                                                        isSold && { opacity: 0.5, borderColor: COLORS.error }
+                                                    ]}
+                                                    onPress={() => setSelectedSize(sizeName)}
+                                                >
+                                                    <Text style={[
+                                                        styles.chipText,
+                                                        selectedSize === sizeName && styles.chipTextSelected,
+                                                        isSold && { color: COLORS.error }
+                                                    ]}>{sizeName}</Text>
+                                                </TouchableOpacity>
+                                            )
+                                        })}
+                                </ScrollView>
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.divider} />
 
                     <View style={styles.actionRow}>
                         <View style={styles.qtyContainer}>
-                            <Text style={styles.sectionTitle}>Quantity</Text>
+                            <Text style={styles.smallTitle}>Quantity</Text>
                             <View style={styles.qtyPicker}>
-                                <TouchableOpacity
-                                    style={styles.qtyBtn}
-                                    onPress={() => qty > 1 && setQty(qty - 1)}
-                                >
-                                    <Minus size={20} color={COLORS.primary} />
+                                <TouchableOpacity style={styles.qtyBtn} onPress={() => qty > 1 && setQty(qty - 1)}>
+                                    <Minus size={18} color={COLORS.primary} />
                                 </TouchableOpacity>
                                 <Text style={styles.qtyText}>{qty}</Text>
-                                <TouchableOpacity
-                                    style={styles.qtyBtn}
-                                    onPress={() => qty < (product.countInStock || 10) && setQty(qty + 1)}
-                                >
-                                    <Plus size={20} color={COLORS.primary} />
+                                <TouchableOpacity style={styles.qtyBtn} onPress={() => qty < (product.countInStock || 10) && setQty(qty + 1)}>
+                                    <Plus size={18} color={COLORS.primary} />
                                 </TouchableOpacity>
                             </View>
                         </View>
-
                         <TouchableOpacity style={styles.wishlistBtn} onPress={toggleFavorite}>
-                            <Heart size={20} color={COLORS.accent} fill={isFavorite ? COLORS.accent : 'transparent'} />
-                            <Text style={styles.wishlistText}>Add to Wishlist</Text>
+                            <Heart size={20} color={isFavorite ? COLORS.error : COLORS.textLight} fill={isFavorite ? COLORS.error : 'transparent'} />
+                            <Text style={[styles.wishlistText, isFavorite && { color: COLORS.error }]}>
+                                {isFavorite ? 'In Wishlist' : 'Wishlist'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -467,12 +482,15 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 <View style={styles.totalBox}>
                     <Text style={styles.totalLabel}>Subtotal</Text>
                     <Text style={styles.totalPrice}>Kshs {
-                        Math.floor(Number(product.price)) * qty
+                        (isOfferActive(product) ? Math.floor(Number(product.price)) : (product.originalPrice ? Math.floor(Number(product.originalPrice)) : Math.floor(Number(product.price)))) * qty
                     }</Text>
                 </View>
                 <View style={{ flexDirection: 'row', flex: 2 }}>
                     {(() => {
-                        const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                        let currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+                        if (!currentSize) {
+                            currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+                        }
                         const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
                         const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
 
@@ -502,7 +520,10 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                         );
                     })()}
                     {(() => {
-                        const currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize);
+                        let currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && s.color === selectedColor?.name);
+                        if (!currentSize) {
+                            currentSize = product.sizes?.find(s => (typeof s === 'string' ? s : s.name) === selectedSize && !s.color);
+                        }
                         const isSizeSold = typeof currentSize === 'object' && currentSize.status === 'Sold';
                         const isSizeOut = typeof currentSize === 'object' && currentSize.status === 'Out of Stock';
 
@@ -540,78 +561,72 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                     >
                         <View style={styles.modalSheet}>
                             <View style={styles.modalHandle} />
-                            <ScrollView
-                                style={{ width: '100%', maxHeight: SIZES.height * 0.8 }}
-                                showsVerticalScrollIndicator={false}
-                                contentContainerStyle={{ alignItems: 'center', paddingBottom: 60 + insets.bottom }}
-                            >
-                                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImage} />
-                                <Text style={styles.modalName}>{product.name}</Text>
-                                <Text style={styles.modalPrice}>Kshs {
-                                    Math.floor(Number(product.price)) * orderQty
-                                }</Text>
 
-                                {/* Color Selection */}
-                                <Text style={styles.modalLabel}>Color:</Text>
-                                <View style={styles.optionsRow}>
-                                    {product.colors && product.colors.length > 0 ? (
-                                        product.colors.map((c, i) => (
-                                            <TouchableOpacity
-                                                key={i}
-                                                style={[
-                                                    styles.colorOptionBtn,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.colorOptionBtnSelected
-                                                ]}
-                                                onPress={() => setSelectedColor(c)}
-                                            >
-                                                <Image source={{ uri: c.image }} style={styles.colorOptionImg} />
-                                                <Text style={[
-                                                    styles.optionText,
-                                                    (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.optionTextSelected
-                                                ]}>{c.name}</Text>
-                                            </TouchableOpacity>
-                                        ))
-                                    ) : (
-                                        <Text style={styles.modalValue}>{product.color || 'Default'}</Text>
-                                    )}
+                            <View style={styles.modalHeaderCompact}>
+                                <Image source={{ uri: selectedColor?.image || product.image }} style={styles.modalImageCompact} />
+                                <View style={styles.modalHeaderInfo}>
+                                    <Text style={styles.modalNameCompact} numberOfLines={2}>{product.name}</Text>
+                                    <Text style={styles.modalPriceCompact}>Kshs {
+                                        (isOfferActive(product) ? Math.floor(Number(product.price)) : (product.originalPrice ? Math.floor(Number(product.originalPrice)) : Math.floor(Number(product.price)))) * orderQty
+                                    }</Text>
                                 </View>
+                            </View>
 
-                                {/* Size Selection */}
-                                <Text style={styles.modalLabel}>Size:</Text>
-                                <View style={styles.optionsRow}>
-                                    {product.sizes && product.sizes.length > 0 ? (
-                                        product.sizes
-                                            .filter(s => !s.color || s.color === (selectedColor?.name || product.colors?.[0]?.name))
-                                            .map((s, i) => {
-                                                const sizeName = typeof s === 'string' ? s : s.name;
-                                                const isSold = typeof s === 'object' && s.status === 'Sold';
-                                                const isOut = typeof s === 'object' && s.status === 'Out of Stock';
-                                                return (
+                            <ScrollView
+                                style={{ width: '100%', maxHeight: SIZES.height * 0.6 }}
+                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+                            >
+                                {/* Compact Selections */}
+                                <View style={styles.compactSelectionGrid}>
+                                    <View style={styles.compactSelectionItem}>
+                                        <Text style={styles.modalLabelSmall}>Color</Text>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            {product.colors && product.colors.length > 0 ? (
+                                                product.colors.map((c, i) => (
                                                     <TouchableOpacity
                                                         key={i}
                                                         style={[
-                                                            styles.optionBtn,
-                                                            selectedSize === sizeName && styles.optionBtnSelected,
-                                                            (isSold || isOut) && { opacity: 0.6, borderColor: isSold ? COLORS.error : COLORS.secondary }
+                                                            styles.compactChip,
+                                                            (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.compactChipSelected
                                                         ]}
-                                                        onPress={() => setSelectedSize(sizeName)}
+                                                        onPress={() => setSelectedColor(c)}
                                                     >
-                                                        <Text style={[
-                                                            styles.optionText,
-                                                            selectedSize === sizeName && styles.optionTextSelected,
-                                                            isSold && { color: COLORS.error }
-                                                        ]}>{sizeName}{isSold ? ' (Sold)' : ''}</Text>
+                                                        <Text style={[styles.compactChipText, (selectedColor?.name === c.name || (!selectedColor && i === 0)) && styles.compactChipTextSelected]}>{c.name}</Text>
                                                     </TouchableOpacity>
-                                                )
-                                            })
-                                    ) : (
-                                        <Text style={styles.modalValue}>{typeof product.size === 'string' ? product.size : (product.size?.name || 'Default')}</Text>
-                                    )}
+                                                ))
+                                            ) : <Text style={styles.modalValueSmall}>{product.color || 'Default'}</Text>}
+                                        </ScrollView>
+                                    </View>
+
+                                    <View style={styles.compactSelectionItem}>
+                                        <Text style={styles.modalLabelSmall}>Size</Text>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                            {product.sizes && product.sizes.length > 0 ? (
+                                                product.sizes
+                                                    .filter(s => !s.color || s.color === (selectedColor?.name || product.colors?.[0]?.name))
+                                                    .map((s, i) => {
+                                                        const sizeName = typeof s === 'string' ? s : s.name;
+                                                        return (
+                                                            <TouchableOpacity
+                                                                key={i}
+                                                                style={[styles.compactChip, selectedSize === sizeName && styles.compactChipSelected]}
+                                                                onPress={() => setSelectedSize(sizeName)}
+                                                            >
+                                                                <Text style={[styles.compactChipText, selectedSize === sizeName && styles.compactChipTextSelected]}>{sizeName}</Text>
+                                                            </TouchableOpacity>
+                                                        )
+                                                    })
+                                            ) : <Text style={styles.modalValueSmall}>{typeof product.size === 'string' ? product.size : (product.size?.name || 'Default')}</Text>}
+                                        </ScrollView>
+                                    </View>
                                 </View>
 
-                                <View style={styles.modalRow}>
-                                    <Text style={styles.modalLabel}>Shipping to:</Text>
-                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                <View style={styles.compactDivider} />
+
+                                <View style={styles.modalRowCompact}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.modalLabelSmall}>Shipping Address</Text>
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setOrderModalVisible(false);
@@ -628,25 +643,21 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                                     }
                                                 });
                                             }}
-                                            style={styles.locationBtn}
+                                            style={styles.locationBtnCompact}
                                         >
-                                            <Text style={styles.locationText} numberOfLines={1}>
-                                                {selectedAddress
-                                                    ? `${selectedAddress.city}, ${selectedAddress.street}`
-                                                    : (user?.addresses?.length > 0 ? "Select Address" : "Add Address")
-                                                }
+                                            <Text style={styles.locationTextCompact} numberOfLines={1}>
+                                                {selectedAddress ? `${selectedAddress.city}, ${selectedAddress.street}` : (user?.addresses?.length > 0 ? "Select Address" : "Add Address")}
                                             </Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
 
-                                <View style={styles.modalRow}>
-                                    <Text style={styles.modalLabel}>Phone Number:</Text>
-                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                        <View style={styles.phoneInputContainer}>
-                                            <Phone size={16} color={COLORS.textLight} style={{ marginRight: 5 }} />
+                                <View style={styles.modalRowCompact}>
+                                    <View style={{ flex: 1, marginRight: 10 }}>
+                                        <Text style={styles.modalLabelSmall}>Phone</Text>
+                                        <View style={styles.phoneInputCompact}>
                                             <TextInput
-                                                style={styles.phoneInput}
+                                                style={styles.phoneInputTextCompact}
                                                 value={phoneNumber}
                                                 onChangeText={setPhoneNumber}
                                                 placeholder="Enter phone"
@@ -654,38 +665,24 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                                             />
                                         </View>
                                     </View>
-                                </View>
-
-                                <View style={styles.modalRow}>
-                                    <Text style={styles.modalLabel}>Quantity:</Text>
-                                    <View style={styles.qtyPicker}>
-                                        <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty > 1 && setOrderQty(orderQty - 1)}>
-                                            <Minus size={20} color={COLORS.primary} />
-                                        </TouchableOpacity>
-                                        <Text style={styles.qtyText}>{orderQty}</Text>
-                                        <TouchableOpacity style={styles.qtyBtn} onPress={() => orderQty < (product.countInStock || 10) && setOrderQty(orderQty + 1)}>
-                                            <Plus size={20} color={COLORS.primary} />
-                                        </TouchableOpacity>
+                                    <View style={{ flex: 0.6 }}>
+                                        <Text style={styles.modalLabelSmall}>Qty</Text>
+                                        <View style={styles.qtyPickerCompact}>
+                                            <TouchableOpacity style={styles.qtyBtnSmall} onPress={() => orderQty > 1 && setOrderQty(orderQty - 1)}>
+                                                <Minus size={16} color={COLORS.primary} />
+                                            </TouchableOpacity>
+                                            <Text style={styles.qtyTextSmall}>{orderQty}</Text>
+                                            <TouchableOpacity style={styles.qtyBtnSmall} onPress={() => orderQty < (product.countInStock || 10) && setOrderQty(orderQty + 1)}>
+                                                <Plus size={16} color={COLORS.primary} />
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                 </View>
+
                                 <MyButton
                                     title="Confirm Order"
                                     onPress={handleConfirmOrder}
-                                    style={[
-                                        styles.modalOkBtn,
-                                        (() => {
-                                            const isColSold = selectedColor?.status === 'Sold';
-                                            const sizeObj = product.sizes?.find(sz => (typeof sz === 'string' ? sz : sz.name) === selectedSize);
-                                            const isSzSold = typeof sizeObj === 'object' && sizeObj.status === 'Sold';
-                                            return (product.status === 'Sold' || isColSold || isSzSold) ? styles.disabledBtn : {};
-                                        })()
-                                    ]}
-                                    disabled={(() => {
-                                        const isColSold = selectedColor?.status === 'Sold';
-                                        const sizeObj = product.sizes?.find(sz => (typeof sz === 'string' ? sz : sz.name) === selectedSize);
-                                        const isSzSold = typeof sizeObj === 'object' && sizeObj.status === 'Sold';
-                                        return (product.status === 'Sold' || isColSold || isSzSold);
-                                    })()}
+                                    style={styles.modalOkBtnCompact}
                                 />
                             </ScrollView>
                         </View>
@@ -737,106 +734,104 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
     },
     header: {
+        position: 'absolute',
+        top: Platform.OS === 'ios' ? 50 : 20,
+        left: 0,
+        right: 0,
+        zIndex: 100,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 15,
+        paddingHorizontal: 20,
     },
-    backBtn: {
-        padding: 8,
-        backgroundColor: COLORS.background,
-        borderRadius: 10,
+    headerBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: COLORS.primary,
+    imageContainer: {
+        width: SCREEN_WIDTH,
+        height: 450,
+        backgroundColor: '#f7f7f7',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        overflow: 'hidden',
     },
     image: {
         width: '100%',
-        height: 450,
-        backgroundColor: '#f0f0f0',
+        height: '100%',
+    },
+    statusBadge: {
+        position: 'absolute',
+        top: 110,
+        left: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+    },
+    soldBadge: { backgroundColor: COLORS.error },
+    outOfStockBadge: { backgroundColor: COLORS.secondary },
+    statusBadgeText: {
+        color: COLORS.white,
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
     content: {
-        padding: 20,
+        flex: 1,
         backgroundColor: COLORS.white,
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        marginTop: -35,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
+        marginTop: -25,
+        padding: 25,
+        paddingTop: 30,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 5,
+        shadowRadius: 10,
+        elevation: 10,
     },
-    metaRow: {
+    topRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     category: {
-        fontSize: 12,
+        fontSize: 11,
+        fontWeight: '800',
         color: COLORS.accent,
-        fontWeight: 'bold',
         textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     ratingBox: {
         flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: COLORS.background,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
     ratingText: {
-        fontSize: 12,
+        fontSize: 11,
+        fontWeight: '600',
         color: COLORS.textLight,
         marginLeft: 5,
     },
     name: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: '800',
         color: COLORS.primary,
         marginBottom: 8,
-    },
-    priceContainer: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        marginBottom: 20,
-    },
-    offerOldPrice: {
-        fontSize: 18,
-        color: COLORS.error,
-        textDecorationLine: 'line-through',
-        marginRight: 10,
-        fontWeight: 'bold',
-    },
-    price: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        color: COLORS.accent,
-    },
-    offTxt: {
-        fontSize: 14,
-        color: COLORS.success,
-        fontWeight: 'bold',
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: COLORS.primary,
-        marginBottom: 10,
-    },
-    description: {
-        fontSize: 15,
-        color: COLORS.textLight,
-        lineHeight: 22,
-        marginBottom: 25,
-    },
-    headerIcons: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    iconBtn: {
-        marginLeft: 15,
-        padding: 5,
+        lineHeight: 30,
     },
     brandRow: {
         flexDirection: 'row',
@@ -844,14 +839,355 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     brandLabel: {
-        fontSize: 14,
+        fontSize: 13,
         color: COLORS.textLight,
-        marginRight: 5,
+        marginRight: 4,
     },
     brandValue: {
-        fontSize: 14,
-        fontWeight: 'bold',
+        fontSize: 13,
+        fontWeight: '700',
         color: COLORS.primary,
+    },
+    priceContainer: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        marginBottom: 25,
+    },
+    price: {
+        fontSize: 28,
+        fontWeight: '900',
+        color: COLORS.primary,
+    },
+    offerOldPrice: {
+        fontSize: 16,
+        color: COLORS.error,
+        textDecorationLine: 'line-through',
+        marginRight: 8,
+        fontWeight: '700',
+    },
+    offTxt: {
+        fontSize: 14,
+        color: COLORS.success,
+        fontWeight: '700',
+        marginLeft: 5,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: COLORS.primary,
+        marginBottom: 12,
+    },
+    smallTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.primary,
+        marginBottom: 6,
+    },
+    description: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 22,
+        marginBottom: 25,
+    },
+    variantsContainer: {
+        marginBottom: 25,
+    },
+    variantSection: {
+        marginBottom: 15,
+    },
+    optionsScroll: {
+        flexDirection: 'row',
+        marginHorizontal: -25,
+        paddingHorizontal: 25,
+    },
+    colorChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 25,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        marginRight: 10,
+        backgroundColor: COLORS.white,
+    },
+    colorChipSelected: {
+        borderColor: COLORS.accent,
+        backgroundColor: '#FFF5F7',
+    },
+    colorChipImg: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginRight: 8,
+    },
+    sizeChip: {
+        minWidth: 50,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        marginRight: 10,
+        backgroundColor: COLORS.white,
+    },
+    sizeChipSelected: {
+        borderColor: COLORS.accent,
+        backgroundColor: COLORS.accent,
+    },
+    chipText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+    chipTextSelected: {
+        color: COLORS.white,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginBottom: 20,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    qtyContainer: {
+        flex: 1,
+    },
+    qtyPicker: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.background,
+        borderRadius: 25,
+        width: 110,
+        justifyContent: 'space-between',
+    },
+    qtyBtn: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qtyText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: COLORS.primary,
+    },
+    wishlistBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+    },
+    wishlistText: {
+        marginLeft: 6,
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.textLight,
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        width: '100%',
+        flexDirection: 'row',
+        backgroundColor: COLORS.white,
+        paddingHorizontal: 20,
+        paddingTop: 15,
+        paddingBottom: Platform.OS === 'ios' ? 35 : 20,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+        alignItems: 'center',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+    },
+    totalBox: {
+        marginRight: 15,
+    },
+    totalLabel: {
+        fontSize: 10,
+        color: COLORS.textLight,
+        textTransform: 'uppercase',
+        fontWeight: '700',
+    },
+    totalPrice: {
+        fontSize: 18,
+        fontWeight: '900',
+        color: COLORS.primary,
+    },
+    addBtn: {
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    disabledBtn: {
+        backgroundColor: '#eee',
+    },
+    statusDetailBadge: {
+        marginLeft: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 10,
+    },
+    statusDetailBadgeText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    modalSheet: {
+        backgroundColor: COLORS.white,
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+        padding: 20,
+    },
+    modalHandle: {
+        width: 35,
+        height: 4,
+        backgroundColor: '#E0E0E0',
+        borderRadius: 2,
+        alignSelf: 'center',
+        marginBottom: 15,
+    },
+    modalHeaderCompact: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        backgroundColor: COLORS.background,
+        padding: 12,
+        borderRadius: 15,
+    },
+    modalImageCompact: {
+        width: 70,
+        height: 70,
+        borderRadius: 12,
+        marginRight: 15,
+    },
+    modalHeaderInfo: {
+        flex: 1,
+    },
+    modalNameCompact: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: COLORS.primary,
+        marginBottom: 4,
+    },
+    modalPriceCompact: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: COLORS.accent,
+    },
+    compactSelectionGrid: {
+        marginBottom: 15,
+    },
+    compactSelectionItem: {
+        marginBottom: 12,
+    },
+    modalLabelSmall: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: COLORS.textLight,
+        marginBottom: 6,
+        textTransform: 'uppercase',
+    },
+    compactChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+        backgroundColor: COLORS.background,
+        marginRight: 8,
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    compactChipSelected: {
+        backgroundColor: '#FFF5F7',
+        borderColor: COLORS.accent,
+    },
+    compactChipText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+    compactChipTextSelected: {
+        color: COLORS.accent,
+        fontWeight: '700',
+    },
+    modalValueSmall: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: COLORS.primary,
+    },
+    compactDivider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginVertical: 15,
+    },
+    modalRowCompact: {
+        flexDirection: 'row',
+        marginBottom: 15,
+        alignItems: 'flex-end',
+    },
+    locationBtnCompact: {
+        backgroundColor: COLORS.background,
+        padding: 10,
+        borderRadius: 12,
+        marginTop: 4,
+    },
+    locationTextCompact: {
+        fontSize: 13,
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    phoneInputCompact: {
+        backgroundColor: COLORS.background,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        height: 40,
+        justifyContent: 'center',
+        marginTop: 4,
+    },
+    phoneInputTextCompact: {
+        fontSize: 13,
+        color: COLORS.primary,
+        fontWeight: '600',
+        padding: 0,
+    },
+    qtyPickerCompact: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.background,
+        borderRadius: 12,
+        height: 40,
+        justifyContent: 'space-between',
+        paddingHorizontal: 5,
+        marginTop: 4,
+    },
+    qtyBtnSmall: {
+        width: 30,
+        height: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qtyTextSmall: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: COLORS.primary,
+    },
+    modalOkBtnCompact: {
+        marginTop: 10,
+        height: 50,
+        borderRadius: 25,
     },
     tagsContainer: {
         marginBottom: 25,
@@ -861,253 +1197,16 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
     },
     tag: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         backgroundColor: COLORS.background,
-        borderRadius: 15,
-        marginRight: 10,
-        marginBottom: 10,
+        borderRadius: 10,
+        marginRight: 8,
+        marginBottom: 8,
     },
     tagText: {
-        fontSize: 12,
+        fontSize: 11,
         color: COLORS.textLight,
-    },
-    actionRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
-        marginBottom: 100,
-    },
-    qtyContainer: {
-        flex: 1,
-    },
-    wishlistBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderRadius: 10,
-        marginBottom: 5,
-    },
-    wishlistText: {
-        marginLeft: 8,
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.accent,
-    },
-    reviewLink: {
-        marginTop: 8,
-        marginBottom: 10,
-    },
-    reviewLinkText: {
-        color: COLORS.accent,
-        fontWeight: '700',
-    },
-    qtyPicker: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-        borderRadius: 20,
-        padding: 2,
-        width: 120,
-    },
-    qtyBtn: {
-        padding: 8,
-    },
-    qtyText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        paddingHorizontal: 10,
-        color: COLORS.primary,
-    },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        width: '100%',
-        flexDirection: 'row',
-        backgroundColor: COLORS.white,
-        padding: 20,
-        paddingBottom: Platform.OS === 'ios' ? 55 : 35,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        alignItems: 'center',
-    },
-    totalBox: {
-        flex: 1,
-    },
-    totalLabel: {
-        fontSize: 12,
-        color: COLORS.textLight,
-    },
-    totalPrice: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.primary,
-    },
-    addBtn: {
-        flex: 2,
-        marginVertical: 0,
-        marginLeft: 5,
-    },
-    disabledBtn: {
-        backgroundColor: '#BDC3C7',
-    },
-    statusDetailBadge: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
-    },
-    statusDetailBadgeText: {
-        color: COLORS.white,
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.3)',
-    },
-    modalSheet: {
-        backgroundColor: COLORS.white,
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
-        padding: 25,
-        alignItems: 'center',
-    },
-    modalImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 15,
-        marginBottom: 10,
-    },
-    modalName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.primary,
-        marginBottom: 5,
-    },
-    modalPrice: {
-        fontSize: 16,
-        color: COLORS.accent,
-        marginBottom: 10,
-    },
-    modalLabel: {
-        fontSize: 15,
-        color: COLORS.textLight,
-        marginBottom: 5,
-    },
-    modalValue: {
-        fontWeight: 'bold',
-        color: COLORS.primary,
-    },
-    modalRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-        width: '100%',
-        justifyContent: 'space-between',
-    },
-    locationBtn: {
-        backgroundColor: COLORS.background,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
-    },
-    locationText: {
-        color: COLORS.primary,
-        fontWeight: 'bold',
-    },
-    modalOkBtn: {
-        marginTop: 15,
-        width: '100%',
-    },
-    optionsRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 10,
-    },
-    optionBtn: {
-        paddingHorizontal: 15,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 12,
-        marginRight: 10,
-        marginBottom: 8,
-        backgroundColor: COLORS.white,
-    },
-    optionBtnSelected: {
-        backgroundColor: COLORS.accent,
-        borderColor: COLORS.accent,
-        shadowColor: COLORS.accent,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        elevation: 3,
-    },
-    optionText: {
-        color: COLORS.text,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    optionTextSelected: {
-        color: COLORS.white,
-        fontWeight: 'bold',
-    },
-    phoneInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-        paddingHorizontal: 10,
-        borderRadius: 8,
-        width: 150,
-        height: 35,
-    },
-    phoneInput: {
-        fontSize: 14,
-        padding: 0,
-    },
-    colorOptionBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: 20,
-        marginRight: 10,
-        marginBottom: 10,
-        backgroundColor: COLORS.white,
-    },
-    colorOptionBtnSelected: {
-        borderColor: COLORS.accent,
-        backgroundColor: '#FFF0F5', // lightly tinted background
-        borderWidth: 2,
-    },
-    colorOptionImg: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        marginRight: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-    },
-    variantsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-        gap: 15,
-    },
-    variantSection: {
-        flex: 1,
-    },
-    modalHandle: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 3,
-        marginBottom: 15,
     },
 });
 
